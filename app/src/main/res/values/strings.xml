@@ -1,0 +1,137 @@
+<resources>
+    <string name="app_name">Tracker</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Today</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_templates">Templates</string>
+    <string name="nav_diet">Diet</string>
+
+    <!-- Common -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_ok">OK</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_back">Back</string>
+    <string name="action_more_options">More options</string>
+    <string name="label_name">Name</string>
+    <string name="progress_ratio">%1$d/%2$d</string>
+    <string name="today_tab_marker">%1$s •</string>
+
+    <!-- Sets -->
+    <plurals name="set_reps">
+        <item quantity="one">%d rep</item>
+        <item quantity="other">%d reps</item>
+    </plurals>
+    <string name="set_weighted">%1$d × %2$s kg</string>
+    <string name="sets_uniform">%1$d × %2$s</string>
+    <string name="no_sets">no sets</string>
+    <plurals name="exercise_count">
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
+    </plurals>
+    <plurals name="set_count">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+
+    <!-- Today -->
+    <string name="today_title">Today</string>
+    <string name="today_section_training">Training</string>
+    <string name="today_section_meals">Meals · %1$s</string>
+    <string name="today_rest_day">Rest day: nothing planned.</string>
+    <string name="today_plan_workout">Plan a workout</string>
+    <string name="today_no_meals">No meals planned for today.</string>
+    <string name="today_set_up_diet">Set up your diet</string>
+    <string name="today_no_exercises">No exercises yet. Tap to add some.</string>
+    <string name="today_exercise_progress">%1$d/%2$d sets</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_legend_planned">Planned</string>
+    <string name="calendar_legend_completed">Completed</string>
+    <string name="calendar_day_planned">%1$d, workout planned</string>
+    <string name="calendar_day_completed">%1$d, workout completed</string>
+
+    <!-- Day -->
+    <string name="day_today">Today</string>
+    <string name="day_empty">Nothing planned for this day.\nAdd a workout from scratch or from a template.</string>
+    <string name="day_add_workout">Add workout</string>
+    <string name="day_workout_copied">Copied to %1$s</string>
+    <string name="day_template_saved">Saved as template “%1$s”</string>
+    <string name="workout_sets_done">%1$d/%2$d sets done</string>
+    <string name="workout_save_as_template">Save as template</string>
+    <string name="workout_copy_to_day">Copy to another day</string>
+    <string name="workout_add_exercise">Add exercise</string>
+    <string name="exercise_add_set">Add set</string>
+    <string name="exercise_edit">Edit</string>
+    <string name="exercise_no_sets">No sets. Use ⋮ › Add set.</string>
+    <string name="set_number">Set %1$d</string>
+    <string name="set_did">Did %1$s</string>
+
+    <string name="dialog_new_workout_title">Add workout</string>
+    <string name="default_workout_name">Workout</string>
+    <string name="dialog_new_workout_from_template">Or start from a template</string>
+    <string name="dialog_new_workout_create_empty">Create empty</string>
+    <string name="dialog_rename_workout_title">Rename workout</string>
+    <string name="dialog_save_template_title">Save as template</string>
+    <string name="label_template_name">Template name</string>
+    <string name="dialog_delete_workout_title">Delete workout?</string>
+    <string name="dialog_delete_workout_message">“%1$s” and everything logged in it will be removed.</string>
+    <string name="dialog_add_exercise_title">Add exercise</string>
+    <string name="dialog_edit_exercise_title">Edit exercise</string>
+    <string name="label_exercise">Exercise</string>
+    <string name="label_sets">Sets</string>
+    <string name="label_reps">Reps</string>
+    <string name="label_kg">kg</string>
+    <string name="label_notes_optional">Notes (optional)</string>
+    <string name="dialog_add_exercise_hint">Leave kg empty for bodyweight. You can tweak single sets later.</string>
+    <string name="dialog_delete_exercise_title">Delete exercise?</string>
+    <string name="dialog_delete_exercise_message">“%1$s” and its sets will be removed.</string>
+    <string name="dialog_set_planned">Planned</string>
+    <string name="dialog_set_actual">Actually done</string>
+    <string name="dialog_set_completed">Completed</string>
+    <string name="dialog_set_delete">Delete set</string>
+
+    <!-- Templates -->
+    <string name="templates_title">Templates</string>
+    <string name="templates_empty">No templates yet.\n\nPlan a workout on any day, then choose “Save as template” from its ⋮ menu.</string>
+    <string name="templates_summary">%1$s · %2$s</string>
+    <string name="templates_use_on_day">Use on a day…</string>
+    <string name="dialog_rename_template_title">Rename template</string>
+    <string name="dialog_delete_template_title">Delete template?</string>
+    <string name="dialog_delete_template_message">Workouts already created from “%1$s” are kept.</string>
+
+    <!-- Diet -->
+    <string name="diet_title">Diet</string>
+    <string name="diet_add_meal">Add meal</string>
+    <string name="diet_copy_day">Copy %1$s to other days…</string>
+    <string name="diet_empty">No meals planned for %1$s.\nTap “Add meal” to start.</string>
+    <string name="meal_edit">Edit meal</string>
+    <string name="meal_delete">Delete meal</string>
+    <string name="meal_add_food">Add food</string>
+    <string name="meal_no_foods">No foods listed</string>
+    <string name="meal_breakfast">Breakfast</string>
+    <string name="meal_snack">Snack</string>
+    <string name="meal_lunch">Lunch</string>
+    <string name="meal_dinner">Dinner</string>
+    <string name="dialog_add_meal_title">Add meal</string>
+    <string name="dialog_edit_meal_title">Edit meal</string>
+    <string name="label_meal">Meal</string>
+    <string name="label_time_optional">Time (optional)</string>
+    <string name="hint_time">08:00</string>
+    <string name="dialog_add_food_title">Add to %1$s</string>
+    <string name="dialog_edit_food_title">Edit food</string>
+    <string name="label_food">Food</string>
+    <string name="label_quantity_optional">Quantity (optional)</string>
+    <string name="hint_quantity">80 g</string>
+    <string name="dialog_delete_meal_title">Delete meal?</string>
+    <string name="dialog_delete_meal_message">“%1$s” and its foods will be removed from %2$s.</string>
+    <string name="dialog_copy_day_title">Copy %1$s to…</string>
+    <string name="dialog_copy_day_message">Meals already planned on the selected days will be replaced.</string>
+    <string name="action_copy">Copy</string>
+</resources>
