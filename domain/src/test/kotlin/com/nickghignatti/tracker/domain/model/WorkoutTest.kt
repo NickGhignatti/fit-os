@@ -56,6 +56,15 @@ class WorkoutTest {
     }
 
     @Test
+    fun `marked done fills only the missing actual values from the plan`() {
+        val logged = ExerciseSet(id = 1, plannedReps = 8, plannedWeight = 62.5, actualReps = 6).markedDone()
+
+        assertTrue(logged.done)
+        assertEquals(6, logged.actualReps)
+        assertEquals(62.5, logged.actualWeight!!, 0.0)
+    }
+
+    @Test
     fun `unmarking keeps actual values`() {
         val undone = ExerciseSet(id = 1, plannedReps = 10, plannedWeight = 60.0).toggledDone().toggledDone()
 

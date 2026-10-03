@@ -44,19 +44,17 @@ data class ExerciseSet(
     fun toPlan(): SetPlan = SetPlan(plannedReps, plannedWeight)
 
     /**
-     * Marking a set done pre-fills the actual values with the plan, so the common case
-     * ("did exactly what was planned") is a single tap. Un-marking keeps any edited values.
+     * A completed set always has actual values: any left blank default to the plan, so the
+     * common case ("did exactly what was planned") needs no typing.
      */
-    fun toggledDone(): ExerciseSet =
-        if (done) {
-            copy(done = false)
-        } else {
-            copy(
-                done = true,
-                actualReps = actualReps ?: plannedReps,
-                actualWeight = actualWeight ?: plannedWeight,
-            )
-        }
+    fun markedDone(): ExerciseSet = copy(
+        done = true,
+        actualReps = actualReps ?: plannedReps,
+        actualWeight = actualWeight ?: plannedWeight,
+    )
+
+    /** Un-marking keeps any logged values, so re-marking restores them. */
+    fun toggledDone(): ExerciseSet = if (done) copy(done = false) else markedDone()
 }
 
 /** Completion totals for one calendar day. */

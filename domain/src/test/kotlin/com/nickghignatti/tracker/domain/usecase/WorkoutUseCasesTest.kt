@@ -90,6 +90,30 @@ class WorkoutUseCasesTest {
     }
 
     @Test
+    fun `logging a completed set with blank actuals keeps the planned values`() = runTest {
+        val id = workouts.createWorkout(today, "Legs", plan)
+        val set = workouts.getWorkout(id)!!.exercises[0].sets[0]
+
+        LogSetUseCase(workouts)(set.copy(actualReps = 3, actualWeight = null, done = true))
+
+        val stored = workouts.getWorkout(id)!!.exercises[0].sets[0]
+        assertEquals(3, stored.actualReps)
+        assertEquals(100.0, stored.actualWeight!!, 0.0)
+    }
+
+    @Test
+    fun `logging a set that is not done stores it as entered`() = runTest {
+        val id = workouts.createWorkout(today, "Legs", plan)
+        val set = workouts.getWorkout(id)!!.exercises[0].sets[0]
+
+        LogSetUseCase(workouts)(set.copy(plannedReps = 6))
+
+        val stored = workouts.getWorkout(id)!!.exercises[0].sets[0]
+        assertEquals(6, stored.plannedReps)
+        assertNull(stored.actualReps)
+    }
+
+    @Test
     fun `add set repeats the last set`() = runTest {
         val id = workouts.createWorkout(today, "Legs", plan)
         val squat = workouts.getWorkout(id)!!.exercises[0]

@@ -8,6 +8,7 @@ import com.nickghignatti.tracker.domain.model.ExercisePlan
 import com.nickghignatti.tracker.domain.usecase.AddSetUseCase
 import com.nickghignatti.tracker.domain.usecase.ApplyTemplateUseCase
 import com.nickghignatti.tracker.domain.usecase.CopyWorkoutUseCase
+import com.nickghignatti.tracker.domain.usecase.LogSetUseCase
 import com.nickghignatti.tracker.domain.usecase.SaveWorkoutAsTemplateUseCase
 import com.nickghignatti.tracker.domain.usecase.ToggleSetDoneUseCase
 import java.time.Clock
@@ -47,6 +48,7 @@ class DayViewModelTest {
         copyWorkout = CopyWorkoutUseCase(workouts, transaction),
         toggleSetDone = ToggleSetDoneUseCase(workouts),
         addSet = AddSetUseCase(workouts),
+        logSet = LogSetUseCase(workouts),
     )
 
     @Test
@@ -84,6 +86,18 @@ class DayViewModelTest {
         viewModel().onAction(DayAction.ToggleSet(set))
 
         assertTrue(workouts.getWorkout(id)!!.exercises[0].sets[0].done)
+    }
+
+    @Test
+    fun `completing a set from its dialog with blank kg keeps the planned weight`() = runTest {
+        val id = workouts.createWorkout(today, "Legs", listOf(squat))
+        val set = workouts.getWorkout(id)!!.exercises[0].sets[0]
+
+        viewModel().onAction(DayAction.UpdateSet(set.copy(actualReps = 3, done = true)))
+
+        val stored = workouts.getWorkout(id)!!.exercises[0].sets[0]
+        assertEquals(3, stored.actualReps)
+        assertEquals(100.0, stored.actualWeight!!, 0.0)
     }
 
     @Test

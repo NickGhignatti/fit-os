@@ -7,6 +7,7 @@ import com.nickghignatti.tracker.domain.repository.WorkoutRepository
 import com.nickghignatti.tracker.domain.usecase.AddSetUseCase
 import com.nickghignatti.tracker.domain.usecase.ApplyTemplateUseCase
 import com.nickghignatti.tracker.domain.usecase.CopyWorkoutUseCase
+import com.nickghignatti.tracker.domain.usecase.LogSetUseCase
 import com.nickghignatti.tracker.domain.usecase.SaveWorkoutAsTemplateUseCase
 import com.nickghignatti.tracker.domain.usecase.ToggleSetDoneUseCase
 import com.nickghignatti.tracker.ui.common.stateInWhileSubscribed
@@ -35,6 +36,7 @@ class DayViewModel @AssistedInject constructor(
     private val copyWorkout: CopyWorkoutUseCase,
     private val toggleSetDone: ToggleSetDoneUseCase,
     private val addSet: AddSetUseCase,
+    private val logSet: LogSetUseCase,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -77,7 +79,7 @@ class DayViewModel @AssistedInject constructor(
             is DayAction.DeleteExercise -> workouts.deleteExercise(action.exerciseId)
             is DayAction.AddSet -> addSet(action.exercise)
             is DayAction.ToggleSet -> toggleSetDone(action.set)
-            is DayAction.UpdateSet -> workouts.updateSet(action.set)
+            is DayAction.UpdateSet -> logSet(action.set)
             is DayAction.DeleteSet -> workouts.deleteSet(action.setId)
         }
     }

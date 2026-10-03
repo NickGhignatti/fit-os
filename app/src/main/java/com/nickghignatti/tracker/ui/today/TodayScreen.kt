@@ -90,7 +90,8 @@ internal fun TodayScreen(
                     )
                 }
             } else {
-                items(state.workouts, key = { it.id }) { workout ->
+                // Workouts and meals come from different tables, so ids overlap: namespace the keys.
+                items(state.workouts, key = { "workout-${it.id}" }) { workout ->
                     WorkoutSummaryCard(workout, onClick = { onOpenDay(state.date) })
                 }
             }
@@ -110,7 +111,7 @@ internal fun TodayScreen(
                     )
                 }
             } else {
-                items(state.meals, key = { it.id }) { meal -> MealCard(meal) }
+                items(state.meals, key = { "meal-${it.id}" }) { meal -> MealCard(meal) }
             }
         }
     }
