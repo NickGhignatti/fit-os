@@ -3,7 +3,9 @@ package com.nickghignatti.tracker.ui.diet
 import com.nickghignatti.tracker.MainDispatcherRule
 import com.nickghignatti.tracker.domain.fake.FakeDietPlanRepository
 import com.nickghignatti.tracker.domain.fake.ImmediateTransactionRunner
+import com.nickghignatti.tracker.domain.fake.basicFood
 import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Portion
 import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.domain.usecase.CopyDietDayUseCase
 import java.time.Clock
@@ -92,6 +94,19 @@ class DietPlanViewModelTest {
         viewModel(plan).onAction(DietPlanAction.CopyDay(SATURDAY, setOf(SUNDAY)))
 
         assertEquals(listOf("Pizza"), diet.getMeals(plan, PlanDay.Weekday(SUNDAY)).map { it.name })
+    }
+
+    @Test
+    fun `a linked food's amount can change`() = runTest {
+        val plan = diet.createPlan("Cut", Recurrence.DAILY)
+        val meal = diet.addMeal(plan, PlanDay.EveryDay, "Pranzo", "")
+        val pasta = basicFood("1", "Pasta di semola", kcal = 350.0)
+        diet.addFood(meal, pasta.name, "", Portion(pasta, 80.0))
+        val food = diet.getMeals(plan, PlanDay.EveryDay).single().foods.single()
+
+        viewModel(plan).onAction(DietPlanAction.UpdateLinkedFood(food.id, Portion(pasta, 100.0)))
+
+        assertEquals(Portion(pasta, 100.0), diet.getMeals(plan, PlanDay.EveryDay).single().foods.single().portion)
     }
 
     @Test

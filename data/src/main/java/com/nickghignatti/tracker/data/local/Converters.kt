@@ -1,6 +1,7 @@
 package com.nickghignatti.tracker.data.local
 
 import androidx.room.TypeConverter
+import com.nickghignatti.tracker.domain.model.FoodId
 import com.nickghignatti.tracker.domain.model.PlanDay
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -22,6 +23,12 @@ internal class Converters {
     @TypeConverter
     fun intToPlanDay(value: Int): PlanDay =
         if (value == EVERY_DAY) PlanDay.EveryDay else PlanDay.Weekday(DayOfWeek.of(value))
+
+    @TypeConverter
+    fun foodIdToString(id: FoodId): String = id.toString()
+
+    @TypeConverter
+    fun stringToFoodId(value: String): FoodId = FoodId.parse(value)
 
     private companion object {
         const val EVERY_DAY = 0

@@ -24,6 +24,8 @@ import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.OverflowMenu
+import com.nickghignatti.tracker.ui.food.kcalLabel
+import com.nickghignatti.tracker.ui.food.portionLabel
 
 /** Editing callbacks for [MealCard]; omit them for a read-only card. */
 class MealCardActions(
@@ -51,6 +53,9 @@ fun MealCard(meal: Meal, modifier: Modifier = Modifier, actions: MealCardActions
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                }
+                meal.nutrients?.let {
+                    Text(kcalLabel(it.kcal), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(end = 12.dp))
                 }
                 if (actions != null) {
                     OverflowMenu(
@@ -94,8 +99,9 @@ private fun FoodRow(food: Food, onClick: (() -> Unit)?) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(food.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        if (food.quantity.isNotBlank()) {
-            Text(food.quantity, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val amount = food.portion?.let { portionLabel(it) } ?: food.quantity
+        if (amount.isNotBlank()) {
+            Text(amount, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

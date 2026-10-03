@@ -3,6 +3,7 @@ package com.nickghignatti.tracker.domain.repository
 import com.nickghignatti.tracker.domain.model.DietPlan
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Portion
 
 /** Diet plans with their meals and foods. Lists are returned in the user's order. */
 interface DietPlanRepository : PlanRepository<DietPlan> {
@@ -15,10 +16,10 @@ interface DietPlanRepository : PlanRepository<DietPlan> {
 
     suspend fun deleteMeal(id: Long)
 
-    /** Appends a food at the end of the meal. */
-    suspend fun addFood(mealId: Long, name: String, quantity: String)
+    /** Appends a food at the end of the meal; with a [portion], its nutrition counts. */
+    suspend fun addFood(mealId: Long, name: String, quantity: String, portion: Portion? = null)
 
-    suspend fun updateFood(id: Long, name: String, quantity: String)
+    suspend fun updateFood(id: Long, name: String, quantity: String, portion: Portion? = null)
 
     suspend fun deleteFood(id: Long)
 

@@ -5,11 +5,9 @@ package com.nickghignatti.tracker.ui.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -199,28 +197,5 @@ fun SectionHeader(text: String, @DrawableRes icon: Int, modifier: Modifier = Mod
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-    }
-}
-
-/** A centered icon and message for features that are not built yet. */
-@Composable
-fun ComingSoon(@DrawableRes icon: Int, text: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-    ) {
-        Icon(
-            painterResource(icon),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(64.dp),
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
     }
 }

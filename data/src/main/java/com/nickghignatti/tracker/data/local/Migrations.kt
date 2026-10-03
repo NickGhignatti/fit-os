@@ -3,7 +3,7 @@ package com.nickghignatti.tracker.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-internal val ALL_MIGRATIONS = arrayOf<Migration>(Migration1To2)
+internal val ALL_MIGRATIONS = arrayOf<Migration>(Migration1To2, Migration2To3, Migration3To4)
 
 /**
  * Version 2 replaces templates and the single weekly meal plan with training and diet plans:
@@ -85,4 +85,54 @@ internal object Migration1To2 : Migration(1, 2) {
 
     private const val EVERY_DAY = 0
     private const val MIGRATED_DIET_NAME = "My diet"
+}
+
+/**
+ * Version 3 adds calorie tracking: diet foods can link to a known food (all new columns are
+ * nullable, so existing foods stay free text), plus the food log, custom foods and favourites.
+ */
+internal object Migration2To3 : Migration(2, 3) {
+    private val LINKED_FOOD_COLUMNS = listOf(
+        "grams" to "REAL",
+        "linked_foodId" to "TEXT",
+        "linked_name" to "TEXT",
+        "linked_brand" to "TEXT",
+        "linked_kcal" to "REAL",
+        "linked_protein" to "REAL",
+        "linked_carbs" to "REAL",
+        "linked_fat" to "REAL",
+        "linked_servingGrams" to "REAL",
+    )
+
+    override fun migrate(db: SupportSQLiteDatabase) {
+        LINKED_FOOD_COLUMNS.forEach { (column, type) -> db.execSQL("ALTER TABLE `foods` ADD COLUMN `$column` $type") }
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `food_log` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`date` INTEGER NOT NULL, `meal` TEXT NOT NULL, `grams` REAL NOT NULL, `foodId` TEXT NOT NULL, " +
+                "`name` TEXT NOT NULL, `brand` TEXT, `kcal` REAL NOT NULL, `protein` REAL NOT NULL, " +
+                "`carbs` REAL NOT NULL, `fat` REAL NOT NULL, `servingGrams` REAL)",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_log_date` ON `food_log` (`date`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `custom_foods` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`name` TEXT NOT NULL, `brand` TEXT, `kcal` REAL NOT NULL, `protein` REAL NOT NULL, " +
+                "`carbs` REAL NOT NULL, `fat` REAL NOT NULL, `servingGrams` REAL)",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `favorite_foods` (`foodId` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                "`brand` TEXT, `kcal` REAL NOT NULL, `protein` REAL NOT NULL, `carbs` REAL NOT NULL, " +
+                "`fat` REAL NOT NULL, `servingGrams` REAL, PRIMARY KEY(`foodId`))",
+        )
+    }
+}
+
+/** Version 4 keeps packaged products the user has seen, so they can be found offline. */
+internal object Migration3To4 : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `saved_products` (`foodId` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                "`brand` TEXT, `kcal` REAL NOT NULL, `protein` REAL NOT NULL, `carbs` REAL NOT NULL, " +
+                "`fat` REAL NOT NULL, `servingGrams` REAL, PRIMARY KEY(`foodId`))",
+        )
+    }
 }

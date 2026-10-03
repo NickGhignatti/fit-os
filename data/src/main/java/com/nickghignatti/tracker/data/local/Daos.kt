@@ -2,8 +2,11 @@ package com.nickghignatti.tracker.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
+import com.nickghignatti.tracker.domain.model.FoodId
 import com.nickghignatti.tracker.domain.model.PlanDay
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -193,12 +196,72 @@ internal interface DietPlanDao {
     @Insert
     suspend fun insertFoods(foods: List<FoodEntity>)
 
-    @Query("UPDATE foods SET name = :name, quantity = :quantity WHERE id = :id")
-    suspend fun updateFood(id: Long, name: String, quantity: String)
+    @Query("SELECT * FROM foods WHERE id = :id")
+    suspend fun getFood(id: Long): FoodEntity?
+
+    @Update
+    suspend fun updateFood(food: FoodEntity)
 
     @Query("DELETE FROM foods WHERE id = :id")
     suspend fun deleteFood(id: Long)
 
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM foods WHERE mealId = :mealId")
     suspend fun nextFoodPosition(mealId: Long): Int
+}
+
+@Dao
+internal interface FoodLogDao {
+    @Query("SELECT * FROM food_log WHERE date = :date ORDER BY id")
+    fun observeEntries(date: LocalDate): Flow<List<FoodLogEntity>>
+
+    @Insert
+    suspend fun insert(entry: FoodLogEntity): Long
+
+    @Query("UPDATE food_log SET grams = :grams WHERE id = :id")
+    suspend fun updateGrams(id: Long, grams: Double)
+
+    @Query("DELETE FROM food_log WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    /** SQLite takes the bare columns from the row holding MAX(id), i.e. the latest log of each food. */
+    @Query(
+        """
+        SELECT foodId, name, brand, kcal, protein, carbs, fat, servingGrams, MAX(id) AS lastId
+        FROM food_log GROUP BY foodId ORDER BY lastId DESC LIMIT :limit
+        """,
+    )
+    fun observeRecentFoods(limit: Int): Flow<List<RecentFoodRow>>
+}
+
+@Dao
+internal interface CustomFoodDao {
+    @Query("SELECT * FROM custom_foods")
+    suspend fun getAll(): List<CustomFoodEntity>
+
+    @Insert
+    suspend fun insert(food: CustomFoodEntity): Long
+}
+
+@Dao
+internal interface FavoriteFoodDao {
+    @Query("SELECT * FROM favorite_foods ORDER BY rowid DESC")
+    fun observeAll(): Flow<List<FavoriteFoodEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(favorite: FavoriteFoodEntity)
+
+    @Query("DELETE FROM favorite_foods WHERE foodId = :foodId")
+    suspend fun delete(foodId: FoodId)
+}
+
+@Dao
+internal interface SavedProductDao {
+    @Query("SELECT * FROM saved_products")
+    suspend fun getAll(): List<SavedProductEntity>
+
+    @Query("SELECT * FROM saved_products WHERE foodId = :foodId")
+    suspend fun find(foodId: FoodId): SavedProductEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(product: SavedProductEntity)
 }

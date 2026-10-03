@@ -30,12 +30,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nickghignatti.tracker.R
 import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.Meal
+import com.nickghignatti.tracker.domain.model.Nutrients
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.ui.components.ConfirmDeleteDialog
 import com.nickghignatti.tracker.ui.components.EmptyState
 import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.OverflowMenu
+import com.nickghignatti.tracker.ui.food.AmountDialog
+import com.nickghignatti.tracker.ui.food.kcalLabel
+import com.nickghignatti.tracker.ui.food.macrosLabel
 import com.nickghignatti.tracker.ui.format.displayName
 import com.nickghignatti.tracker.ui.plans.WeekdayTabs
 import com.nickghignatti.tracker.ui.plans.rememberLocalWeek
@@ -46,19 +50,23 @@ private sealed interface DietDialog {
     data class NewMeal(val day: PlanDay) : DietDialog
     data class EditMeal(val meal: Meal) : DietDialog
     data class DeleteMeal(val meal: Meal) : DietDialog
-    data class NewFood(val meal: Meal) : DietDialog
     data class EditFood(val food: Food) : DietDialog
     data object CopyDay : DietDialog
 }
 
 @Composable
-fun DietPlanScreen(onBack: () -> Unit, viewModel: DietPlanViewModel) {
+fun DietPlanScreen(onBack: () -> Unit, onAddFood: (Meal) -> Unit, viewModel: DietPlanViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    DietPlanScreen(state, viewModel::onAction, onBack)
+    DietPlanScreen(state, viewModel::onAction, onBack, onAddFood)
 }
 
 @Composable
-internal fun DietPlanScreen(state: DietPlanUiState, onAction: (DietPlanAction) -> Unit, onBack: () -> Unit) {
+internal fun DietPlanScreen(
+    state: DietPlanUiState,
+    onAction: (DietPlanAction) -> Unit,
+    onBack: () -> Unit,
+    onAddFood: (Meal) -> Unit,
+) {
     val plan = state.plan
     if (!state.isLoading && plan == null) {
         // Deleted elsewhere: nothing left to edit.
@@ -125,13 +133,16 @@ internal fun DietPlanScreen(state: DietPlanUiState, onAction: (DietPlanAction) -
                     contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    state.planDay?.let(plan::nutrientsOn)?.let { total ->
+                        item(key = "total") { DayTotal(total) }
+                    }
                     items(state.meals, key = { it.id }) { meal ->
                         MealCard(
                             meal = meal,
                             actions = MealCardActions(
                                 onEditMeal = { dialog = DietDialog.EditMeal(it) },
                                 onDeleteMeal = { dialog = DietDialog.DeleteMeal(it) },
-                                onAddFood = { dialog = DietDialog.NewFood(it) },
+                                onAddFood = onAddFood,
                                 onEditFood = { dialog = DietDialog.EditFood(it) },
                             ),
                         )
@@ -164,14 +175,16 @@ internal fun DietPlanScreen(state: DietPlanUiState, onAction: (DietPlanAction) -
             onConfirm = { act(DietPlanAction.DeleteMeal(current.meal.id)) },
             onDismiss = dismiss,
         )
-        is DietDialog.NewFood -> FoodDialog(
-            title = stringResource(R.string.dialog_add_food_title, current.meal.name),
-            existing = null,
-            onSave = { name, quantity -> act(DietPlanAction.AddFood(current.meal.id, name, quantity)) },
-            onDelete = null,
-            onDismiss = dismiss,
-        )
-        is DietDialog.EditFood -> FoodDialog(
+        is DietDialog.EditFood -> current.food.portion?.let { portion ->
+            AmountDialog(
+                food = portion.food,
+                initialGrams = portion.grams,
+                confirmLabel = stringResource(R.string.action_save),
+                onConfirm = { act(DietPlanAction.UpdateLinkedFood(current.food.id, portion.copy(grams = it))) },
+                onDelete = { act(DietPlanAction.DeleteFood(current.food.id)) },
+                onDismiss = dismiss,
+            )
+        } ?: FoodDialog(
             title = stringResource(R.string.dialog_edit_food_title),
             existing = current.food,
             onSave = { name, quantity -> act(DietPlanAction.UpdateFood(current.food.id, name, quantity)) },
@@ -184,5 +197,13 @@ internal fun DietPlanScreen(state: DietPlanUiState, onAction: (DietPlanAction) -
             onCopy = { act(DietPlanAction.CopyDay(state.selectedDay, it)) },
             onDismiss = dismiss,
         )
+    }
+}
+
+@Composable
+private fun DayTotal(total: Nutrients) {
+    Column {
+        Text(stringResource(R.string.diet_day_total, kcalLabel(total.kcal)), style = MaterialTheme.typography.titleMedium)
+        Text(macrosLabel(total), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

@@ -45,8 +45,9 @@ class DietPlanViewModel @AssistedInject constructor(
             is DietPlanAction.AddMeal -> launch { diet.addMeal(planId, action.day, action.name.trim(), action.time.trim()) }
             is DietPlanAction.UpdateMeal -> launch { diet.updateMeal(action.mealId, action.name.trim(), action.time.trim()) }
             is DietPlanAction.DeleteMeal -> launch { diet.deleteMeal(action.mealId) }
-            is DietPlanAction.AddFood -> launch { diet.addFood(action.mealId, action.name.trim(), action.quantity.trim()) }
             is DietPlanAction.UpdateFood -> launch { diet.updateFood(action.foodId, action.name.trim(), action.quantity.trim()) }
+            is DietPlanAction.UpdateLinkedFood ->
+                launch { diet.updateFood(action.foodId, action.portion.food.name, quantity = "", action.portion) }
             is DietPlanAction.DeleteFood -> launch { diet.deleteFood(action.foodId) }
             is DietPlanAction.CopyDay -> launch {
                 copyDietDay(planId, PlanDay.Weekday(action.source), action.targets.map(PlanDay::Weekday).toSet())

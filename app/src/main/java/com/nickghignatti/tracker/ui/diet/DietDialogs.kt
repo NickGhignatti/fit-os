@@ -80,8 +80,9 @@ internal fun FoodDialog(
     onSave: (name: String, quantity: String) -> Unit,
     onDelete: (() -> Unit)?,
     onDismiss: () -> Unit,
+    initialName: String = "",
 ) {
-    var name by rememberSaveable { mutableStateOf(existing?.name.orEmpty()) }
+    var name by rememberSaveable { mutableStateOf(existing?.name ?: initialName) }
     var quantity by rememberSaveable { mutableStateOf(existing?.quantity.orEmpty()) }
     AlertDialog(
         onDismissRequest = onDismiss,

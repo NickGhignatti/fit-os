@@ -137,6 +137,7 @@
     <string name="diet_weekly_description">Its own meals on each day of the week</string>
     <string name="diet_delete_message">Its meals and foods will be removed.</string>
     <string name="diet_summary_empty">No meals yet</string>
+    <string name="diet_day_total">Planned: %1$s</string>
     <string name="diet_plan_empty_daily">No meals yet.\nTap “Add meal” to start.</string>
     <string name="diet_add_meal">Add meal</string>
     <string name="diet_copy_day">Copy %1$s to other days…</string>
@@ -167,7 +168,60 @@
 
     <!-- Calories -->
     <string name="calories_title">Calories</string>
-    <string name="calories_coming_soon">Calorie tracking is coming soon.</string>
+    <string name="calories_today">Today</string>
+    <string name="calories_yesterday">Yesterday</string>
+    <string name="calories_tomorrow">Tomorrow</string>
+    <string name="calories_previous_day">Previous day</string>
+    <string name="calories_next_day">Next day</string>
+    <string name="calories_eaten">eaten</string>
+    <string name="calories_of_planned">of %1$s planned</string>
+    <string name="calories_left">%1$d kcal left</string>
+    <string name="calories_over">%1$d kcal over the plan</string>
+    <string name="calories_no_plan_hint">With an active diet, its planned calories show up here to compare.</string>
+    <string name="calories_planned_value">%1$s planned</string>
+    <string name="calories_log_as_planned">Log as planned</string>
+    <string name="calories_add_food">Add food</string>
+    <string name="calories_no_nutrition_data">no nutrition data</string>
+    <string name="kcal_value">%1$d kcal</string>
+    <string name="macros_value">P %1$d g · C %2$d g · F %3$d g</string>
+    <string name="portion_value">%1$s g · %2$s</string>
+    <string name="per_100g">%1$s per 100 g</string>
+    <string name="grams_value">%1$d g</string>
+    <string name="grams_of_planned">%1$d / %2$d g</string>
+    <string name="label_protein">Protein</string>
+    <string name="label_carbs">Carbs</string>
+    <string name="label_fat">Fat</string>
+
+    <!-- Food search -->
+    <string name="food_search_title">Add to %1$s</string>
+    <string name="food_search_hint">Search, e.g. pasta, mela, or type a barcode</string>
+    <string name="food_scan_barcode">Scan barcode</string>
+    <string name="food_section_favorites">Favourites</string>
+    <string name="food_section_recent">Recent</string>
+    <string name="food_section_basic">Foods</string>
+    <string name="food_section_products">Packaged products</string>
+    <string name="food_search_empty_hint">Type a food\'s name, scan a barcode with the button above, or type the barcode\'s digits.</string>
+    <string name="food_products_type_more">Type at least 3 letters to search packaged products.</string>
+    <string name="food_products_none">No packaged products found.</string>
+    <string name="food_products_unavailable">Can\'t reach Open Food Facts. Check your connection.</string>
+    <string name="food_barcode_not_found">No product with barcode %1$s. Search by name or create the food.</string>
+    <string name="food_scanner_unavailable">The barcode scanner isn\'t available on this device.</string>
+    <string name="food_favorite">Add to favourites</string>
+    <string name="food_unfavorite">Remove from favourites</string>
+    <string name="food_create_custom">Create a food…</string>
+    <string name="food_add_as_text">Add without nutrition data…</string>
+    <string name="food_source_basic">CREA</string>
+    <string name="food_source_product">Open Food Facts</string>
+    <string name="food_source_custom">Your food</string>
+    <string name="food_attribution">Basic foods: CREA, Tabelle di composizione degli alimenti. Packaged products: Open Food Facts (ODbL).</string>
+    <string name="label_grams">Grams</string>
+    <string name="amount_100g">100 g</string>
+    <string name="amount_serving">1 serving (%1$s g)</string>
+    <string name="action_add">Add</string>
+    <string name="dialog_custom_food_title">New food</string>
+    <string name="dialog_custom_food_hint">Copy the values per 100 g from the label.</string>
+    <string name="label_kcal">kcal</string>
+    <string name="label_serving_optional">Serving in g (optional)</string>
 
     <!-- Profile -->
     <string name="profile_title">Profile</string>

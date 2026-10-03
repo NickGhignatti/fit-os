@@ -32,6 +32,9 @@ import com.nickghignatti.tracker.ui.day.DayViewModel
 import com.nickghignatti.tracker.ui.diet.DietPlanScreen
 import com.nickghignatti.tracker.ui.diet.DietPlanViewModel
 import com.nickghignatti.tracker.ui.diet.DietPlansScreen
+import com.nickghignatti.tracker.ui.food.FoodSearchScreen
+import com.nickghignatti.tracker.ui.food.FoodSearchViewModel
+import com.nickghignatti.tracker.ui.food.FoodTarget
 import com.nickghignatti.tracker.ui.profile.ProfileScreen
 import com.nickghignatti.tracker.ui.today.TodayScreen
 import com.nickghignatti.tracker.ui.training.TrainingPlanScreen
@@ -60,6 +63,10 @@ private fun NavHostController.openTopLevel(destination: TopLevelDestination) =
         launchSingleTop = true
         restoreState = true
     }
+
+@Composable
+private fun foodSearchViewModel(target: FoodTarget) =
+    hiltViewModel<FoodSearchViewModel, FoodSearchViewModel.Factory> { it.create(target) }
 
 @Composable
 fun TrackerNavHost() {
@@ -104,6 +111,7 @@ fun TrackerNavHost() {
                 val planId = entry.toRoute<DietPlanRoute>().planId
                 DietPlanScreen(
                     onBack = { nav.popBackStack() },
+                    onAddFood = { meal -> nav.navigate(DietFoodRoute(meal.id, meal.name)) },
                     viewModel = hiltViewModel<DietPlanViewModel, DietPlanViewModel.Factory> { it.create(planId) },
                 )
             }
@@ -114,7 +122,18 @@ fun TrackerNavHost() {
                     onOpenDiet = { nav.openTopLevel(TopLevelDestination.Diet) },
                 )
             }
-            composable<CaloriesRoute> { CaloriesScreen() }
+            composable<CaloriesRoute> { CaloriesScreen(onAddFood = { date, meal -> nav.navigate(LogFoodRoute(date, meal)) }) }
+            composable<LogFoodRoute> { entry ->
+                val route = entry.toRoute<LogFoodRoute>()
+                FoodSearchScreen(onDone = { nav.popBackStack() }, viewModel = foodSearchViewModel(FoodTarget.Log(route.date, route.meal)))
+            }
+            composable<DietFoodRoute> { entry ->
+                val route = entry.toRoute<DietFoodRoute>()
+                FoodSearchScreen(
+                    onDone = { nav.popBackStack() },
+                    viewModel = foodSearchViewModel(FoodTarget.DietMeal(route.mealId, route.mealName)),
+                )
+            }
             composable<ProfileRoute> { ProfileScreen(onOpenDay = nav::openDay) }
             composable<DayRoute> { entry ->
                 val date = entry.toRoute<DayRoute>().date

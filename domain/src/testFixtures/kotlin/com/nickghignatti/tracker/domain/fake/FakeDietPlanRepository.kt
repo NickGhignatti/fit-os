@@ -4,6 +4,7 @@ import com.nickghignatti.tracker.domain.model.DietPlan
 import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Portion
 import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.domain.repository.DietPlanRepository
 import kotlinx.coroutines.flow.Flow
@@ -55,11 +56,11 @@ class FakeDietPlanRepository : DietPlanRepository {
         all.map { plan -> plan.copy(meals = plan.meals.mapValues { (_, list) -> list.filterNot { it.id == id } }) }
     }
 
-    override suspend fun addFood(mealId: Long, name: String, quantity: String) =
-        updateMeals { if (it.id == mealId) it.copy(foods = it.foods + Food(nextId(), name, quantity)) else it }
+    override suspend fun addFood(mealId: Long, name: String, quantity: String, portion: Portion?) =
+        updateMeals { if (it.id == mealId) it.copy(foods = it.foods + Food(nextId(), name, quantity, portion)) else it }
 
-    override suspend fun updateFood(id: Long, name: String, quantity: String) = updateMeals { meal ->
-        meal.copy(foods = meal.foods.map { if (it.id == id) it.copy(name = name, quantity = quantity) else it })
+    override suspend fun updateFood(id: Long, name: String, quantity: String, portion: Portion?) = updateMeals { meal ->
+        meal.copy(foods = meal.foods.map { if (it.id == id) it.copy(name = name, quantity = quantity, portion = portion) else it })
     }
 
     override suspend fun deleteFood(id: Long) = updateMeals { meal -> meal.copy(foods = meal.foods.filterNot { it.id == id }) }

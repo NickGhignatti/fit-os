@@ -5,10 +5,12 @@ import com.nickghignatti.tracker.data.local.AppDatabase
 import com.nickghignatti.tracker.data.local.DietPlanEntity
 import com.nickghignatti.tracker.data.local.FoodEntity
 import com.nickghignatti.tracker.data.local.MealEntity
+import com.nickghignatti.tracker.data.mapper.toColumns
 import com.nickghignatti.tracker.data.mapper.toDomain
 import com.nickghignatti.tracker.domain.model.DietPlan
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Portion
 import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.domain.repository.DietPlanRepository
 import javax.inject.Inject
@@ -49,13 +51,19 @@ internal class RoomDietPlanRepository @Inject constructor(
 
     override suspend fun deleteMeal(id: Long) = dao.deleteMeal(id)
 
-    override suspend fun addFood(mealId: Long, name: String, quantity: String) = db.withTransaction {
+    override suspend fun addFood(mealId: Long, name: String, quantity: String, portion: Portion?) = db.withTransaction {
         dao.insertFoods(
-            listOf(FoodEntity(mealId = mealId, position = dao.nextFoodPosition(mealId), name = name, quantity = quantity)),
+            listOf(
+                FoodEntity(mealId = mealId, position = dao.nextFoodPosition(mealId), name = name, quantity = quantity)
+                    .withPortion(portion),
+            ),
         )
     }
 
-    override suspend fun updateFood(id: Long, name: String, quantity: String) = dao.updateFood(id, name, quantity)
+    override suspend fun updateFood(id: Long, name: String, quantity: String, portion: Portion?) = db.withTransaction {
+        val food = dao.getFood(id) ?: return@withTransaction
+        dao.updateFood(food.copy(name = name, quantity = quantity).withPortion(portion))
+    }
 
     override suspend fun deleteFood(id: Long) = dao.deleteFood(id)
 
@@ -68,8 +76,12 @@ internal class RoomDietPlanRepository @Inject constructor(
             dao.insertFoods(
                 meal.foods.mapIndexed { index, food ->
                     FoodEntity(mealId = mealId, position = index, name = food.name, quantity = food.quantity)
+                        .withPortion(food.portion)
                 },
             )
         }
     }
+
+    private fun FoodEntity.withPortion(portion: Portion?) =
+        copy(linkedFood = portion?.food?.toColumns(), grams = portion?.grams)
 }

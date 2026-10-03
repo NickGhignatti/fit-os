@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.nickghignatti.tracker.domain.model.FoodId
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.Recurrence
 import java.time.LocalDate
@@ -207,6 +208,10 @@ internal data class FoodEntity(
     val position: Int,
     val name: String,
     val quantity: String,
+    /** The known food this one is linked to, so its nutrition counts; null for free text. */
+    @Embedded(prefix = "linked_") val linkedFood: FoodColumns? = null,
+    /** Set together with [linkedFood]. */
+    val grams: Double? = null,
 )
 
 internal data class MealWithFoods(
@@ -219,4 +224,55 @@ internal data class DietPlanWithMeals(
     @Embedded val plan: DietPlanEntity,
     @Relation(entity = MealEntity::class, parentColumn = "id", entityColumn = "planId")
     val meals: List<MealWithFoods>,
+)
+
+// ---- Foods and the food log -------------------------------------------------
+
+/** A snapshot of a food's data, embedded wherever a food is stored, so no lookup is needed to read it. */
+internal data class FoodColumns(
+    val foodId: FoodId,
+    val name: String,
+    val brand: String?,
+    val kcal: Double,
+    val protein: Double,
+    val carbs: Double,
+    val fat: Double,
+    val servingGrams: Double?,
+)
+
+@Entity(tableName = "food_log", indices = [Index("date")])
+internal data class FoodLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val date: LocalDate,
+    val meal: String,
+    @Embedded val food: FoodColumns,
+    val grams: Double,
+)
+
+@Entity(tableName = "custom_foods")
+internal data class CustomFoodEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val brand: String?,
+    val kcal: Double,
+    val protein: Double,
+    val carbs: Double,
+    val fat: Double,
+    val servingGrams: Double?,
+)
+
+/** Packaged products seen before, so they can be found offline. */
+@Entity(tableName = "saved_products", primaryKeys = ["foodId"])
+internal data class SavedProductEntity(
+    @Embedded val food: FoodColumns,
+)
+
+@Entity(tableName = "favorite_foods", primaryKeys = ["foodId"])
+internal data class FavoriteFoodEntity(
+    @Embedded val food: FoodColumns,
+)
+
+internal data class RecentFoodRow(
+    @Embedded val food: FoodColumns,
+    val lastId: Long,
 )

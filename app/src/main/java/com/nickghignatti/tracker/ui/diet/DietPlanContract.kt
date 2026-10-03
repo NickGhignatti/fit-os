@@ -3,6 +3,7 @@ package com.nickghignatti.tracker.ui.diet
 import com.nickghignatti.tracker.domain.model.DietPlan
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Portion
 import java.time.DayOfWeek
 
 data class DietPlanUiState(
@@ -23,8 +24,8 @@ sealed interface DietPlanAction {
     data class AddMeal(val day: PlanDay, val name: String, val time: String) : DietPlanAction
     data class UpdateMeal(val mealId: Long, val name: String, val time: String) : DietPlanAction
     data class DeleteMeal(val mealId: Long) : DietPlanAction
-    data class AddFood(val mealId: Long, val name: String, val quantity: String) : DietPlanAction
     data class UpdateFood(val foodId: Long, val name: String, val quantity: String) : DietPlanAction
+    data class UpdateLinkedFood(val foodId: Long, val portion: Portion) : DietPlanAction
     data class DeleteFood(val foodId: Long) : DietPlanAction
 
     /** Weekly plans only: copies one weekday's meals over others. */

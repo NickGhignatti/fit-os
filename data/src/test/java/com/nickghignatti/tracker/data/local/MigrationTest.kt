@@ -5,8 +5,11 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.nickghignatti.tracker.data.repository.RoomDietPlanRepository
+import com.nickghignatti.tracker.data.repository.RoomFoodLogRepository
+import com.nickghignatti.tracker.data.repository.RoomSavedProductRepository
 import com.nickghignatti.tracker.data.repository.RoomTrainingPlanRepository
 import com.nickghignatti.tracker.data.repository.RoomWorkoutRepository
+import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.PlannedExercise
 import com.nickghignatti.tracker.domain.model.PlannedSet
@@ -55,7 +58,7 @@ class MigrationTest {
         }
 
         helper.runMigrationsAndValidate(DB_NAME, 2, true, Migration1To2).close()
-        val db = openMigrated()
+        val db = openMigrated() // migrates on to the latest version
 
         val trainingPlan = RoomTrainingPlanRepository(db).observePlans().first().single()
         val squat = PlannedExercise(5, "Squat", "belt", listOf(PlannedSet(7, 5, 100.0), PlannedSet(8, 12, null)))
@@ -79,6 +82,31 @@ class MigrationTest {
         helper.runMigrationsAndValidate(DB_NAME, 2, true, Migration1To2).close()
 
         assertTrue(RoomDietPlanRepository(openMigrated()).observePlans().first().isEmpty())
+    }
+
+    @Test
+    fun `2 to 3 keeps diet foods as free text and starts an empty food log`() = runTest {
+        helper.createDatabase(DB_NAME, 2).use { db ->
+            db.execSQL("INSERT INTO diet_plans (id, name, recurrence, isActive) VALUES (1, 'Cut', 'DAILY', 1)")
+            db.execSQL("INSERT INTO meals (id, planId, day, position, name, time) VALUES (1, 1, 0, 0, 'Colazione', '08:00')")
+            db.execSQL("INSERT INTO foods (id, mealId, position, name, quantity) VALUES (1, 1, 0, 'Avena', '50 g')")
+        }
+
+        helper.runMigrationsAndValidate(DB_NAME, 3, true, Migration2To3).close()
+        val db = openMigrated()
+
+        val food = RoomDietPlanRepository(db).getActivePlan()!!.mealsOn(PlanDay.EveryDay).single().foods.single()
+        assertEquals(Food(1, "Avena", "50 g", portion = null), food)
+        assertTrue(RoomFoodLogRepository(db).observeEntries(LocalDate.of(2026, 10, 3)).first().isEmpty())
+    }
+
+    @Test
+    fun `3 to 4 adds an empty table of saved products`() = runTest {
+        helper.createDatabase(DB_NAME, 3).close()
+
+        helper.runMigrationsAndValidate(DB_NAME, 4, true, Migration3To4).close()
+
+        assertTrue(RoomSavedProductRepository(openMigrated()).search("yogurt").isEmpty())
     }
 
     private fun openMigrated(): AppDatabase =
