@@ -14,10 +14,17 @@ interface WorkoutRepository {
 
     fun observeDaySummaries(from: LocalDate, to: LocalDate): Flow<List<DaySummary>>
 
+    suspend fun getWorkouts(date: LocalDate): List<Workout>
+
     suspend fun getWorkout(id: Long): Workout?
 
-    /** Creates a workout, optionally pre-filled with [exercises]; returns its id. */
-    suspend fun createWorkout(date: LocalDate, title: String, exercises: List<ExercisePlan> = emptyList()): Long
+    /** Creates a workout, optionally pre-filled with [exercises] from plan [planId]; returns its id. */
+    suspend fun createWorkout(
+        date: LocalDate,
+        title: String,
+        exercises: List<ExercisePlan> = emptyList(),
+        planId: Long? = null,
+    ): Long
 
     suspend fun renameWorkout(id: Long, title: String)
 

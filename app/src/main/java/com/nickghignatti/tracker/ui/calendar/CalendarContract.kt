@@ -8,6 +8,8 @@ data class CalendarUiState(
     val month: YearMonth,
     val today: LocalDate,
     val days: Map<LocalDate, DaySummary> = emptyMap(),
+    /** Upcoming days on which the active training plan has a session. */
+    val plannedDays: Set<LocalDate> = emptySet(),
 )
 
 sealed interface CalendarAction {

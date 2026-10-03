@@ -26,23 +26,30 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.nickghignatti.tracker.R
-import com.nickghignatti.tracker.ui.calendar.CalendarScreen
+import com.nickghignatti.tracker.ui.calories.CaloriesScreen
 import com.nickghignatti.tracker.ui.day.DayScreen
 import com.nickghignatti.tracker.ui.day.DayViewModel
-import com.nickghignatti.tracker.ui.diet.DietScreen
-import com.nickghignatti.tracker.ui.templates.TemplatesScreen
+import com.nickghignatti.tracker.ui.diet.DietPlanScreen
+import com.nickghignatti.tracker.ui.diet.DietPlanViewModel
+import com.nickghignatti.tracker.ui.diet.DietPlansScreen
+import com.nickghignatti.tracker.ui.profile.ProfileScreen
 import com.nickghignatti.tracker.ui.today.TodayScreen
+import com.nickghignatti.tracker.ui.training.TrainingPlanScreen
+import com.nickghignatti.tracker.ui.training.TrainingPlanViewModel
+import com.nickghignatti.tracker.ui.training.TrainingPlansScreen
 import java.time.LocalDate
 
+/** The bottom bar, left to right, with Home in the middle. */
 private enum class TopLevelDestination(
     val route: Any,
     @param:StringRes val label: Int,
     @param:DrawableRes val icon: Int,
 ) {
-    Today(TodayRoute, R.string.nav_today, R.drawable.ic_home),
-    Calendar(CalendarRoute, R.string.nav_calendar, R.drawable.ic_calendar),
-    Templates(TemplatesRoute, R.string.nav_templates, R.drawable.ic_bookmark),
+    Training(TrainingRoute, R.string.nav_training, R.drawable.ic_fitness),
     Diet(DietRoute, R.string.nav_diet, R.drawable.ic_restaurant),
+    Home(TodayRoute, R.string.nav_home, R.drawable.ic_home),
+    Calories(CaloriesRoute, R.string.nav_calories, R.drawable.ic_calories),
+    Profile(ProfileRoute, R.string.nav_profile, R.drawable.ic_person),
 }
 
 private fun NavHostController.openDay(date: LocalDate) = navigate(DayRoute(date))
@@ -84,15 +91,31 @@ fun TrackerNavHost() {
             startDestination = TodayRoute,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
+            composable<TrainingRoute> { TrainingPlansScreen(onOpenPlan = { nav.navigate(TrainingPlanRoute(it)) }) }
+            composable<TrainingPlanRoute> { entry ->
+                val planId = entry.toRoute<TrainingPlanRoute>().planId
+                TrainingPlanScreen(
+                    onBack = { nav.popBackStack() },
+                    viewModel = hiltViewModel<TrainingPlanViewModel, TrainingPlanViewModel.Factory> { it.create(planId) },
+                )
+            }
+            composable<DietRoute> { DietPlansScreen(onOpenPlan = { nav.navigate(DietPlanRoute(it)) }) }
+            composable<DietPlanRoute> { entry ->
+                val planId = entry.toRoute<DietPlanRoute>().planId
+                DietPlanScreen(
+                    onBack = { nav.popBackStack() },
+                    viewModel = hiltViewModel<DietPlanViewModel, DietPlanViewModel.Factory> { it.create(planId) },
+                )
+            }
             composable<TodayRoute> {
                 TodayScreen(
                     onOpenDay = nav::openDay,
+                    onOpenTraining = { nav.openTopLevel(TopLevelDestination.Training) },
                     onOpenDiet = { nav.openTopLevel(TopLevelDestination.Diet) },
                 )
             }
-            composable<CalendarRoute> { CalendarScreen(onOpenDay = nav::openDay) }
-            composable<TemplatesRoute> { TemplatesScreen(onOpenDay = nav::openDay) }
-            composable<DietRoute> { DietScreen() }
+            composable<CaloriesRoute> { CaloriesScreen() }
+            composable<ProfileRoute> { ProfileScreen(onOpenDay = nav::openDay) }
             composable<DayRoute> { entry ->
                 val date = entry.toRoute<DayRoute>().date
                 DayScreen(

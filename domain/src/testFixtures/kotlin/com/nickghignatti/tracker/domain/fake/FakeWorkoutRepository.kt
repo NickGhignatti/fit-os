@@ -30,11 +30,13 @@ class FakeWorkoutRepository : WorkoutRepository {
                 .map { (date, workouts) -> DaySummary(date, workouts.sumOf { it.totalSets }, workouts.sumOf { it.doneSets }) }
         }
 
+    override suspend fun getWorkouts(date: LocalDate): List<Workout> = state.value.filter { it.date == date }
+
     override suspend fun getWorkout(id: Long): Workout? = state.value.find { it.id == id }
 
-    override suspend fun createWorkout(date: LocalDate, title: String, exercises: List<ExercisePlan>): Long {
+    override suspend fun createWorkout(date: LocalDate, title: String, exercises: List<ExercisePlan>, planId: Long?): Long {
         val id = nextId()
-        state.update { it + Workout(id, date, title, exercises.map(::newExercise)) }
+        state.update { it + Workout(id, date, title, exercises.map(::newExercise), planId) }
         return id
     }
 

@@ -36,7 +36,9 @@ import com.nickghignatti.tracker.domain.model.ExerciseSet
 import com.nickghignatti.tracker.domain.model.Workout
 import com.nickghignatti.tracker.ui.components.ConfirmDeleteDialog
 import com.nickghignatti.tracker.ui.components.DatePickerModal
+import com.nickghignatti.tracker.ui.components.EditExerciseDialog
 import com.nickghignatti.tracker.ui.components.EmptyState
+import com.nickghignatti.tracker.ui.components.NewExerciseDialog
 import com.nickghignatti.tracker.ui.components.TextInputDialog
 import com.nickghignatti.tracker.ui.format.displayName
 import com.nickghignatti.tracker.ui.format.formatted
@@ -46,7 +48,7 @@ import java.time.format.FormatStyle
 internal sealed interface DayDialog {
     data object NewWorkout : DayDialog
     data class RenameWorkout(val workout: Workout) : DayDialog
-    data class SaveAsTemplate(val workout: Workout) : DayDialog
+    data class SaveAsPlan(val workout: Workout) : DayDialog
     data class CopyWorkout(val workout: Workout) : DayDialog
     data class DeleteWorkout(val workout: Workout) : DayDialog
     data class NewExercise(val workoutId: Long) : DayDialog
@@ -65,7 +67,7 @@ fun DayScreen(onBack: () -> Unit, viewModel: DayViewModel) {
         viewModel.events.collect { event ->
             val message = when (event) {
                 is DayEvent.WorkoutCopied -> resources.getString(R.string.day_workout_copied, event.date.formatted(FormatStyle.MEDIUM))
-                is DayEvent.TemplateSaved -> resources.getString(R.string.day_template_saved, event.name)
+                is DayEvent.PlanSaved -> resources.getString(R.string.day_plan_saved, event.name)
             }
             snackbar.showSnackbar(message)
         }
@@ -114,12 +116,18 @@ internal fun DayScreen(
     ) { padding ->
         when {
             state.isLoading -> Unit
-            state.workouts.isEmpty() -> EmptyState(stringResource(R.string.day_empty), Modifier.padding(padding))
+            state.workouts.isEmpty() && state.pendingSession == null ->
+                EmptyState(stringResource(R.string.day_empty), Modifier.padding(padding))
             else -> LazyColumn(
                 modifier = Modifier.padding(padding),
                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                state.pendingSession?.let { session ->
+                    item(key = "pending") {
+                        PendingSessionCard(session, onStart = { onAction(DayAction.StartPlannedSession) })
+                    }
+                }
                 items(state.workouts, key = { it.id }) { workout ->
                     WorkoutCard(workout, onOpenDialog = { dialog = it }, onAction = onAction)
                 }
@@ -144,10 +152,11 @@ private fun DayDialogHost(
         onDismiss()
     }
     when (dialog) {
-        DayDialog.NewWorkout -> NewWorkoutDialog(
-            templates = state.templates,
-            onCreate = { act(DayAction.CreateWorkout(it)) },
-            onUseTemplate = { act(DayAction.ApplyTemplate(it)) },
+        DayDialog.NewWorkout -> TextInputDialog(
+            title = stringResource(R.string.dialog_new_workout_title),
+            label = stringResource(R.string.label_name),
+            initial = stringResource(R.string.default_workout_name),
+            onConfirm = { act(DayAction.CreateWorkout(it)) },
             onDismiss = onDismiss,
         )
         is DayDialog.RenameWorkout -> TextInputDialog(
@@ -157,11 +166,11 @@ private fun DayDialogHost(
             onConfirm = { act(DayAction.RenameWorkout(dialog.workout.id, it)) },
             onDismiss = onDismiss,
         )
-        is DayDialog.SaveAsTemplate -> TextInputDialog(
-            title = stringResource(R.string.dialog_save_template_title),
-            label = stringResource(R.string.label_template_name),
+        is DayDialog.SaveAsPlan -> TextInputDialog(
+            title = stringResource(R.string.dialog_save_plan_title),
+            label = stringResource(R.string.label_name),
             initial = dialog.workout.title,
-            onConfirm = { act(DayAction.SaveAsTemplate(dialog.workout.id, it)) },
+            onConfirm = { act(DayAction.SaveAsPlan(dialog.workout.id, it)) },
             onDismiss = onDismiss,
         )
         is DayDialog.CopyWorkout -> DatePickerModal(
@@ -180,7 +189,8 @@ private fun DayDialogHost(
             onDismiss = onDismiss,
         )
         is DayDialog.EditExercise -> EditExerciseDialog(
-            exercise = dialog.exercise,
+            initialName = dialog.exercise.name,
+            initialNotes = dialog.exercise.notes,
             onSave = { name, notes -> act(DayAction.UpdateExercise(dialog.exercise.id, name, notes)) },
             onDismiss = onDismiss,
         )

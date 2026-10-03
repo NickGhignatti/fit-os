@@ -9,12 +9,6 @@ import javax.inject.Inject
 class AddSetUseCase @Inject constructor(
     private val workouts: WorkoutRepository,
 ) {
-    suspend operator fun invoke(exercise: Exercise) {
-        val next = exercise.sets.lastOrNull()?.toPlan() ?: SetPlan(DEFAULT_REPS, weight = null)
-        workouts.addSet(exercise.id, next)
-    }
-
-    private companion object {
-        const val DEFAULT_REPS = 10
-    }
+    suspend operator fun invoke(exercise: Exercise) =
+        workouts.addSet(exercise.id, SetPlan.following(exercise.sets.lastOrNull()?.toPlan()))
 }

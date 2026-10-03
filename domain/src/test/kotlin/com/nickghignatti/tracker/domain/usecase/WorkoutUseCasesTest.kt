@@ -1,13 +1,16 @@
 package com.nickghignatti.tracker.domain.usecase
 
-import com.nickghignatti.tracker.domain.fake.FakeTemplateRepository
+import com.nickghignatti.tracker.domain.fake.FakeTrainingPlanRepository
 import com.nickghignatti.tracker.domain.fake.FakeWorkoutRepository
 import com.nickghignatti.tracker.domain.fake.ImmediateTransactionRunner
 import com.nickghignatti.tracker.domain.model.ExercisePlan
+import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.domain.model.SetPlan
 import java.time.LocalDate
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,7 +18,7 @@ import org.junit.Test
 class WorkoutUseCasesTest {
 
     private val workouts = FakeWorkoutRepository()
-    private val templates = FakeTemplateRepository()
+    private val trainingPlans = FakeTrainingPlanRepository()
     private val transaction = ImmediateTransactionRunner()
 
     private val today = LocalDate.of(2026, 9, 26)
@@ -25,41 +28,24 @@ class WorkoutUseCasesTest {
     )
 
     @Test
-    fun `save as template stores the plan without logged results`() = runTest {
+    fun `save as plan stores a daily plan without logged results`() = runTest {
         val workoutId = workouts.createWorkout(today, "Legs", plan)
         val firstSet = workouts.getWorkout(workoutId)!!.exercises[0].sets[0]
         workouts.updateSet(firstSet.copy(done = true, actualReps = 3))
 
-        val templateId = SaveWorkoutAsTemplateUseCase(workouts, templates, transaction)(workoutId, "Leg day")
+        val planId = SaveWorkoutAsPlanUseCase(workouts, trainingPlans, transaction)(workoutId, "Leg day")
 
-        val template = templates.getTemplate(templateId!!)!!
-        assertEquals("Leg day", template.name)
-        assertEquals(plan, template.exercises)
+        val saved = trainingPlans.plan(planId!!)
+        assertEquals("Leg day", saved.name)
+        assertEquals(Recurrence.DAILY, saved.recurrence)
+        assertFalse(saved.isActive)
+        assertEquals(plan, saved.sessionOn(PlanDay.EveryDay).map { it.toPlan() })
     }
 
     @Test
-    fun `save as template of a missing workout does nothing`() = runTest {
-        assertNull(SaveWorkoutAsTemplateUseCase(workouts, templates, transaction)(workoutId = 42, name = "x"))
-        assertTrue(templates.templates.isEmpty())
-    }
-
-    @Test
-    fun `apply template creates a workout on the chosen day`() = runTest {
-        val templateId = templates.createTemplate("Leg day", plan)
-        val nextWeek = today.plusWeeks(1)
-
-        val workoutId = ApplyTemplateUseCase(templates, workouts, transaction)(templateId, nextWeek)
-
-        val workout = workouts.getWorkout(workoutId!!)!!
-        assertEquals(nextWeek, workout.date)
-        assertEquals("Leg day", workout.title)
-        assertEquals(plan, workout.toPlan())
-    }
-
-    @Test
-    fun `apply missing template does nothing`() = runTest {
-        assertNull(ApplyTemplateUseCase(templates, workouts, transaction)(templateId = 42, date = today))
-        assertTrue(workouts.workouts.isEmpty())
+    fun `save as plan of a missing workout does nothing`() = runTest {
+        assertNull(SaveWorkoutAsPlanUseCase(workouts, trainingPlans, transaction)(workoutId = 42, name = "x"))
+        assertTrue(trainingPlans.plans.isEmpty())
     }
 
     @Test

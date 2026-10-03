@@ -2,12 +2,12 @@ package com.nickghignatti.tracker.data.di
 
 import android.content.Context
 import com.nickghignatti.tracker.data.local.AppDatabase
-import com.nickghignatti.tracker.data.repository.RoomDietRepository
-import com.nickghignatti.tracker.data.repository.RoomTemplateRepository
+import com.nickghignatti.tracker.data.repository.RoomDietPlanRepository
+import com.nickghignatti.tracker.data.repository.RoomTrainingPlanRepository
 import com.nickghignatti.tracker.data.repository.RoomTransactionRunner
 import com.nickghignatti.tracker.data.repository.RoomWorkoutRepository
-import com.nickghignatti.tracker.domain.repository.DietRepository
-import com.nickghignatti.tracker.domain.repository.TemplateRepository
+import com.nickghignatti.tracker.domain.repository.DietPlanRepository
+import com.nickghignatti.tracker.domain.repository.TrainingPlanRepository
 import com.nickghignatti.tracker.domain.repository.TransactionRunner
 import com.nickghignatti.tracker.domain.repository.WorkoutRepository
 import dagger.Binds
@@ -26,10 +26,10 @@ abstract class DataModule {
     internal abstract fun bindWorkoutRepository(impl: RoomWorkoutRepository): WorkoutRepository
 
     @Binds
-    internal abstract fun bindTemplateRepository(impl: RoomTemplateRepository): TemplateRepository
+    internal abstract fun bindTrainingPlanRepository(impl: RoomTrainingPlanRepository): TrainingPlanRepository
 
     @Binds
-    internal abstract fun bindDietRepository(impl: RoomDietRepository): DietRepository
+    internal abstract fun bindDietPlanRepository(impl: RoomDietPlanRepository): DietPlanRepository
 
     @Binds
     internal abstract fun bindTransactionRunner(impl: RoomTransactionRunner): TransactionRunner

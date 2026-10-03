@@ -5,6 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.nickghignatti.tracker.data.local.AppDatabase
 import com.nickghignatti.tracker.domain.model.DaySummary
 import com.nickghignatti.tracker.domain.model.ExercisePlan
+import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.domain.model.SetPlan
 import java.time.LocalDate
 import kotlinx.coroutines.flow.first
@@ -25,7 +27,7 @@ class RoomWorkoutRepositoryTest {
 
     private lateinit var db: AppDatabase
     private lateinit var workouts: RoomWorkoutRepository
-    private lateinit var templates: RoomTemplateRepository
+    private lateinit var trainingPlans: RoomTrainingPlanRepository
 
     private val today = LocalDate.of(2026, 9, 26)
     private val plan = listOf(
@@ -39,7 +41,7 @@ class RoomWorkoutRepositoryTest {
             .allowMainThreadQueries()
             .build()
         workouts = RoomWorkoutRepository(db)
-        templates = RoomTemplateRepository(db)
+        trainingPlans = RoomTrainingPlanRepository(db)
     }
 
     @After
@@ -112,21 +114,25 @@ class RoomWorkoutRepositoryTest {
         runCatching {
             transaction.run {
                 workouts.createWorkout(today, "Legs", plan)
-                templates.createTemplate("Leg day", plan)
+                trainingPlans.createPlan("Leg day", Recurrence.DAILY, mapOf(PlanDay.EveryDay to plan))
                 error("boom")
             }
         }
 
         assertTrue(workouts.observeWorkouts(today).first().isEmpty())
-        assertTrue(templates.observeTemplates().first().isEmpty())
+        assertTrue(trainingPlans.observePlans().first().isEmpty())
     }
 
     @Test
-    fun `templates round-trip in name order`() = runTest {
-        templates.createTemplate("push", emptyList())
-        val legsId = templates.createTemplate("Legs", plan)
+    fun `workouts remember their plan until it is deleted`() = runTest {
+        val planId = trainingPlans.createPlan("Leg day", Recurrence.DAILY)
+        val id = workouts.createWorkout(today, "Legs", plan, planId)
+        assertEquals(planId, workouts.getWorkouts(today).single().planId)
 
-        assertEquals(listOf("Legs", "push"), templates.observeTemplates().first().map { it.name })
-        assertEquals(plan, templates.getTemplate(legsId)!!.exercises)
+        trainingPlans.deletePlan(planId)
+
+        val kept = workouts.getWorkout(id)!!
+        assertNull(kept.planId)
+        assertEquals(plan, kept.toPlan())
     }
 }

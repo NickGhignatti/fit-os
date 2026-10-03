@@ -11,25 +11,28 @@ import androidx.room.TypeConverters
         WorkoutEntity::class,
         ExerciseEntity::class,
         SetEntity::class,
-        TemplateEntity::class,
-        TemplateExerciseEntity::class,
-        TemplateSetEntity::class,
+        TrainingPlanEntity::class,
+        PlanExerciseEntity::class,
+        PlanSetEntity::class,
+        DietPlanEntity::class,
         MealEntity::class,
         FoodEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
 internal abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
-    abstract fun templateDao(): TemplateDao
-    abstract fun dietDao(): DietDao
+    abstract fun trainingPlanDao(): TrainingPlanDao
+    abstract fun dietPlanDao(): DietPlanDao
 
     companion object {
         private const val NAME = "tracker.db"
 
         fun build(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, NAME).build()
+            Room.databaseBuilder(context, AppDatabase::class.java, NAME)
+                .addMigrations(*ALL_MIGRATIONS)
+                .build()
     }
 }

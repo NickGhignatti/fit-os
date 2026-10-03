@@ -55,7 +55,7 @@ internal fun WorkoutCard(
                 OverflowMenu(
                     listOf(
                         MenuItem(stringResource(R.string.action_rename)) { onOpenDialog(DayDialog.RenameWorkout(workout)) },
-                        MenuItem(stringResource(R.string.workout_save_as_template)) { onOpenDialog(DayDialog.SaveAsTemplate(workout)) },
+                        MenuItem(stringResource(R.string.workout_save_as_plan)) { onOpenDialog(DayDialog.SaveAsPlan(workout)) },
                         MenuItem(stringResource(R.string.workout_copy_to_day)) { onOpenDialog(DayDialog.CopyWorkout(workout)) },
                         MenuItem(stringResource(R.string.action_delete)) { onOpenDialog(DayDialog.DeleteWorkout(workout)) },
                     ),

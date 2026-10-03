@@ -8,6 +8,8 @@ data class Workout(
     val date: LocalDate,
     val title: String,
     val exercises: List<Exercise>,
+    /** The training plan this workout was started from, if any. */
+    val planId: Long? = null,
 ) {
     val totalSets: Int get() = exercises.sumOf { it.sets.size }
     val doneSets: Int get() = exercises.sumOf { it.doneSets }

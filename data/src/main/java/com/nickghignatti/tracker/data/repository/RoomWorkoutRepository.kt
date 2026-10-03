@@ -28,11 +28,13 @@ internal class RoomWorkoutRepository @Inject constructor(
     override fun observeDaySummaries(from: LocalDate, to: LocalDate): Flow<List<DaySummary>> =
         dao.observeDaySummaries(from, to).map { rows -> rows.map { it.toDomain() } }
 
+    override suspend fun getWorkouts(date: LocalDate): List<Workout> = dao.getWorkoutsOn(date).map { it.toDomain() }
+
     override suspend fun getWorkout(id: Long): Workout? = dao.getWorkout(id)?.toDomain()
 
-    override suspend fun createWorkout(date: LocalDate, title: String, exercises: List<ExercisePlan>): Long =
+    override suspend fun createWorkout(date: LocalDate, title: String, exercises: List<ExercisePlan>, planId: Long?): Long =
         db.withTransaction {
-            val workoutId = dao.insertWorkout(WorkoutEntity(date = date, title = title))
+            val workoutId = dao.insertWorkout(WorkoutEntity(date = date, title = title, planId = planId))
             exercises.forEachIndexed { position, exercise -> insertExercise(workoutId, position, exercise) }
             workoutId
         }

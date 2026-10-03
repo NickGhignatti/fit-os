@@ -20,6 +20,11 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
+    // Exported schemas let MigrationTestHelper build old database versions in tests.
+    sourceSets {
+        getByName("test").assets.srcDir("$projectDir/schemas")
+    }
 }
 
 ksp {
@@ -40,4 +45,5 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
 }
