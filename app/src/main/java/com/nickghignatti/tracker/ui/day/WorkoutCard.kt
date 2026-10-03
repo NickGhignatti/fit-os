@@ -28,6 +28,7 @@ import com.nickghignatti.tracker.domain.model.ExerciseSet
 import com.nickghignatti.tracker.domain.model.Workout
 import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.OverflowMenu
+import com.nickghignatti.tracker.ui.exercises.HowToButton
 import com.nickghignatti.tracker.ui.format.setLabel
 import com.nickghignatti.tracker.ui.theme.TrackerTheme
 import java.time.LocalDate
@@ -37,6 +38,8 @@ internal fun WorkoutCard(
     workout: Workout,
     onOpenDialog: (DayDialog) -> Unit,
     onAction: (DayAction) -> Unit,
+    onAddExercise: () -> Unit,
+    onOpenExercise: (catalogId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ElevatedCard(modifier.fillMaxWidth()) {
@@ -68,10 +71,10 @@ internal fun WorkoutCard(
                 )
             }
             workout.exercises.forEach { exercise ->
-                ExerciseBlock(exercise, onOpenDialog, onAction)
+                ExerciseBlock(exercise, onOpenDialog, onAction, onOpenExercise)
             }
             TextButton(
-                onClick = { onOpenDialog(DayDialog.NewExercise(workout.id)) },
+                onClick = onAddExercise,
                 modifier = Modifier.padding(horizontal = 8.dp),
             ) {
                 Icon(painterResource(R.drawable.ic_add), contentDescription = null)
@@ -87,6 +90,7 @@ private fun ExerciseBlock(
     exercise: Exercise,
     onOpenDialog: (DayDialog) -> Unit,
     onAction: (DayAction) -> Unit,
+    onOpenExercise: (catalogId: String) -> Unit,
 ) {
     Column(Modifier.padding(top = 8.dp)) {
         Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -100,6 +104,7 @@ private fun ExerciseBlock(
                     )
                 }
             }
+            exercise.catalogId?.let { catalogId -> HowToButton(exercise.name) { onOpenExercise(catalogId) } }
             OverflowMenu(
                 listOf(
                     MenuItem(stringResource(R.string.exercise_add_set)) { onAction(DayAction.AddSet(exercise)) },
@@ -175,6 +180,8 @@ private fun WorkoutCardPreview() {
             workout = Workout(1, LocalDate.of(2026, 9, 26), "Push", listOf(bench)),
             onOpenDialog = {},
             onAction = {},
+            onAddExercise = {},
+            onOpenExercise = {},
         )
     }
 }

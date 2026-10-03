@@ -53,6 +53,7 @@ internal data class ExerciseEntity(
     val position: Int,
     val name: String,
     val notes: String,
+    val catalogId: String? = null,
 )
 
 @Entity(
@@ -125,6 +126,7 @@ internal data class PlanExerciseEntity(
     val position: Int,
     val name: String,
     val notes: String,
+    val catalogId: String? = null,
 )
 
 @Entity(

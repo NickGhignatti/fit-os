@@ -10,7 +10,7 @@ import com.nickghignatti.tracker.data.mapper.toDomain
 import com.nickghignatti.tracker.domain.model.FoodId
 import com.nickghignatti.tracker.domain.model.FoodItem
 import com.nickghignatti.tracker.domain.model.FoodLogEntry
-import com.nickghignatti.tracker.domain.model.FoodSearch
+import com.nickghignatti.tracker.domain.model.TextSearch
 import com.nickghignatti.tracker.domain.model.FoodSource
 import com.nickghignatti.tracker.domain.model.Nutrients
 import com.nickghignatti.tracker.domain.model.Portion
@@ -46,7 +46,7 @@ internal class RoomCustomFoodRepository @Inject constructor(db: AppDatabase) : C
     private val dao = db.customFoodDao()
 
     override suspend fun search(query: String): List<FoodItem> =
-        FoodSearch.rank(query, dao.getAll().map { it.toDomain() }) { it.name }
+        TextSearch.rank(query, dao.getAll().map { it.toDomain() }) { it.name }
 
     override suspend fun create(name: String, per100g: Nutrients, brand: String?, servingGrams: Double?): FoodItem {
         val entity = CustomFoodEntity(
@@ -80,5 +80,5 @@ internal class RoomSavedProductRepository @Inject constructor(db: AppDatabase) :
     override suspend fun find(barcode: String): FoodItem? = dao.find(FoodId(FoodSource.PRODUCT, barcode))?.food?.toDomain()
 
     override suspend fun search(query: String): List<FoodItem> =
-        FoodSearch.rank(query, dao.getAll().map { it.food.toDomain() }) { it.searchableName }
+        TextSearch.rank(query, dao.getAll().map { it.food.toDomain() }) { it.searchableName }
 }

@@ -1,6 +1,5 @@
 package com.nickghignatti.tracker.ui.training
 
-import com.nickghignatti.tracker.domain.model.ExercisePlan
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.PlannedExercise
 import com.nickghignatti.tracker.domain.model.SetPlan
@@ -22,7 +21,6 @@ data class TrainingPlanUiState(
 
 sealed interface TrainingPlanAction {
     data class SelectDay(val day: DayOfWeek) : TrainingPlanAction
-    data class AddExercise(val day: PlanDay, val exercise: ExercisePlan) : TrainingPlanAction
     data class UpdateExercise(val exerciseId: Long, val name: String, val notes: String) : TrainingPlanAction
     data class DeleteExercise(val exerciseId: Long) : TrainingPlanAction
     data class AddSet(val exercise: PlannedExercise) : TrainingPlanAction

@@ -2,7 +2,7 @@ package com.nickghignatti.tracker.domain.usecase
 
 import com.nickghignatti.tracker.domain.model.CalorieDay
 import com.nickghignatti.tracker.domain.model.FoodItem
-import com.nickghignatti.tracker.domain.model.FoodSearch
+import com.nickghignatti.tracker.domain.model.TextSearch
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.domain.model.MealLog
 import com.nickghignatti.tracker.domain.repository.BasicFoodRepository
@@ -29,7 +29,7 @@ class SearchFoodsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(query: String): List<FoodItem> {
         val candidates = customFoods.search(query) + savedProducts.search(query) + basicFoods.search(query)
-        return FoodSearch.rank(query, candidates) { it.searchableName }
+        return TextSearch.rank(query, candidates) { it.searchableName }
     }
 }
 

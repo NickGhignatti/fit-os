@@ -3,7 +3,7 @@ package com.nickghignatti.tracker.domain.fake
 import com.nickghignatti.tracker.domain.model.FoodId
 import com.nickghignatti.tracker.domain.model.FoodItem
 import com.nickghignatti.tracker.domain.model.FoodLogEntry
-import com.nickghignatti.tracker.domain.model.FoodSearch
+import com.nickghignatti.tracker.domain.model.TextSearch
 import com.nickghignatti.tracker.domain.model.FoodSource
 import com.nickghignatti.tracker.domain.model.Nutrients
 import com.nickghignatti.tracker.domain.model.Portion
@@ -32,7 +32,7 @@ fun basicFood(code: String, name: String, kcal: Double = 100.0, servingGrams: Do
 
 /** In-memory [BasicFoodRepository] over a fixed list. */
 class FakeBasicFoodRepository(private val foods: List<FoodItem> = emptyList()) : BasicFoodRepository {
-    override suspend fun search(query: String): List<FoodItem> = FoodSearch.rank(query, foods) { it.name }
+    override suspend fun search(query: String): List<FoodItem> = TextSearch.rank(query, foods) { it.name }
 }
 
 /** In-memory [CustomFoodRepository] for tests. */
@@ -40,7 +40,7 @@ class FakeCustomFoodRepository : CustomFoodRepository {
     private var lastId = 0L
     val foods = mutableListOf<FoodItem>()
 
-    override suspend fun search(query: String): List<FoodItem> = FoodSearch.rank(query, foods) { it.name }
+    override suspend fun search(query: String): List<FoodItem> = TextSearch.rank(query, foods) { it.name }
 
     override suspend fun create(name: String, per100g: Nutrients, brand: String?, servingGrams: Double?): FoodItem =
         FoodItem(FoodId(FoodSource.CUSTOM, (++lastId).toString()), name, per100g, brand, servingGrams).also(foods::add)
@@ -73,7 +73,7 @@ class FakeProductRepository(
     override suspend fun search(query: String): ProductSearch {
         searches += query
         // Like Open Food Facts, matches brands as well as names.
-        return if (available) ProductSearch.Results(FoodSearch.rank(query, products.map { it.second }) { it.searchableName }) else ProductSearch.Unavailable
+        return if (available) ProductSearch.Results(TextSearch.rank(query, products.map { it.second }) { it.searchableName }) else ProductSearch.Unavailable
     }
 }
 
@@ -113,5 +113,5 @@ class FakeSavedProductRepository : SavedProductRepository {
 
     override suspend fun find(barcode: String): FoodItem? = products.find { it.id.key == barcode }
 
-    override suspend fun search(query: String): List<FoodItem> = FoodSearch.rank(query, products) { it.searchableName }
+    override suspend fun search(query: String): List<FoodItem> = TextSearch.rank(query, products) { it.searchableName }
 }

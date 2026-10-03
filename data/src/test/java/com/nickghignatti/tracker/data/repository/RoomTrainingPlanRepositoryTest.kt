@@ -58,6 +58,19 @@ class RoomTrainingPlanRepositoryTest {
     }
 
     @Test
+    fun `catalogue links survive from plan to workout`() = runTest {
+        val linked = squat.copy(catalogId = "Barbell_Squat")
+        val id = plans.createPlan("Legs", Recurrence.DAILY, mapOf(PlanDay.EveryDay to listOf(linked)))
+
+        val planned = plans.observePlan(id).first()!!.sessionOn(PlanDay.EveryDay).single()
+        assertEquals("Barbell_Squat", planned.catalogId)
+
+        val workouts = RoomWorkoutRepository(db)
+        val workoutId = workouts.createWorkout(java.time.LocalDate.of(2026, 10, 3), "Legs", listOf(planned.toPlan()))
+        assertEquals("Barbell_Squat", workouts.getWorkout(workoutId)!!.exercises.single().catalogId)
+    }
+
+    @Test
     fun `plans are listed by name`() = runTest {
         plans.createPlan("push", Recurrence.DAILY)
         plans.createPlan("Legs", Recurrence.WEEKLY)

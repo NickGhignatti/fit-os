@@ -27,8 +27,14 @@ private const val MAX_SETS = 20
 
 /** Adds an exercise with N identical sets; single sets can be tweaked afterwards. */
 @Composable
-fun NewExerciseDialog(onSave: (ExercisePlan) -> Unit, onDismiss: () -> Unit) {
-    var name by rememberSaveable { mutableStateOf("") }
+fun NewExerciseDialog(
+    onSave: (ExercisePlan) -> Unit,
+    onDismiss: () -> Unit,
+    initialName: String = "",
+    /** Set when the exercise was picked from the catalogue, so it stays linked to it. */
+    catalogId: String? = null,
+) {
+    var name by rememberSaveable { mutableStateOf(initialName) }
     var notes by rememberSaveable { mutableStateOf("") }
     var sets by rememberSaveable { mutableStateOf("3") }
     var reps by rememberSaveable { mutableStateOf("10") }
@@ -64,7 +70,7 @@ fun NewExerciseDialog(onSave: (ExercisePlan) -> Unit, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(ExercisePlan.uniform(name, notes, setCount!!, repCount!!, weightValue)) },
+                onClick = { onSave(ExercisePlan.uniform(name, notes, setCount!!, repCount!!, weightValue, catalogId)) },
                 enabled = valid,
             ) { Text(stringResource(R.string.action_save)) }
         },

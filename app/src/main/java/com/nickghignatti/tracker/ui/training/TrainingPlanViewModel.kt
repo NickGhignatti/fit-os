@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 /** Edits one training plan; a weekly plan is edited one weekday at a time, starting from today's. */
 @HiltViewModel(assistedFactory = TrainingPlanViewModel.Factory::class)
 class TrainingPlanViewModel @AssistedInject constructor(
-    @Assisted private val planId: Long,
+    @Assisted planId: Long,
     clock: Clock,
     private val plans: TrainingPlanRepository,
     private val addPlannedSet: AddPlannedSetUseCase,
@@ -41,13 +41,6 @@ class TrainingPlanViewModel @AssistedInject constructor(
     fun onAction(action: TrainingPlanAction) {
         when (action) {
             is TrainingPlanAction.SelectDay -> selectedDay.value = action.day
-            is TrainingPlanAction.AddExercise -> launch {
-                plans.addExercise(
-                    planId,
-                    action.day,
-                    action.exercise.copy(name = action.exercise.name.trim(), notes = action.exercise.notes.trim()),
-                )
-            }
             is TrainingPlanAction.UpdateExercise ->
                 launch { plans.updateExercise(action.exerciseId, action.name.trim(), action.notes.trim()) }
             is TrainingPlanAction.DeleteExercise -> launch { plans.deleteExercise(action.exerciseId) }

@@ -5,10 +5,12 @@ data class ExercisePlan(
     val name: String,
     val notes: String = "",
     val sets: List<SetPlan>,
+    /** The catalogue exercise this one is, if picked from it. */
+    val catalogId: String? = null,
 ) {
     companion object {
-        fun uniform(name: String, notes: String, sets: Int, reps: Int, weight: Double?): ExercisePlan =
-            ExercisePlan(name, notes, List(sets) { SetPlan(reps, weight) })
+        fun uniform(name: String, notes: String, sets: Int, reps: Int, weight: Double?, catalogId: String? = null): ExercisePlan =
+            ExercisePlan(name, notes, List(sets) { SetPlan(reps, weight) }, catalogId)
     }
 }
 

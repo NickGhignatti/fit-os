@@ -3,6 +3,7 @@ package com.nickghignatti.tracker.data.di
 import android.content.Context
 import com.nickghignatti.tracker.data.local.AppDatabase
 import com.nickghignatti.tracker.data.remote.CreaBasicFoodRepository
+import com.nickghignatti.tracker.data.remote.FreeExerciseDbRepository
 import com.nickghignatti.tracker.data.remote.OpenFoodFactsRepository
 import com.nickghignatti.tracker.data.repository.RoomCustomFoodRepository
 import com.nickghignatti.tracker.data.repository.RoomDietPlanRepository
@@ -15,6 +16,7 @@ import com.nickghignatti.tracker.data.repository.RoomWorkoutRepository
 import com.nickghignatti.tracker.domain.repository.BasicFoodRepository
 import com.nickghignatti.tracker.domain.repository.CustomFoodRepository
 import com.nickghignatti.tracker.domain.repository.DietPlanRepository
+import com.nickghignatti.tracker.domain.repository.ExerciseCatalogRepository
 import com.nickghignatti.tracker.domain.repository.FavoriteFoodRepository
 import com.nickghignatti.tracker.domain.repository.FoodLogRepository
 import com.nickghignatti.tracker.domain.repository.ProductRepository
@@ -60,6 +62,9 @@ abstract class DataModule {
 
     @Binds
     internal abstract fun bindSavedProductRepository(impl: RoomSavedProductRepository): SavedProductRepository
+
+    @Binds
+    internal abstract fun bindExerciseCatalogRepository(impl: FreeExerciseDbRepository): ExerciseCatalogRepository
 
     @Binds
     internal abstract fun bindTransactionRunner(impl: RoomTransactionRunner): TransactionRunner

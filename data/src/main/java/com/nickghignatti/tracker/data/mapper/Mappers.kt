@@ -45,6 +45,7 @@ internal fun ExerciseWithSets.toDomain() = Exercise(
     name = exercise.name,
     notes = exercise.notes,
     sets = sets.sortedBy { it.position }.map { it.toDomain() },
+    catalogId = exercise.catalogId,
 )
 
 internal fun SetEntity.toDomain() = ExerciseSet(
@@ -73,6 +74,7 @@ internal fun PlanExerciseWithSets.toDomain() = PlannedExercise(
     name = exercise.name,
     notes = exercise.notes,
     sets = sets.sortedBy { it.position }.map { it.toDomain() },
+    catalogId = exercise.catalogId,
 )
 
 internal fun PlanSetEntity.toDomain() = PlannedSet(id, reps, weight)

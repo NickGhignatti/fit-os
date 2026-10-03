@@ -57,12 +57,12 @@ class FoodTest {
             basicFood("6", "Pollo, petto, senza pelle, crudo"),
         )
 
-        assertEquals(listOf("1"), FoodSearch.rank("mela", foods) { it.name }.map { it.id.key })
-        assertEquals(listOf("2"), FoodSearch.rank("CAFFE", foods) { it.name }.map { it.id.key })
-        assertEquals(listOf("3"), FoodSearch.rank("uovo", foods) { it.name }.map { it.id.key })
-        assertEquals(listOf("4"), FoodSearch.rank("pasta cruda", foods) { it.name }.map { it.id.key })
-        assertEquals(listOf("6"), FoodSearch.rank("petto di pollo", foods) { it.name }.map { it.id.key })
-        assertEquals(emptyList<FoodItem>(), FoodSearch.rank("  ", foods) { it.name })
+        assertEquals(listOf("1"), TextSearch.rank("mela", foods) { it.name }.map { it.id.key })
+        assertEquals(listOf("2"), TextSearch.rank("CAFFE", foods) { it.name }.map { it.id.key })
+        assertEquals(listOf("3"), TextSearch.rank("uovo", foods) { it.name }.map { it.id.key })
+        assertEquals(listOf("4"), TextSearch.rank("pasta cruda", foods) { it.name }.map { it.id.key })
+        assertEquals(listOf("6"), TextSearch.rank("petto di pollo", foods) { it.name }.map { it.id.key })
+        assertEquals(emptyList<FoodItem>(), TextSearch.rank("  ", foods) { it.name })
     }
 
     @Test
@@ -73,6 +73,6 @@ class FoodTest {
             basicFood("3", "Latte di vacca, intero"),
         )
 
-        assertEquals(listOf("3", "2", "1"), FoodSearch.rank("latte", foods) { it.name }.map { it.id.key })
+        assertEquals(listOf("3", "2", "1"), TextSearch.rank("latte", foods) { it.name }.map { it.id.key })
     }
 }

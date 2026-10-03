@@ -68,7 +68,7 @@ class FakeWorkoutRepository : WorkoutRepository {
     private fun updateExercises(transform: (Exercise) -> Exercise) =
         state.update { all -> all.map { w -> w.copy(exercises = w.exercises.map(transform)) } }
 
-    private fun newExercise(plan: ExercisePlan) = Exercise(nextId(), plan.name, plan.notes, plan.sets.map(::newSet))
+    private fun newExercise(plan: ExercisePlan) = Exercise(nextId(), plan.name, plan.notes, plan.sets.map(::newSet), plan.catalogId)
 
     private fun newSet(plan: SetPlan) = ExerciseSet(nextId(), plan.reps, plan.weight)
 

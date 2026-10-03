@@ -32,6 +32,11 @@ import com.nickghignatti.tracker.ui.day.DayViewModel
 import com.nickghignatti.tracker.ui.diet.DietPlanScreen
 import com.nickghignatti.tracker.ui.diet.DietPlanViewModel
 import com.nickghignatti.tracker.ui.diet.DietPlansScreen
+import com.nickghignatti.tracker.ui.exercises.ExerciseDetailScreen
+import com.nickghignatti.tracker.ui.exercises.ExerciseDetailViewModel
+import com.nickghignatti.tracker.ui.exercises.ExercisePickerScreen
+import com.nickghignatti.tracker.ui.exercises.ExercisePickerViewModel
+import com.nickghignatti.tracker.ui.exercises.ExerciseTarget
 import com.nickghignatti.tracker.ui.food.FoodSearchScreen
 import com.nickghignatti.tracker.ui.food.FoodSearchViewModel
 import com.nickghignatti.tracker.ui.food.FoodTarget
@@ -69,6 +74,10 @@ private fun foodSearchViewModel(target: FoodTarget) =
     hiltViewModel<FoodSearchViewModel, FoodSearchViewModel.Factory> { it.create(target) }
 
 @Composable
+private fun exercisePickerViewModel(target: ExerciseTarget) =
+    hiltViewModel<ExercisePickerViewModel, ExercisePickerViewModel.Factory> { it.create(target) }
+
+@Composable
 fun TrackerNavHost() {
     val nav = rememberNavController()
     val backStackEntry by nav.currentBackStackEntryAsState()
@@ -103,6 +112,8 @@ fun TrackerNavHost() {
                 val planId = entry.toRoute<TrainingPlanRoute>().planId
                 TrainingPlanScreen(
                     onBack = { nav.popBackStack() },
+                    onAddExercise = { id, day -> nav.navigate(PlanExercisePickerRoute(id, day)) },
+                    onOpenExercise = { nav.navigate(ExerciseDetailRoute(it)) },
                     viewModel = hiltViewModel<TrainingPlanViewModel, TrainingPlanViewModel.Factory> { it.create(planId) },
                 )
             }
@@ -122,6 +133,29 @@ fun TrackerNavHost() {
                     onOpenDiet = { nav.openTopLevel(TopLevelDestination.Diet) },
                 )
             }
+            composable<WorkoutExercisePickerRoute> { entry ->
+                val route = entry.toRoute<WorkoutExercisePickerRoute>()
+                ExercisePickerScreen(
+                    onDone = { nav.popBackStack() },
+                    onOpenExercise = { nav.navigate(ExerciseDetailRoute(it)) },
+                    viewModel = exercisePickerViewModel(ExerciseTarget.Workout(route.workoutId)),
+                )
+            }
+            composable<PlanExercisePickerRoute> { entry ->
+                val route = entry.toRoute<PlanExercisePickerRoute>()
+                ExercisePickerScreen(
+                    onDone = { nav.popBackStack() },
+                    onOpenExercise = { nav.navigate(ExerciseDetailRoute(it)) },
+                    viewModel = exercisePickerViewModel(ExerciseTarget.Plan(route.planId, route.planDay)),
+                )
+            }
+            composable<ExerciseDetailRoute> { entry ->
+                val id = entry.toRoute<ExerciseDetailRoute>().catalogId
+                ExerciseDetailScreen(
+                    onBack = { nav.popBackStack() },
+                    viewModel = hiltViewModel<ExerciseDetailViewModel, ExerciseDetailViewModel.Factory> { it.create(id) },
+                )
+            }
             composable<CaloriesRoute> { CaloriesScreen(onAddFood = { date, meal -> nav.navigate(LogFoodRoute(date, meal)) }) }
             composable<LogFoodRoute> { entry ->
                 val route = entry.toRoute<LogFoodRoute>()
@@ -139,6 +173,8 @@ fun TrackerNavHost() {
                 val date = entry.toRoute<DayRoute>().date
                 DayScreen(
                     onBack = { nav.popBackStack() },
+                    onAddExercise = { nav.navigate(WorkoutExercisePickerRoute(it)) },
+                    onOpenExercise = { nav.navigate(ExerciseDetailRoute(it)) },
                     viewModel = hiltViewModel<DayViewModel, DayViewModel.Factory> { it.create(date) },
                 )
             }

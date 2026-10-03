@@ -76,7 +76,7 @@ class FakeTrainingPlanRepository : TrainingPlanRepository {
         all.map { plan -> plan.copy(sessions = plan.sessions.mapValues { (_, list) -> list.map(transform) }) }
     }
 
-    private fun newExercise(plan: ExercisePlan) = PlannedExercise(nextId(), plan.name, plan.notes, plan.sets.map(::newSet))
+    private fun newExercise(plan: ExercisePlan) = PlannedExercise(nextId(), plan.name, plan.notes, plan.sets.map(::newSet), plan.catalogId)
 
     private fun newSet(plan: SetPlan) = PlannedSet(nextId(), plan.reps, plan.weight)
 

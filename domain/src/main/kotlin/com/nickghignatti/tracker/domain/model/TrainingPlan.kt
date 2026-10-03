@@ -25,8 +25,10 @@ data class PlannedExercise(
     val name: String,
     val notes: String,
     val sets: List<PlannedSet>,
+    /** The catalogue exercise this one is, if picked from it. */
+    val catalogId: String? = null,
 ) {
-    fun toPlan(): ExercisePlan = ExercisePlan(name, notes, sets.map(PlannedSet::toPlan))
+    fun toPlan(): ExercisePlan = ExercisePlan(name, notes, sets.map(PlannedSet::toPlan), catalogId)
 }
 
 data class PlannedSet(

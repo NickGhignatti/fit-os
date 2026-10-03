@@ -3,7 +3,7 @@ package com.nickghignatti.tracker.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-internal val ALL_MIGRATIONS = arrayOf<Migration>(Migration1To2, Migration2To3, Migration3To4)
+internal val ALL_MIGRATIONS = arrayOf<Migration>(Migration1To2, Migration2To3, Migration3To4, Migration4To5)
 
 /**
  * Version 2 replaces templates and the single weekly meal plan with training and diet plans:
@@ -134,5 +134,13 @@ internal object Migration3To4 : Migration(3, 4) {
                 "`brand` TEXT, `kcal` REAL NOT NULL, `protein` REAL NOT NULL, `carbs` REAL NOT NULL, " +
                 "`fat` REAL NOT NULL, `servingGrams` REAL, PRIMARY KEY(`foodId`))",
         )
+    }
+}
+
+/** Version 5 lets workout and plan exercises link to the exercise catalogue; existing ones stay free text. */
+internal object Migration4To5 : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `exercises` ADD COLUMN `catalogId` TEXT")
+        db.execSQL("ALTER TABLE `plan_exercises` ADD COLUMN `catalogId` TEXT")
     }
 }

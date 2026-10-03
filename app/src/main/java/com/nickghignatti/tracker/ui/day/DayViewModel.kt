@@ -69,10 +69,6 @@ class DayViewModel @AssistedInject constructor(
                 val name = action.name.trim()
                 saveWorkoutAsPlan(action.workoutId, name)?.let { _events.send(DayEvent.PlanSaved(name)) }
             }
-            is DayAction.AddExercise -> workouts.addExercise(
-                action.workoutId,
-                action.exercise.copy(name = action.exercise.name.trim(), notes = action.exercise.notes.trim()),
-            )
             is DayAction.UpdateExercise ->
                 workouts.updateExercise(action.exerciseId, action.name.trim(), action.notes.trim())
             is DayAction.DeleteExercise -> workouts.deleteExercise(action.exerciseId)

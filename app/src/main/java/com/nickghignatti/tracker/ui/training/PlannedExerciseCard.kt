@@ -31,6 +31,7 @@ import com.nickghignatti.tracker.ui.components.CancelButton
 import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.NumberField
 import com.nickghignatti.tracker.ui.components.OverflowMenu
+import com.nickghignatti.tracker.ui.exercises.HowToButton
 import com.nickghignatti.tracker.ui.format.formatWeight
 import com.nickghignatti.tracker.ui.format.parseWeight
 import com.nickghignatti.tracker.ui.format.setLabel
@@ -42,6 +43,7 @@ internal fun PlannedExerciseCard(
     onOpenDialog: (TrainingPlanDialog) -> Unit,
     onAction: (TrainingPlanAction) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenExercise: (catalogId: String) -> Unit = {},
 ) {
     ElevatedCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = 8.dp)) {
@@ -56,6 +58,7 @@ internal fun PlannedExerciseCard(
                         )
                     }
                 }
+                exercise.catalogId?.let { catalogId -> HowToButton(exercise.name) { onOpenExercise(catalogId) } }
                 OverflowMenu(
                     listOf(
                         MenuItem(stringResource(R.string.exercise_add_set)) { onAction(TrainingPlanAction.AddSet(exercise)) },

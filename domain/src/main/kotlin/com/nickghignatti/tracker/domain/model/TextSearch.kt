@@ -3,12 +3,12 @@ package com.nickghignatti.tracker.domain.model
 import java.text.Normalizer
 
 /**
- * Matches food names against what the user typed, the way people search in Italian: case and
- * accents are ignored, every typed word must start a word of the name, a final vowel is dropped
- * so singular and plural meet ("mela" finds "Mele"), and linking words are skipped because names
- * are written differently ("petto di pollo" finds "Pollo, petto").
+ * Matches names of foods and exercises against what the user typed, the way people search in
+ * Italian: case and accents are ignored, every typed word must start a word of the name, a final
+ * vowel is dropped so singular and plural meet ("mela" finds "Mele"), and linking words are
+ * skipped because names are written differently ("petto di pollo" finds "Pollo, petto").
  */
-object FoodSearch {
+object TextSearch {
     private const val MIN_STEM_LENGTH = 4
     private val VOWELS = setOf('a', 'e', 'i', 'o', 'u')
     private val WORD_SEPARATORS = Regex("[^\\p{L}\\p{N}]+")

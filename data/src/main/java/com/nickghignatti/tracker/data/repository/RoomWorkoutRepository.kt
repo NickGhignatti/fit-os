@@ -69,7 +69,13 @@ internal class RoomWorkoutRepository @Inject constructor(
     /** Callers must hold a transaction. */
     private suspend fun insertExercise(workoutId: Long, position: Int, exercise: ExercisePlan) {
         val exerciseId = dao.insertExercise(
-            ExerciseEntity(workoutId = workoutId, position = position, name = exercise.name, notes = exercise.notes),
+            ExerciseEntity(
+                workoutId = workoutId,
+                position = position,
+                name = exercise.name,
+                notes = exercise.notes,
+                catalogId = exercise.catalogId,
+            ),
         )
         dao.insertSets(exercise.sets.mapIndexed { index, set -> set.toEntity(exerciseId, index) })
     }

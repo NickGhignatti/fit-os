@@ -109,6 +109,20 @@ class MigrationTest {
         assertTrue(RoomSavedProductRepository(openMigrated()).search("yogurt").isEmpty())
     }
 
+    @Test
+    fun `4 to 5 keeps exercises as free text`() = runTest {
+        helper.createDatabase(DB_NAME, 4).use { db ->
+            db.execSQL("INSERT INTO workouts (id, date, title) VALUES (1, ${LocalDate.of(2026, 10, 3).toEpochDay()}, 'Legs')")
+            db.execSQL("INSERT INTO exercises (id, workoutId, position, name, notes) VALUES (1, 1, 0, 'Squat', '')")
+        }
+
+        helper.runMigrationsAndValidate(DB_NAME, 5, true, Migration4To5).close()
+
+        val exercise = RoomWorkoutRepository(openMigrated()).getWorkout(1)!!.exercises.single()
+        assertEquals("Squat", exercise.name)
+        assertNull(exercise.catalogId)
+    }
+
     private fun openMigrated(): AppDatabase =
         Room.databaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java, DB_NAME)
             .addMigrations(*ALL_MIGRATIONS)

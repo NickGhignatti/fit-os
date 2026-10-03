@@ -3,7 +3,7 @@ package com.nickghignatti.tracker.data.remote
 import android.content.Context
 import com.nickghignatti.tracker.domain.model.FoodId
 import com.nickghignatti.tracker.domain.model.FoodItem
-import com.nickghignatti.tracker.domain.model.FoodSearch
+import com.nickghignatti.tracker.domain.model.TextSearch
 import com.nickghignatti.tracker.domain.model.FoodSource
 import com.nickghignatti.tracker.domain.model.Nutrients
 import com.nickghignatti.tracker.domain.repository.BasicFoodRepository
@@ -27,7 +27,7 @@ internal class CreaBasicFoodRepository @Inject constructor(
     }
 
     override suspend fun search(query: String): List<FoodItem> =
-        withContext(Dispatchers.IO) { FoodSearch.rank(query, foods) { it.name } }
+        withContext(Dispatchers.IO) { TextSearch.rank(query, foods) { it.name } }
 
     private companion object {
         const val ASSET = "crea_foods.csv"

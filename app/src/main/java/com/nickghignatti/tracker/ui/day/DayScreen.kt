@@ -38,7 +38,6 @@ import com.nickghignatti.tracker.ui.components.ConfirmDeleteDialog
 import com.nickghignatti.tracker.ui.components.DatePickerModal
 import com.nickghignatti.tracker.ui.components.EditExerciseDialog
 import com.nickghignatti.tracker.ui.components.EmptyState
-import com.nickghignatti.tracker.ui.components.NewExerciseDialog
 import com.nickghignatti.tracker.ui.components.TextInputDialog
 import com.nickghignatti.tracker.ui.format.displayName
 import com.nickghignatti.tracker.ui.format.formatted
@@ -51,14 +50,18 @@ internal sealed interface DayDialog {
     data class SaveAsPlan(val workout: Workout) : DayDialog
     data class CopyWorkout(val workout: Workout) : DayDialog
     data class DeleteWorkout(val workout: Workout) : DayDialog
-    data class NewExercise(val workoutId: Long) : DayDialog
     data class EditExercise(val exercise: Exercise) : DayDialog
     data class DeleteExercise(val exercise: Exercise) : DayDialog
     data class EditSet(val set: ExerciseSet, val number: Int) : DayDialog
 }
 
 @Composable
-fun DayScreen(onBack: () -> Unit, viewModel: DayViewModel) {
+fun DayScreen(
+    onBack: () -> Unit,
+    onAddExercise: (workoutId: Long) -> Unit,
+    onOpenExercise: (catalogId: String) -> Unit,
+    viewModel: DayViewModel,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val resources = LocalResources.current
@@ -73,7 +76,7 @@ fun DayScreen(onBack: () -> Unit, viewModel: DayViewModel) {
         }
     }
 
-    DayScreen(state, viewModel::onAction, onBack, snackbar)
+    DayScreen(state, viewModel::onAction, onBack, onAddExercise, onOpenExercise, snackbar)
 }
 
 @Composable
@@ -81,6 +84,8 @@ internal fun DayScreen(
     state: DayUiState,
     onAction: (DayAction) -> Unit,
     onBack: () -> Unit,
+    onAddExercise: (workoutId: Long) -> Unit = {},
+    onOpenExercise: (catalogId: String) -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     var dialog by remember { mutableStateOf<DayDialog?>(null) }
@@ -129,7 +134,13 @@ internal fun DayScreen(
                     }
                 }
                 items(state.workouts, key = { it.id }) { workout ->
-                    WorkoutCard(workout, onOpenDialog = { dialog = it }, onAction = onAction)
+                    WorkoutCard(
+                        workout = workout,
+                        onOpenDialog = { dialog = it },
+                        onAction = onAction,
+                        onAddExercise = { onAddExercise(workout.id) },
+                        onOpenExercise = onOpenExercise,
+                    )
                 }
             }
         }
@@ -182,10 +193,6 @@ private fun DayDialogHost(
             title = stringResource(R.string.dialog_delete_workout_title),
             message = stringResource(R.string.dialog_delete_workout_message, dialog.workout.title),
             onConfirm = { act(DayAction.DeleteWorkout(dialog.workout.id)) },
-            onDismiss = onDismiss,
-        )
-        is DayDialog.NewExercise -> NewExerciseDialog(
-            onSave = { act(DayAction.AddExercise(dialog.workoutId, it)) },
             onDismiss = onDismiss,
         )
         is DayDialog.EditExercise -> EditExerciseDialog(

@@ -51,17 +51,6 @@ class TrainingPlanViewModelTest {
     }
 
     @Test
-    fun `added exercises are trimmed and go to the given day`() = runTest {
-        val id = plans.createPlan("Full body", Recurrence.DAILY)
-
-        viewModel(id).onAction(TrainingPlanAction.AddExercise(PlanDay.EveryDay, squat.copy(name = " Squat ", notes = " belt ")))
-
-        val stored = plans.plan(id).sessionOn(PlanDay.EveryDay).single()
-        assertEquals("Squat", stored.name)
-        assertEquals("belt", stored.notes)
-    }
-
-    @Test
     fun `sets can be added, changed and removed`() = runTest {
         val id = plans.createPlan("Full body", Recurrence.DAILY, mapOf(PlanDay.EveryDay to listOf(squat)))
         val vm = viewModel(id)

@@ -1,7 +1,6 @@
 package com.nickghignatti.tracker.ui.day
 
 import com.nickghignatti.tracker.domain.model.Exercise
-import com.nickghignatti.tracker.domain.model.ExercisePlan
 import com.nickghignatti.tracker.domain.model.ExerciseSet
 import com.nickghignatti.tracker.domain.model.PendingSession
 import com.nickghignatti.tracker.domain.model.Workout
@@ -23,7 +22,6 @@ sealed interface DayAction {
     data class DeleteWorkout(val workoutId: Long) : DayAction
     data class CopyWorkout(val workoutId: Long, val target: LocalDate) : DayAction
     data class SaveAsPlan(val workoutId: Long, val name: String) : DayAction
-    data class AddExercise(val workoutId: Long, val exercise: ExercisePlan) : DayAction
     data class UpdateExercise(val exerciseId: Long, val name: String, val notes: String) : DayAction
     data class DeleteExercise(val exerciseId: Long) : DayAction
     data class AddSet(val exercise: Exercise) : DayAction

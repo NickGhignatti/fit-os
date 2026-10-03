@@ -35,23 +35,26 @@ import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.ui.components.ConfirmDeleteDialog
 import com.nickghignatti.tracker.ui.components.EditExerciseDialog
 import com.nickghignatti.tracker.ui.components.EmptyState
-import com.nickghignatti.tracker.ui.components.NewExerciseDialog
 import com.nickghignatti.tracker.ui.format.displayName
 import com.nickghignatti.tracker.ui.plans.WeekdayTabs
 import com.nickghignatti.tracker.ui.plans.recurrenceLabel
 
 /** Which dialog is open; transient UI state, so it lives in the screen, not the ViewModel. */
 internal sealed interface TrainingPlanDialog {
-    data class NewExercise(val day: PlanDay) : TrainingPlanDialog
     data class EditExercise(val exercise: PlannedExercise) : TrainingPlanDialog
     data class DeleteExercise(val exercise: PlannedExercise) : TrainingPlanDialog
     data class EditSet(val set: PlannedSet, val number: Int) : TrainingPlanDialog
 }
 
 @Composable
-fun TrainingPlanScreen(onBack: () -> Unit, viewModel: TrainingPlanViewModel) {
+fun TrainingPlanScreen(
+    onBack: () -> Unit,
+    onAddExercise: (planId: Long, day: PlanDay) -> Unit,
+    onOpenExercise: (catalogId: String) -> Unit,
+    viewModel: TrainingPlanViewModel,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    TrainingPlanScreen(state, viewModel::onAction, onBack)
+    TrainingPlanScreen(state, viewModel::onAction, onBack, onAddExercise, onOpenExercise)
 }
 
 @Composable
@@ -59,6 +62,8 @@ internal fun TrainingPlanScreen(
     state: TrainingPlanUiState,
     onAction: (TrainingPlanAction) -> Unit,
     onBack: () -> Unit,
+    onAddExercise: (planId: Long, day: PlanDay) -> Unit = { _, _ -> },
+    onOpenExercise: (catalogId: String) -> Unit = {},
 ) {
     val plan = state.plan
     if (!state.isLoading && plan == null) {
@@ -91,9 +96,10 @@ internal fun TrainingPlanScreen(
             )
         },
         floatingActionButton = {
-            state.planDay?.let { day ->
+            val day = state.planDay
+            if (plan != null && day != null) {
                 ExtendedFloatingActionButton(
-                    onClick = { dialog = TrainingPlanDialog.NewExercise(day) },
+                    onClick = { onAddExercise(plan.id, day) },
                     icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
                     text = { Text(stringResource(R.string.workout_add_exercise)) },
                 )
@@ -122,7 +128,7 @@ internal fun TrainingPlanScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(state.exercises, key = { it.id }) { exercise ->
-                        PlannedExerciseCard(exercise, onOpenDialog = { dialog = it }, onAction = onAction)
+                        PlannedExerciseCard(exercise, onOpenDialog = { dialog = it }, onAction = onAction, onOpenExercise = onOpenExercise)
                     }
                 }
             }
@@ -136,10 +142,6 @@ internal fun TrainingPlanScreen(
     }
     when (val current = dialog) {
         null -> Unit
-        is TrainingPlanDialog.NewExercise -> NewExerciseDialog(
-            onSave = { act(TrainingPlanAction.AddExercise(current.day, it)) },
-            onDismiss = dismiss,
-        )
         is TrainingPlanDialog.EditExercise -> EditExerciseDialog(
             initialName = current.exercise.name,
             initialNotes = current.exercise.notes,

@@ -23,10 +23,12 @@ data class Exercise(
     val name: String,
     val notes: String,
     val sets: List<ExerciseSet>,
+    /** The catalogue exercise this one is, if picked from it. */
+    val catalogId: String? = null,
 ) {
     val doneSets: Int get() = sets.count { it.done }
 
-    fun toPlan(): ExercisePlan = ExercisePlan(name, notes, sets.map(ExerciseSet::toPlan))
+    fun toPlan(): ExercisePlan = ExercisePlan(name, notes, sets.map(ExerciseSet::toPlan), catalogId)
 }
 
 /** One set: what was planned and, once done, what was actually performed. */
