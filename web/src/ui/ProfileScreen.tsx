@@ -9,6 +9,7 @@ import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKcal, formatKg, parseNumbe
 import { useToast } from './hooks';
 import { ConfirmDialog, Loading, MacroChips, Modal, PageHeader, PromptDialog } from './kit';
 import { TargetsDialog } from './TargetsDialog';
+import { LegalLinks } from './Legal';
 import { ReceiveButton } from './Transfer';
 
 const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave: (p: Profile) => void; onClose: () => void }) => {
@@ -152,6 +153,8 @@ export const ProfileScreen = () => {
     <>
       <PageHeader title="Profile" />
 
+      <AccountSection />
+
       <h2>About you</h2>
       <section className="card">
         {hasDetails ? (
@@ -199,11 +202,10 @@ export const ProfileScreen = () => {
       <h2>Calendar</h2>
       <Calendar />
 
-      <AccountSection />
-
       <DataSection />
 
-      <p className="small muted" style={{ marginTop: 24 }}>
+      <p className="small muted" style={{ marginTop: 24 }}><LegalLinks />.</p>
+      <p className="small muted">
         Basic foods: CREA, Tabelle di composizione degli alimenti. Packaged products: Open Food Facts (ODbL). Exercises and photos: free-exercise-db (public domain).
       </p>
 

@@ -180,7 +180,6 @@ export const AccountSection = () => {
           </>
         )}
       </section>
-      <p className="small muted"><LegalLinks />.</p>
 
       {dialog === 'signIn' && <SignInDialog onClose={() => setDialog(null)} />}
       {dialog === 'profile' && auth.status === 'signedIn' && <ProfileDialog account={auth.account} onClose={() => setDialog(null)} />}

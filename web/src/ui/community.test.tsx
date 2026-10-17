@@ -331,3 +331,24 @@ describe('legal pages', () => {
     expect(screen.getAllByRole('link', { name: 'Privacy Policy' })[0]).toHaveAttribute('href', '/privacy');
   });
 });
+
+describe('the order of the profile page', () => {
+  const sections = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+
+  it('puts the account on top, your details in the middle, and your data at the bottom', async () => {
+    renderApp('/profile', makeDevice(null, new FakeCommunity()));
+    await screen.findByRole('region', { name: 'Account' });
+    expect(sections()).toEqual(['Account', 'About you', 'Daily goal', 'Weight', 'Calendar', 'Your data']);
+    // the legal links close the page, after the data section
+    const links = screen.getAllByRole('link', { name: 'Privacy Policy' });
+    expect(links.at(-1)!.compareDocumentPosition(screen.getByRole('heading', { name: 'Your data' })) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
+
+  it('starts with the details when the build has no accounts, and still shows the legal links', async () => {
+    renderApp('/profile', makeDevice());
+    await screen.findByRole('heading', { name: 'About you' });
+    expect(sections()).toEqual(['About you', 'Daily goal', 'Weight', 'Calendar', 'Your data']);
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+  });
+});
