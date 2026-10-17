@@ -32,10 +32,10 @@ export const Calendar = () => {
 
   const info = useStream(
     (c) =>
-      combine([c.repos.workouts.observeDaySummaries(from, to), c.repos.trainingPlans.observeActivePlan()], (summaries, plan) => ({
+      combine([c.repos.workouts.observeDaySummaries(from, to), c.repos.trainingPlans.observeActivePlans()], (summaries, plans) => ({
         completed: new Set(summaries.filter(isCompleted).map((s) => s.date)),
         logged: new Set(summaries.map((s) => s.date)),
-        planned: (date: LocalDate) => plan !== undefined && sessionOn(plan, date).length > 0,
+        planned: (date: LocalDate) => plans.some((plan) => sessionOn(plan, date).length > 0),
       })),
     [from, to],
   );

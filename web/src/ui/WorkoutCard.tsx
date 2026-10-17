@@ -228,7 +228,7 @@ export const PendingSessionCard = ({ session, date }: { session: PendingSession;
           <li key={i}>{e.name} <span className="muted">{setSummary(e.sets)}</span></li>
         ))}
       </ul>
-      <button className="btn" onClick={() => void startPlannedSession(repos, date)}>Start workout</button>
+      <button className="btn" onClick={() => void startPlannedSession(repos, date, session.planId)}>Start workout</button>
     </section>
   );
 };

@@ -17,19 +17,20 @@ import type {
 } from './repositories';
 import { combine } from './stream';
 import { pendingSessionOn, sessionOn, type PendingSession, type TrainingPlan } from './trainingPlan';
-import { markedDone, setFollowing, toggledDone, workoutToPlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
+import { doneSetsOf, markedDone, setFollowing, toggledDone, totalSetsOf, workoutToPlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
 
 // ---- Observing --------------------------------------------------------------
 
 /**
- * A day's agenda: its workouts, the active training plan's session while it has not been started,
+ * A day's agenda: its workouts, the session of every active training plan that has not been started,
  * and the active diet plan's meals. Plans are never copied ahead of time, so switching plan takes
  * effect immediately.
  */
 export interface DayAgenda {
   readonly date: LocalDate;
   readonly workouts: readonly Workout[];
-  readonly pendingSession: PendingSession | null;
+  /** One per active plan that has a session today and has not started it. */
+  readonly pendingSessions: readonly PendingSession[];
   readonly meals: readonly Meal[];
   readonly hasTrainingPlan: boolean;
   readonly hasDietPlan: boolean;
@@ -40,13 +41,13 @@ export const observeDayAgenda = (
   date: LocalDate,
 ): Stream<DayAgenda> =>
   combine(
-    [repos.workouts.observeWorkouts(date), repos.trainingPlans.observeActivePlan(), repos.dietPlans.observeActivePlan()],
-    (workouts, trainingPlan, dietPlan): DayAgenda => ({
+    [repos.workouts.observeWorkouts(date), repos.trainingPlans.observeActivePlans(), repos.dietPlans.observeActivePlan()],
+    (workouts, trainingPlans, dietPlan): DayAgenda => ({
       date,
       workouts,
-      pendingSession: trainingPlan ? pendingSessionOn(trainingPlan, date, workouts) : null,
+      pendingSessions: trainingPlans.flatMap((plan) => pendingSessionOn(plan, date, workouts) ?? []),
       meals: dietPlan ? mealsOn(dietPlan, date) : [],
-      hasTrainingPlan: trainingPlan !== undefined,
+      hasTrainingPlan: trainingPlans.length > 0,
       hasDietPlan: dietPlan !== undefined,
     }),
   );
@@ -120,7 +121,7 @@ export interface TrainingWeekDay {
   readonly isToday: boolean;
 }
 
-/** How the active plan is going this week (Monday to Sunday). */
+/** How one active plan is going this week (Monday to Sunday). */
 export interface TrainingWeek {
   readonly plan: TrainingPlan;
   /** The days of the week the plan has a session on. */
@@ -130,27 +131,38 @@ export interface TrainingWeek {
   readonly completedCount: number;
 }
 
-/** Emits null while there is no active plan. */
-export const observeTrainingWeek = (
+/**
+ * One entry per active plan, sorted by name; empty while none is active. A day is completed for a
+ * plan when the workouts started from that plan on that day are all done, so plans do not
+ * count each other's work.
+ */
+export const observeTrainingWeeks = (
   repos: { workouts: WorkoutRepository; trainingPlans: TrainingPlanRepository },
   today: LocalDate,
-): Stream<TrainingWeek | null> => {
+): Stream<TrainingWeek[]> => {
   const monday = mondayOnOrBefore(today);
   return combine(
-    [repos.trainingPlans.observeActivePlan(), repos.workouts.observeDaySummaries(monday, addDays(monday, 6)), repos.workouts.observeWorkouts(today)],
-    (plan, summaries, todays) => {
-      if (!plan) return null;
-      const completed = new Set(summaries.filter((s) => s.totalSets > 0 && s.doneSets === s.totalSets).map((s) => s.date));
-      const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
-        .filter((d) => sessionOn(plan, d).length > 0)
-        .map((date): TrainingWeekDay => ({ date, isCompleted: completed.has(date), isToday: date === today }));
-      return {
-        plan,
-        days,
-        hasPendingSessionToday: pendingSessionOn(plan, today, todays) !== null,
-        completedCount: days.filter((d) => d.isCompleted).length,
-      };
-    },
+    [repos.trainingPlans.observeActivePlans(), repos.workouts.observeWorkoutsBetween(monday, addDays(monday, 6))],
+    (plans, week) =>
+      plans.map((plan): TrainingWeek => {
+        const own = week.filter((w) => w.planId === plan.id);
+        const completed = new Set(
+          [...new Set(own.map((w) => w.date))].filter((date) => {
+            const that = own.filter((w) => w.date === date);
+            const total = that.reduce((n, w) => n + totalSetsOf(w), 0);
+            return total > 0 && total === that.reduce((n, w) => n + doneSetsOf(w), 0);
+          }),
+        );
+        const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
+          .filter((d) => sessionOn(plan, d).length > 0)
+          .map((date): TrainingWeekDay => ({ date, isCompleted: completed.has(date), isToday: date === today }));
+        return {
+          plan,
+          days,
+          hasPendingSessionToday: pendingSessionOn(plan, today, week.filter((w) => w.date === today)) !== null,
+          completedCount: days.filter((d) => d.isCompleted).length,
+        };
+      }),
   );
 };
 
@@ -208,15 +220,16 @@ export const addPlannedSetLikeLast = (
   });
 
 /**
- * Returns the id of the day's workout from the active plan, creating it if needed (so a double
- * tap never starts it twice), or null when there is no active plan or nothing planned that day.
+ * Returns the id of the day's workout from plan [planId], creating it if needed (so a double tap
+ * never starts it twice), or null when the plan is gone or has nothing planned that day.
  */
 export const startPlannedSession = (
   deps: WorkoutDeps & { trainingPlans: TrainingPlanRepository },
   date: LocalDate,
+  planId: string,
 ): Promise<string | null> =>
   deps.transaction.run(async () => {
-    const plan = await deps.trainingPlans.getActivePlan();
+    const plan = await deps.trainingPlans.getPlan(planId);
     if (!plan) return null;
     const dayWorkouts = await deps.workouts.getWorkouts(date);
     const existing = dayWorkouts.find((w) => w.planId === plan.id);

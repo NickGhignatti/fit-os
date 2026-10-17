@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { newDietPlan } from '../domain/edit';
 import { newId } from '../domain/id';
 import { portionOf, type FoodItem } from '../domain/nutrition';
 import type { Stream } from '../domain/repositories';
@@ -116,20 +117,45 @@ describe('plans', () => {
     expect((await nextWhere(repo.observePlans(), (p) => p.length === 3)).map((p) => p.name)).toEqual(['Alpha', 'beta', 'charlie']);
   });
 
-  it('keeps at most one plan active', async () => {
+  it('lets several workout plans be active at once', async () => {
     const repo = dexieTrainingPlans(db);
-    const a = plan({ name: 'A' });
-    const b = plan({ name: 'B' });
+    const lifting = plan({ name: 'Lifting' });
+    const volley = plan({ name: 'Volleyball' });
+    const rest = plan({ name: 'Mobility' });
+    for (const p of [lifting, volley, rest]) await repo.save(p);
+
+    await repo.setPlanActive(lifting.id, true);
+    await repo.setPlanActive(volley.id, true);
+    expect((await repo.getActivePlans()).map((p) => p.name)).toEqual(['Lifting', 'Volleyball']); // by name, both on
+
+    await repo.setPlanActive(lifting.id, false); // turning one off leaves the other alone
+    expect((await repo.getActivePlans()).map((p) => p.name)).toEqual(['Volleyball']);
+
+    await repo.save({ ...rest, isActive: true }); // saving an active plan does not switch the others off
+    expect((await repo.getActivePlans()).map((p) => p.name)).toEqual(['Mobility', 'Volleyball']);
+
+    const seen = new Promise<string[]>((resolve) => {
+      const stop = repo.observeActivePlans().subscribe((plans) => { if (plans.length === 0) { stop(); resolve([]); } });
+    });
+    await repo.setPlanActive(volley.id, false);
+    await repo.setPlanActive(rest.id, false);
+    expect(await seen).toEqual([]);
+  });
+
+  it('keeps at most one diet active', async () => {
+    const repo = dexieDietPlans(db);
+    const a = newDietPlan('A', 'daily');
+    const b = newDietPlan('B', 'daily');
     await repo.save(a);
     await repo.save(b);
 
     await repo.setActivePlan(a.id);
     expect((await repo.getActivePlan())?.id).toBe(a.id);
-    await repo.setActivePlan(b.id);
+    await repo.setPlanActive(b.id, true); // activating one switches the other off
     expect((await repo.getActivePlan())?.id).toBe(b.id);
     expect((await repo.getPlan(a.id))?.isActive).toBe(false);
 
-    await repo.save({ ...a, isActive: true }); // saving an active plan takes over
+    await repo.save({ ...a, isActive: true }); // saving an active diet takes over
     expect((await repo.getActivePlan())?.id).toBe(a.id);
     expect((await repo.getPlan(b.id))?.isActive).toBe(false);
 
@@ -324,5 +350,31 @@ describe('backup', () => {
     expect(parseBackup('{{{')).toEqual({ ok: false, error: 'not a JSON file' });
     expect(parseBackup('{"app":"other"}').ok).toBe(false);
     expect(parseBackup('{"app":"tracker","v":2,"exportedAt":"x","data":{}}').ok).toBe(false);
+  });
+});
+
+describe('restoring workout plans from a backup', () => {
+  it('keeps every plan that was active, next to the ones already on the device', async () => {
+    const source = new TrackerDb('restore-multi-source');
+    const a = { ...plan({ name: 'Lifting' }), isActive: true };
+    const b = { ...plan({ name: 'Volleyball' }), isActive: true };
+    await source.trainingPlans.bulkPut([a, b]);
+    const parsed = parseBackup(JSON.stringify(await exportBackup(source)));
+    if (!parsed.ok) throw new Error(parsed.error);
+
+    const mine = { ...plan({ name: 'Already here' }), isActive: true };
+    await db.trainingPlans.put(mine);
+    await restoreBackup(db, parsed.backup);
+    expect((await db.trainingPlans.toArray()).filter((p) => p.isActive).map((p) => p.name).sort()).toEqual(['Already here', 'Lifting', 'Volleyball']);
+  });
+
+  it('still keeps only one diet active', async () => {
+    const source = new TrackerDb('restore-diet-source');
+    await source.dietPlans.bulkPut([{ ...newDietPlan('One', 'daily'), isActive: true }, { ...newDietPlan('Two', 'daily'), isActive: true }]);
+    const parsed = parseBackup(JSON.stringify(await exportBackup(source)));
+    if (!parsed.ok) throw new Error(parsed.error);
+    await db.dietPlans.put({ ...newDietPlan('Existing', 'daily'), isActive: true });
+    await restoreBackup(db, parsed.backup);
+    expect((await db.dietPlans.toArray()).filter((p) => p.isActive)).toHaveLength(1);
   });
 });

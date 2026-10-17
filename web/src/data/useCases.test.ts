@@ -13,7 +13,7 @@ import {
   observeCalorieDay,
   observeDailyTargets,
   observeDayAgenda,
-  observeTrainingWeek,
+  observeTrainingWeeks,
   saveWorkoutAsPlan,
   startPlannedSession,
   toggleSetDone,
@@ -76,7 +76,7 @@ describe('starting a planned session', () => {
     const plan = addPlannedExercise(newTrainingPlan('Strength', 'weekly'), 1, squat);
     await r.trainingPlans.save({ ...plan, isActive: true });
 
-    const [a, b] = await Promise.all([startPlannedSession(r, MONDAY), startPlannedSession(r, MONDAY)]);
+    const [a, b] = await Promise.all([startPlannedSession(r, MONDAY, plan.id), startPlannedSession(r, MONDAY, plan.id)]);
     expect(a).not.toBeNull();
     expect(b).toBe(a);
     const workouts = await r.workouts.getWorkouts(MONDAY);
@@ -84,12 +84,24 @@ describe('starting a planned session', () => {
     expect(workouts[0]).toMatchObject({ title: 'Strength', planId: plan.id });
   });
 
-  it('does nothing on a rest day or without an active plan', async () => {
+  it('does nothing on a rest day or for a plan that is gone', async () => {
     const r = repos();
-    expect(await startPlannedSession(r, MONDAY)).toBeNull();
+    expect(await startPlannedSession(r, MONDAY, 'missing')).toBeNull();
     const plan = addPlannedExercise(newTrainingPlan('Strength', 'weekly'), 1, squat);
     await r.trainingPlans.save({ ...plan, isActive: true });
-    expect(await startPlannedSession(r, '2026-10-13')).toBeNull(); // Tuesday
+    expect(await startPlannedSession(r, '2026-10-13', plan.id)).toBeNull(); // Tuesday
+  });
+
+  it('starts each active plan separately, so two plans give two workouts the same day', async () => {
+    const r = repos();
+    const lifting = { ...addPlannedExercise(newTrainingPlan('Lifting', 'daily'), 0, squat), isActive: true };
+    const volley = { ...addPlannedExercise(newTrainingPlan('Volleyball', 'daily'), 0, { ...squat, name: 'Pogo jump' }), isActive: true };
+    await r.trainingPlans.save(lifting);
+    await r.trainingPlans.save(volley);
+
+    const first = await startPlannedSession(r, MONDAY, lifting.id);
+    expect(await startPlannedSession(r, MONDAY, volley.id)).not.toBe(first);
+    expect((await r.workouts.getWorkouts(MONDAY)).map((w) => [w.title, w.planId])).toEqual([['Lifting', lifting.id], ['Volleyball', volley.id]]);
   });
 });
 
@@ -178,28 +190,59 @@ describe('copying', () => {
 describe('observing', () => {
   it('shows the pending session until it is started, then the workout', async () => {
     const r = repos();
-    await r.trainingPlans.save({ ...addPlannedExercise(newTrainingPlan('Strength', 'weekly'), 1, squat), isActive: true });
+    const plan = { ...addPlannedExercise(newTrainingPlan('Strength', 'weekly'), 1, squat), isActive: true };
+    await r.trainingPlans.save(plan);
 
     const before = await nextWhere(observeDayAgenda(r, MONDAY), (a) => a.hasTrainingPlan);
-    expect(before.pendingSession?.title).toBe('Strength');
+    expect(before.pendingSessions.map((s) => s.title)).toEqual(['Strength']);
     expect(before.workouts).toHaveLength(0);
 
-    const after = nextWhere(observeDayAgenda(r, MONDAY), (a) => a.workouts.length === 1 && a.pendingSession === null);
-    await startPlannedSession(r, MONDAY);
+    const after = nextWhere(observeDayAgenda(r, MONDAY), (a) => a.workouts.length === 1 && a.pendingSessions.length === 0);
+    await startPlannedSession(r, MONDAY, plan.id);
     expect((await after).workouts[0]!.title).toBe('Strength');
   });
 
-  it('tracks the training week', async () => {
+  it('shows one pending session per active plan, and none for plans that are off or resting', async () => {
     const r = repos();
-    const plan = addPlannedExercise(addPlannedExercise(newTrainingPlan('Strength', 'weekly'), 1, squat), 3, squat);
-    await r.trainingPlans.save({ ...plan, isActive: true });
-    const id = (await startPlannedSession(r, MONDAY))!;
-    const w = (await r.workouts.getWorkout(id))!;
-    await toggleSetDone(r, id, w.exercises[0]!.sets[0]!);
+    const lifting = { ...addPlannedExercise(newTrainingPlan('Lifting', 'weekly'), 1, squat), isActive: true };
+    const volley = { ...addPlannedExercise(newTrainingPlan('Volleyball', 'daily'), 0, squat), isActive: true };
+    const off = { ...addPlannedExercise(newTrainingPlan('Not following', 'daily'), 0, squat), isActive: false };
+    const tuesdayOnly = { ...addPlannedExercise(newTrainingPlan('Tuesdays', 'weekly'), 2, squat), isActive: true };
+    for (const p of [lifting, volley, off, tuesdayOnly]) await r.trainingPlans.save(p);
 
-    const week = (await nextWhere(observeTrainingWeek(r, '2026-10-14'), (x) => x?.completedCount === 1))!;
-    expect(week.days.map((d) => [d.date, d.isCompleted, d.isToday])).toEqual([[MONDAY, true, false], ['2026-10-14', false, true]]);
-    expect(week.hasPendingSessionToday).toBe(true);
+    const monday = await nextWhere(observeDayAgenda(r, MONDAY), (a) => a.pendingSessions.length === 2);
+    expect(monday.pendingSessions.map((s) => s.title)).toEqual(['Lifting', 'Volleyball']);
+
+    const afterStart = nextWhere(observeDayAgenda(r, MONDAY), (a) => a.workouts.length === 1);
+    await startPlannedSession(r, MONDAY, lifting.id);
+    expect((await afterStart).pendingSessions.map((s) => s.title)).toEqual(['Volleyball']); // only the unstarted one remains
+  });
+
+  it('tracks the training week of each active plan on its own', async () => {
+    const r = repos();
+    const strength = { ...addPlannedExercise(addPlannedExercise(newTrainingPlan('Strength', 'weekly'), 1, squat), 3, squat), isActive: true };
+    const volley = { ...addPlannedExercise(addPlannedExercise(newTrainingPlan('Volleyball', 'weekly'), 1, squat), 2, squat), isActive: true };
+    await r.trainingPlans.save(strength);
+    await r.trainingPlans.save(volley);
+
+    // Monday: Strength is finished, Volleyball is started but not finished.
+    const sId = (await startPlannedSession(r, MONDAY, strength.id))!;
+    await toggleSetDone(r, sId, (await r.workouts.getWorkout(sId))!.exercises[0]!.sets[0]!);
+    await startPlannedSession(r, MONDAY, volley.id);
+
+    const weeks = await nextWhere(observeTrainingWeeks(r, '2026-10-14'), (w) => w.length === 2 && w[0]!.completedCount === 1);
+    expect(weeks.map((w) => w.plan.name)).toEqual(['Strength', 'Volleyball']);
+    const [s, v] = weeks;
+    expect(s!.days.map((d) => [d.date, d.isCompleted, d.isToday])).toEqual([[MONDAY, true, false], ['2026-10-14', false, true]]);
+    expect(v!.days.map((d) => [d.date, d.isCompleted])).toEqual([[MONDAY, false], ['2026-10-13', false]]); // Monday not done there
+    expect(s!.hasPendingSessionToday).toBe(true); // Wednesday's session is not started
+    expect(v!.hasPendingSessionToday).toBe(false); // Volleyball has none on Wednesday
+  });
+
+  it('has no weeks while no plan is active', async () => {
+    const r = repos();
+    await r.trainingPlans.save(addPlannedExercise(newTrainingPlan('Idle', 'daily'), 0, squat));
+    expect(await nextWhere(observeTrainingWeeks(r, MONDAY), () => true)).toEqual([]);
   });
 
   it('builds the calorie day from the diet plan, extras, and what was eaten', async () => {

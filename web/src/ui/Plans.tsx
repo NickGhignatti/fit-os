@@ -74,7 +74,7 @@ export const PlanMenu = <P extends PlanLike>({ plan, repo, texts, extra = [], af
     <>
       <ActionMenu actions={[
         { label: 'Rename', onSelect: () => setDialog('rename') },
-        { label: plan.isActive ? 'Deactivate' : 'Set as active', onSelect: () => void repo.setActivePlan(plan.isActive ? undefined : plan.id) },
+        { label: plan.isActive ? 'Deactivate' : 'Set as active', onSelect: () => void repo.setPlanActive(plan.id, !plan.isActive) },
         ...extra,
         { label: 'Delete', danger: true, onSelect: () => setDialog('delete') },
       ]} />
@@ -102,19 +102,19 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, crea
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
   if (!plans) return <Loading />;
-  const active = plans.find((p) => p.isActive);
+  const actives = plans.filter((p) => p.isActive);
 
   return (
     <>
       {header}
-      {active && (
-        <section className="card" aria-label={`Active ${texts.noun}`}>
+      {actives.map((active) => (
+        <section key={active.id} className="card" aria-label={`Active ${texts.noun}: ${active.name}`}>
           <div className="small muted">Active</div>
           <div className="title">{active.name}</div>
           <div className="small muted">{summary(active)}</div>
           <Link className="btn" style={{ display: 'inline-block', marginTop: 8, textDecoration: 'none' }} to={href(active)}>Open</Link>
         </section>
-      )}
+      ))}
       {plans.length === 0 ? (
         <Empty>{texts.empty.split('\n').map((line, i) => <div key={i}>{line}</div>)}</Empty>
       ) : (
@@ -127,7 +127,7 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, crea
                 <div className="small muted">{plan.recurrence === 'daily' ? 'Daily' : 'Weekly'} · {summary(plan)}</div>
               </Link>
               <button className="btn secondary" aria-label={`${plan.isActive ? 'Deactivate' : 'Set as active'} ${plan.name}`}
-                onClick={() => void repo.setActivePlan(plan.isActive ? undefined : plan.id)}>
+                onClick={() => void repo.setPlanActive(plan.id, !plan.isActive)}>
                 {plan.isActive ? 'Deactivate' : 'Activate'}
               </button>
             </div>

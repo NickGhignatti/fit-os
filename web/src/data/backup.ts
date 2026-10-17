@@ -90,12 +90,13 @@ const keepOneActive = <P extends { id: string; isActive: boolean }>(plans: P[]):
 
 /**
  * Merges a backup into the device: items with the same id are replaced, everything else is kept.
- * If the backup has an active plan it becomes the active one, replacing the current choice.
+ * If the backup has an active diet it becomes the active one, replacing the current choice; restored
+ * workout plans keep whatever active state they had, alongside those already on the device.
  */
 export const restoreBackup = (db: TrackerDb, { data }: Backup): Promise<void> =>
   db.transaction('rw', db.tables, async () => {
-    await restorePlans(db, 'trainingPlans', data.trainingPlans);
-    await restorePlans(db, 'dietPlans', data.dietPlans);
+    await restorePlans(db, 'trainingPlans', data.trainingPlans, false); // any number can be active
+    await restorePlans(db, 'dietPlans', data.dietPlans, true); // only one diet can be
     await db.workouts.bulkPut(data.workouts);
     await db.foodLogDays.bulkPut(data.foodLogDays);
     await db.customFoods.bulkPut(data.customFoods);
@@ -105,10 +106,16 @@ export const restoreBackup = (db: TrackerDb, { data }: Backup): Promise<void> =>
     await db.records.bulkPut(data.records);
   });
 
-const restorePlans = async (db: TrackerDb, table: 'trainingPlans' | 'dietPlans', plans: (TrainingPlan | DietPlan)[]) => {
+const restorePlans = async (
+  db: TrackerDb,
+  table: 'trainingPlans' | 'dietPlans',
+  plans: (TrainingPlan | DietPlan)[],
+  exclusive: boolean,
+) => {
+  const store = db.table<TrainingPlan | DietPlan, string>(table);
+  if (!exclusive) return void (await store.bulkPut(plans));
   const incoming = keepOneActive(plans);
   const active = incoming.find((p) => p.isActive);
-  const store = db.table<TrainingPlan | DietPlan, string>(table);
   if (active) await store.filter((p) => p.isActive).modify((p) => void ((p as { isActive: boolean }).isActive = false));
   await store.bulkPut(incoming);
 };

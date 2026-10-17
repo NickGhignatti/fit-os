@@ -2,7 +2,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { newTrainingPlan } from '../domain/edit';
 import { sessionOnDay, trainingDays, type TrainingPlan } from '../domain/trainingPlan';
-import { observeTrainingWeek, startPlannedSession } from '../domain/useCases';
+import { observeTrainingWeeks, startPlannedSession } from '../domain/useCases';
 import { ExerciseBrowser } from './Exercises';
 import { shortDayName, today } from './format';
 import { PageHeader, Segmented } from './kit';
@@ -30,7 +30,7 @@ export const Workouts = () => {
   const { repos, community } = useContainer();
   const navigate = useNavigate();
   const plans = useStream((c) => c.repos.trainingPlans.observePlans());
-  const week = useStream((c) => observeTrainingWeek(c.repos, date), [date]);
+  const weeks = useStream((c) => observeTrainingWeeks(c.repos, date), [date]);
 
   const tabs = (
     <Segmented<Tab> label="Workouts" value={tab} onChange={(t) => setParams(t === 'plans' ? {} : { tab: t }, { replace: true })}
@@ -53,19 +53,19 @@ export const Workouts = () => {
           summary={trainingSummary}
           create={(name, recurrence) => newTrainingPlan(name, recurrence)}
           href={(p) => `/workouts/plan/${p.id}`}
-          header={week ? (
-            <section className="card" aria-label="Active program">
+          header={weeks && weeks.length > 0 ? weeks.map((week) => (
+            <section key={week.plan.id} className="card" aria-label={`Active program: ${week.plan.name}`}>
               <div className="small muted">Active program</div>
               <div className="title">{week.plan.name}</div>
               <div className="small muted">{week.completedCount} of {week.days.length} sessions completed</div>
               {week.hasPendingSessionToday && (
                 <button className="btn" style={{ marginTop: 8 }}
-                  onClick={() => void startPlannedSession(repos, date).then(() => navigate('/'))}>
+                  onClick={() => void startPlannedSession(repos, date, week.plan.id).then(() => navigate('/'))}>
                   Start today's session
                 </button>
               )}
             </section>
-          ) : week === null ? <p className="muted">No active plan. Set one as active to follow it here.</p> : undefined}
+          )) : weeks ? <p className="muted">No active plan. Set one as active to follow it here. You can follow several at once.</p> : undefined}
         />
       )}
       {tab === 'plans' && (

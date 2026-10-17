@@ -59,6 +59,10 @@ export class DexieWorkoutRepository implements WorkoutRepository {
     });
   }
 
+  observeWorkoutsBetween(from: LocalDate, to: LocalDate): Stream<Workout[]> {
+    return live(() => this.db.workouts.where('date').between(from, to, true, true).sortBy('id'));
+  }
+
   getWorkouts(date: LocalDate): Promise<Workout[]> {
     return this.onDate(date);
   }
@@ -82,38 +86,38 @@ interface PlanLike {
   readonly isActive: boolean;
 }
 
-/** Shared by training and diet plans: they differ only in what a plan contains. */
+const byName = (a: PlanLike, b: PlanLike) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+const setActive = (value: boolean) => (plan: PlanLike) => {
+  (plan as { isActive: boolean }).isActive = value;
+};
+
+/**
+ * Shared by training and diet plans: they differ only in what a plan contains, and in whether
+ * several may be active at once ([exclusive] false) or just one ([exclusive] true).
+ */
 class DexiePlanRepository<P extends PlanLike> implements PlanRepository<P> {
   constructor(
-    private readonly db: TrackerDb,
-    private readonly table: Table<P, string>,
+    protected readonly db: TrackerDb,
+    protected readonly table: Table<P, string>,
+    private readonly exclusive: boolean,
   ) {}
 
   observePlans(): Stream<P[]> {
-    return live(async () =>
-      (await this.table.toArray()).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
-    );
+    return live(async () => (await this.table.toArray()).sort(byName));
   }
 
   observePlan(id: string): Stream<P | null> {
     return live(async () => (await this.table.get(id)) ?? null);
   }
 
-  observeActivePlan(): Stream<P | undefined> {
-    return live(() => this.findActive());
-  }
-
   getPlan(id: string): Promise<P | undefined> {
     return this.table.get(id);
   }
 
-  getActivePlan(): Promise<P | undefined> {
-    return this.findActive();
-  }
-
   save(plan: P): Promise<void> {
     return this.db.transaction('rw', this.table, async () => {
-      if (plan.isActive) await this.deactivateAllExcept(plan.id);
+      if (this.exclusive && plan.isActive) await this.deactivateAllExcept(plan.id);
       await this.table.put(plan);
     });
   }
@@ -122,29 +126,60 @@ class DexiePlanRepository<P extends PlanLike> implements PlanRepository<P> {
     return this.table.delete(id);
   }
 
+  setPlanActive(id: string, active: boolean): Promise<void> {
+    return this.db.transaction('rw', this.table, async () => {
+      if (this.exclusive && active) await this.deactivateAllExcept(id);
+      await this.table.where('id').equals(id).modify(setActive(active));
+    });
+  }
+
+  protected activePlans(): Promise<P[]> {
+    return this.table.filter((p) => p.isActive).toArray().then((plans) => plans.sort(byName));
+  }
+
+  protected async deactivateAllExcept(id: string | undefined): Promise<void> {
+    await this.table.filter((p) => p.isActive && p.id !== id).modify(setActive(false));
+  }
+}
+
+class DexieTrainingPlans extends DexiePlanRepository<TrainingPlan> implements TrainingPlanRepository {
+  constructor(db: TrackerDb) {
+    super(db, db.table<TrainingPlan, string>('trainingPlans'), false);
+  }
+
+  observeActivePlans(): Stream<TrainingPlan[]> {
+    return live(() => this.activePlans());
+  }
+
+  getActivePlans(): Promise<TrainingPlan[]> {
+    return this.activePlans();
+  }
+}
+
+class DexieDietPlans extends DexiePlanRepository<DietPlan> implements DietPlanRepository {
+  constructor(db: TrackerDb) {
+    super(db, db.table<DietPlan, string>('dietPlans'), true);
+  }
+
+  observeActivePlan(): Stream<DietPlan | undefined> {
+    return live(async () => (await this.activePlans())[0]);
+  }
+
+  async getActivePlan(): Promise<DietPlan | undefined> {
+    return (await this.activePlans())[0];
+  }
+
   setActivePlan(id: string | undefined): Promise<void> {
     return this.db.transaction('rw', this.table, async () => {
       await this.deactivateAllExcept(id);
       if (id !== undefined) await this.table.where('id').equals(id).modify(setActive(true));
     });
   }
-
-  private findActive(): Promise<P | undefined> {
-    return this.table.filter((p) => p.isActive).first();
-  }
-
-  private async deactivateAllExcept(id: string | undefined): Promise<void> {
-    await this.table.filter((p) => p.isActive && p.id !== id).modify(setActive(false));
-  }
 }
 
-const setActive = (value: boolean) => (plan: PlanLike) => {
-  (plan as { isActive: boolean }).isActive = value;
-};
+export const dexieTrainingPlans = (db: TrackerDb): TrainingPlanRepository => new DexieTrainingPlans(db);
 
-export const dexieTrainingPlans = (db: TrackerDb): TrainingPlanRepository => new DexiePlanRepository(db, db.table<TrainingPlan, string>('trainingPlans'));
-
-export const dexieDietPlans = (db: TrackerDb): DietPlanRepository => new DexiePlanRepository(db, db.table<DietPlan, string>('dietPlans'));
+export const dexieDietPlans = (db: TrackerDb): DietPlanRepository => new DexieDietPlans(db);
 
 /** The days of food log scanned for "recent foods"; older meals are not recent. */
 const RECENT_DAYS = 60;

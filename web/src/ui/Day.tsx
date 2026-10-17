@@ -29,9 +29,9 @@ export const Day = () => {
           <button className="icon-btn" aria-label="Next day" onClick={() => navigate(`/day/${addDays(date, 1)}`, { replace: true })}>›</button>
         </>
       } />
-      {agenda.pendingSession && <PendingSessionCard session={agenda.pendingSession} date={date} />}
+      {agenda.pendingSessions.map((session) => <PendingSessionCard key={session.planId} session={session} date={date} />)}
       {agenda.workouts.map((w) => <WorkoutCard key={w.id} workout={w} />)}
-      {!agenda.pendingSession && agenda.workouts.length === 0 && (
+      {agenda.pendingSessions.length === 0 && agenda.workouts.length === 0 && (
         <Empty>Nothing planned for this day.<br />Tap “Add workout” to log one.</Empty>
       )}
       <button className="btn" onClick={() => setAdding(true)}>Add workout</button>

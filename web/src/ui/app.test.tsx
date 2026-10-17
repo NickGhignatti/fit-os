@@ -449,3 +449,66 @@ describe('staying on the same day of a weekly plan', () => {
     expect(screen.getByText(/No exercises yet/)).toBeInTheDocument();
   });
 });
+
+describe('following several workouts at once', () => {
+  const exercise = (name: string) => ({ name, notes: '', catalogId: null, sets: [{ reps: 10, weight: null }] });
+  const twoPlans = async () => {
+    const device = makeDevice();
+    await device.repos.trainingPlans.save(newTrainingPlan('Lifting', 'daily', { 0: [exercise('Squat')] }));
+    await device.repos.trainingPlans.save(newTrainingPlan('Volleyball', 'daily', { 0: [exercise('Pogo jump')] }));
+    return device;
+  };
+
+  it('lets you switch on a second workout without switching off the first', async () => {
+    const user = userEvent.setup();
+    renderApp('/workouts', await twoPlans());
+
+    await user.click(await screen.findByRole('button', { name: 'Set as active Lifting' }));
+    await user.click(await screen.findByRole('button', { name: 'Set as active Volleyball' }));
+
+    expect(await screen.findByRole('region', { name: 'Active program: Lifting' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Active program: Volleyball' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Start today's session/ })).toHaveLength(2);
+
+    await user.click(screen.getByRole('button', { name: 'Deactivate Lifting' })); // turning one off leaves the other
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Active program: Lifting' })).not.toBeInTheDocument());
+    expect(screen.getByRole('region', { name: 'Active program: Volleyball' })).toBeInTheDocument();
+  });
+
+  it('shows a card and a week for each on Today, and finishing one does not tick the other', async () => {
+    const user = userEvent.setup();
+    const device = await twoPlans();
+    for (const plan of (await device.db.trainingPlans.toArray())) await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    renderApp('/', device);
+
+    const lifting = await screen.findByRole('region', { name: 'Lifting, from your plan' });
+    const volley = await screen.findByRole('region', { name: 'Volleyball, from your plan' });
+    expect(screen.getByRole('region', { name: 'Lifting, this week' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Volleyball, this week' })).toBeInTheDocument();
+
+    await user.click(within(volley).getByRole('button', { name: 'Start workout' }));
+    expect(await screen.findByRole('region', { name: 'Volleyball' })).toBeInTheDocument(); // the logged workout
+    expect(screen.getByRole('region', { name: 'Lifting, from your plan' })).toBeInTheDocument(); // the other still waits
+    expect(screen.queryByRole('region', { name: 'Volleyball, from your plan' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Set 1 not done' }));
+    await screen.findByText('1/1 sets done');
+    expect(await screen.findByRole('link', { name: /^Volleyball, .*, completed$/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Lifting, .*, completed$/ })).not.toBeInTheDocument();
+    expect(within(lifting).queryByText(/Start workout/)).toBeInTheDocument();
+  });
+
+  it('can start both on the same day', async () => {
+    const user = userEvent.setup();
+    const device = await twoPlans();
+    for (const plan of await device.db.trainingPlans.toArray()) await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    renderApp('/', device);
+
+    await user.click(within(await screen.findByRole('region', { name: 'Lifting, from your plan' })).getByRole('button', { name: 'Start workout' }));
+    await user.click(within(await screen.findByRole('region', { name: 'Volleyball, from your plan' })).getByRole('button', { name: 'Start workout' }));
+
+    expect(await screen.findByRole('region', { name: 'Lifting' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Volleyball' })).toBeInTheDocument();
+    expect(await device.db.workouts.count()).toBe(2);
+  });
+});

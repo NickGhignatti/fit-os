@@ -20,6 +20,8 @@ export interface Stream<T> {
 export interface WorkoutRepository {
   observeWorkouts(date: LocalDate): Stream<Workout[]>;
   observeDaySummaries(from: LocalDate, to: LocalDate): Stream<DaySummary[]>;
+  /** Every workout from [from] to [to], both included. */
+  observeWorkoutsBetween(from: LocalDate, to: LocalDate): Stream<Workout[]>;
   getWorkouts(date: LocalDate): Promise<Workout[]>;
   getWorkout(id: string): Promise<Workout | undefined>;
   /** Creates the workout, or replaces the stored one with the same id. */
@@ -33,18 +35,28 @@ export interface PlanRepository<P> {
   observePlans(): Stream<P[]>;
   /** Emits null once the plan is deleted (or if it never existed). */
   observePlan(id: string): Stream<P | null>;
-  observeActivePlan(): Stream<P | undefined>;
   getPlan(id: string): Promise<P | undefined>;
-  getActivePlan(): Promise<P | undefined>;
   /** Creates the plan, or replaces the stored one with the same id. */
   save(plan: P): Promise<void>;
   delete(id: string): Promise<void>;
-  /** Makes [id] the only active plan, or deactivates every plan when undefined. */
-  setActivePlan(id: string | undefined): Promise<void>;
+  /** Marks a plan active or not. Where only one plan can be active, activating one deactivates the others. */
+  setPlanActive(id: string, active: boolean): Promise<void>;
 }
 
-export type TrainingPlanRepository = PlanRepository<TrainingPlan>;
-export type DietPlanRepository = PlanRepository<DietPlan>;
+/** Workout plans: as many as the user likes can be active at once (say, a lifting split and a volleyball routine). */
+export interface TrainingPlanRepository extends PlanRepository<TrainingPlan> {
+  /** Every active plan, sorted by name. */
+  observeActivePlans(): Stream<TrainingPlan[]>;
+  getActivePlans(): Promise<TrainingPlan[]>;
+}
+
+/** Diets: only one can be active, because a day is eaten once. */
+export interface DietPlanRepository extends PlanRepository<DietPlan> {
+  observeActivePlan(): Stream<DietPlan | undefined>;
+  getActivePlan(): Promise<DietPlan | undefined>;
+  /** Makes [id] the only active diet, or deactivates every diet when undefined. */
+  setActivePlan(id: string | undefined): Promise<void>;
+}
 
 /** What was eaten, one document per day. */
 export interface FoodLogRepository {
