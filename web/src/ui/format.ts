@@ -2,6 +2,7 @@ import type { Equipment, ExerciseCategory, ExerciseLevel, Muscle } from '../doma
 import type { Nutrients } from '../domain/nutrition';
 import { addDays, weekdayOf, type LocalDate, type PlanDay } from '../domain/plan';
 import type { ActivityLevel, GoalPace, Sex } from '../domain/profile';
+import { oneRepMax, type PersonalRecord, type PrMetric } from '../domain/records';
 
 /** Today in the device's timezone, "2026-10-17". */
 export const today = (now: Date = new Date()): LocalDate => {
@@ -85,3 +86,41 @@ export const parseNumber = (text: string): number | null => {
   const n = Number.parseFloat(text.trim().replace(',', '.'));
   return Number.isFinite(n) ? n : null;
 };
+
+/** 1325 seconds -> "22:05"; 3725 -> "1:02:05". */
+export const formatDuration = (seconds: number): string => {
+  const total = Math.round(seconds);
+  const [h, m, sec] = [Math.floor(total / 3600), Math.floor((total % 3600) / 60), total % 60];
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+};
+
+/** "22:05", "1:02:05" or plain seconds ("90") -> seconds; null when it is not a time. */
+export const parseDuration = (text: string): number | null => {
+  const parts = text.trim().split(':');
+  if (parts.length > 3 || parts.some((p) => !/^\d+(\.\d+)?$/.test(p))) return null;
+  const numbers = parts.map(Number);
+  if (numbers.slice(1).some((n) => n >= 60)) return null;
+  const seconds = numbers.reduce((total, n) => total * 60 + n, 0);
+  return seconds > 0 ? seconds : null;
+};
+
+/** Metres -> "800 m" or "5.2 km". */
+export const formatDistance = (metres: number): string =>
+  metres >= 1000 ? `${trim(metres / 1000, 2)} km` : `${trim(metres, 0)} m`;
+
+export const METRIC_LABEL: Record<PrMetric, string> = { weight: 'Weight', reps: 'Reps', time: 'Time', distance: 'Distance' };
+
+/** "100 kg × 5", "25 reps", "21:45", "5.2 km". */
+export const describeRecord = (r: PersonalRecord): string => {
+  switch (r.metric) {
+    case 'weight': return r.reps && r.reps > 1 ? `${formatKg(r.value)} × ${r.reps}` : formatKg(r.value);
+    case 'reps': return `${r.value} ${r.value === 1 ? 'rep' : 'reps'}`;
+    case 'time': return formatDuration(r.value);
+    case 'distance': return formatDistance(r.value);
+  }
+};
+
+/** For lifts of several reps, the one-rep max they imply; otherwise null. */
+export const impliedOneRepMax = (r: PersonalRecord): string | null =>
+  r.metric === 'weight' && r.reps && r.reps > 1 ? `≈ ${formatKg(oneRepMax(r.value, r.reps))} 1RM` : null;

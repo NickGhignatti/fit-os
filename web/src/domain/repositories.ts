@@ -3,6 +3,7 @@ import type { FoodLogDay } from './foodLog';
 import type { FoodItem, Nutrients } from './nutrition';
 import type { LocalDate } from './plan';
 import type { Profile, WeightEntry } from './profile';
+import type { PersonalRecord } from './records';
 import type { TrainingPlan } from './trainingPlan';
 import type { DaySummary, Workout } from './workout';
 
@@ -77,6 +78,18 @@ export interface ProfileRepository {
   /** Records the weight of [date], replacing any earlier weigh-in of that day. */
   setWeight(date: LocalDate, kg: number): Promise<void>;
   deleteWeight(id: string): Promise<void>;
+}
+
+/** Personal records: measurements of exercises over time. */
+export interface PersonalRecordRepository {
+  /** Every record, newest first. */
+  observeAll(): Stream<PersonalRecord[]>;
+  /** The records of one exercise, newest first. */
+  observeFor(exerciseKey: string): Stream<PersonalRecord[]>;
+  getFor(exerciseKey: string): Promise<PersonalRecord[]>;
+  /** Creates the record, or replaces the stored one with the same id. */
+  save(record: PersonalRecord): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 
 /** Runs a block atomically across repositories: it either fully succeeds or leaves no trace. */

@@ -10,6 +10,7 @@ import {
 } from './format';
 import { useAsync } from './hooks';
 import { Empty, Loading, Modal, PageHeader, useDebounced } from './kit';
+import { ExerciseRecordsSection } from './Records';
 
 /** Search box, filters and the matching exercises. [onPick] turns rows into buttons; otherwise they open the detail page. */
 export const ExerciseBrowser = ({ onPick, onCustom }: { onPick?: (exercise: ExerciseInfo) => void; onCustom?: (name: string) => void }) => {
@@ -174,6 +175,7 @@ export const ExerciseDetail = () => {
               <ol style={{ paddingLeft: 20 }}>{result.value.instructions.map((step, i) => <li key={i} style={{ marginBottom: 8 }}>{step}</li>)}</ol>
             </>
           )}
+          <ExerciseRecordsSection name={result.value.name} catalogId={result.value.id} />
           <p className="small muted">Exercises and photos: free-exercise-db (public domain).</p>
         </>
       )}

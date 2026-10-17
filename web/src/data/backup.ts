@@ -5,6 +5,7 @@ import {
   dietPlanSchema,
   foodItemSchema,
   foodLogDaySchema,
+  personalRecordSchema,
   profileSchema,
   trainingPlanSchema,
   weightEntrySchema,
@@ -33,6 +34,8 @@ const backupSchema = z.object({
     favorites: z.array(z.object({ food: foodItemSchema, addedAt: z.number().finite() })).max(10_000),
     weights: z.array(weightEntrySchema).max(20_000),
     profile: profileSchema.nullable(),
+    // Added later: backups written before have no records.
+    records: z.array(personalRecordSchema).max(50_000).default([]),
   }),
 });
 
@@ -52,6 +55,7 @@ export const exportBackup = (db: TrackerDb, now: () => Date = () => new Date()):
       favorites: (await db.favoriteFoods.toArray()).map(({ food, addedAt }) => ({ food, addedAt })),
       weights: await db.weightEntries.toArray(),
       profile: await readProfile(db),
+      records: await db.records.toArray(),
     },
   }));
 
@@ -98,6 +102,7 @@ export const restoreBackup = (db: TrackerDb, { data }: Backup): Promise<void> =>
     await db.favoriteFoods.bulkPut(data.favorites.map(({ food, addedAt }) => ({ id: food.id, food, addedAt })));
     await restoreWeights(db, data.weights);
     if (data.profile) await db.profile.put({ key: 'me', ...data.profile });
+    await db.records.bulkPut(data.records);
   });
 
 const restorePlans = async (db: TrackerDb, table: 'trainingPlans' | 'dietPlans', plans: (TrainingPlan | DietPlan)[]) => {

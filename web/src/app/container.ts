@@ -4,6 +4,7 @@ import {
   DexieCustomFoodRepository,
   DexieFavoriteFoodRepository,
   DexieFoodLogRepository,
+  DexiePersonalRecords,
   DexieProfileRepository,
   DexieTransactionRunner,
   DexieWorkoutRepository,
@@ -26,6 +27,7 @@ export interface Container {
     readonly customFoods: DexieCustomFoodRepository;
     readonly favorites: DexieFavoriteFoodRepository;
     readonly profile: DexieProfileRepository;
+    readonly records: DexiePersonalRecords;
     readonly transaction: DexieTransactionRunner;
     readonly exercises: StaticExerciseCatalog;
     readonly basicFoods: StaticBasicFoods;
@@ -48,6 +50,7 @@ export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb
     customFoods: new DexieCustomFoodRepository(db),
     favorites: new DexieFavoriteFoodRepository(db),
     profile: new DexieProfileRepository(db),
+    records: new DexiePersonalRecords(db),
     transaction: new DexieTransactionRunner(db),
     exercises: new StaticExerciseCatalog(),
     basicFoods: new StaticBasicFoods(),

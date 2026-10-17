@@ -5,10 +5,13 @@ import { deleteExercise, deleteSet, renameWorkout, updateExercise } from '../dom
 import type { LocalDate } from '../domain/plan';
 import type { PendingSession } from '../domain/trainingPlan';
 import { addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedSession, toggleSetDone } from '../domain/useCases';
-import { doneSets, doneSetsOf, deviatesFromPlan, totalSetsOf, type Exercise, type ExerciseSet, type Workout } from '../domain/workout';
+import { newId } from '../domain/id';
+import { beatsBest, exerciseKey, type PersonalRecord } from '../domain/records';
+import { markedDone, doneSets, doneSetsOf, deviatesFromPlan, totalSetsOf, type Exercise, type ExerciseSet, type Workout } from '../domain/workout';
 import { dateTitle, formatKg, parseNumber, relativeDay, setSummary, today } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Modal, ProgressBar, PromptDialog } from './kit';
+import { PrPrompt } from './Records';
 import { SendButton } from './Transfer';
 
 export const DateDialog = ({ title, initial, confirmLabel, onSubmit, onClose }: {
@@ -102,6 +105,24 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const close = () => setDialog(null);
   const save = (w: Workout) => void repos.workouts.save(w);
+  const [pr, setPr] = useState<PersonalRecord | null>(null);
+
+  /** After a set is done: if it beats a stored personal record, offer to save it. */
+  const checkForPr = async (exercise: Exercise, set: ExerciseSet) => {
+    const reps = set.actualReps ?? set.plannedReps;
+    const weight = set.actualWeight ?? set.plannedWeight;
+    const candidate: PersonalRecord = {
+      id: newId(), exerciseKey: exerciseKey(exercise.name, exercise.catalogId), exerciseName: exercise.name, catalogId: exercise.catalogId,
+      ...(weight !== null && weight > 0 ? { metric: 'weight' as const, value: weight, reps } : { metric: 'reps' as const, value: reps, reps: null }),
+      date: workout.date, note: '',
+    };
+    if (reps > 0 && beatsBest(candidate, await repos.records.getFor(candidate.exerciseKey))) setPr(candidate);
+  };
+
+  const toggle = async (exercise: Exercise, set: ExerciseSet) => {
+    await toggleSetDone(repos, workout.id, set);
+    if (!set.done) void checkForPr(exercise, markedDone(set)); // it just became done
+  };
 
   return (
     <section className="card" aria-label={workout.title}>
@@ -141,7 +162,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
           {exercise.sets.map((set, index) => (
             <div key={set.id} className="set-row">
               <button className={`check ${set.done ? 'on' : ''}`} aria-label={`Set ${index + 1} ${set.done ? 'done' : 'not done'}`}
-                aria-pressed={set.done} onClick={() => void toggleSetDone(repos, workout.id, set)}>{set.done ? '✓' : ''}</button>
+                aria-pressed={set.done} onClick={() => void toggle(exercise, set)}>{set.done ? '✓' : ''}</button>
               <button className="list-item grow" style={{ border: 0, minHeight: 44, padding: 0 }}
                 onClick={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })}>
                 <span className="grow">
@@ -163,6 +184,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
         <button className="btn secondary" onClick={() => navigate(`/exercises/pick?workout=${workout.id}`)}>Add exercise</button>
       </div>
       <SendButton kind="workout" data={workout} />
+      {pr && <PrPrompt record={pr} onClose={() => setPr(null)} />}
 
       {dialog?.kind === 'rename' && (
         <PromptDialog title="Rename workout" label="Name" initial={workout.title} onClose={close} onSubmit={(t) => save(renameWorkout(workout, t))} />
@@ -188,7 +210,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
       )}
       {dialog?.kind === 'editSet' && (
         <SetDialog number={dialog.number} set={dialog.set} onClose={close}
-          onSave={(s) => void logSet(repos, workout.id, s)} onDelete={() => save(deleteSet(workout, dialog.set.id))} />
+          onSave={(s) => void logSet(repos, workout.id, s).then(() => (s.done ? checkForPr(dialog.exercise, s) : undefined))} onDelete={() => save(deleteSet(workout, dialog.set.id))} />
       )}
     </section>
   );

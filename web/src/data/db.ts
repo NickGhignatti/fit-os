@@ -3,6 +3,7 @@ import type { DietPlan } from '../domain/diet';
 import type { FoodLogDay } from '../domain/foodLog';
 import type { FoodItem } from '../domain/nutrition';
 import type { Profile, WeightEntry } from '../domain/profile';
+import type { PersonalRecord } from '../domain/records';
 import type { Stream } from '../domain/repositories';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { Workout } from '../domain/workout';
@@ -35,6 +36,7 @@ export class TrackerDb extends Dexie {
   weightEntries!: EntityTable<WeightEntry, 'id'>;
   profile!: EntityTable<ProfileRow, 'key'>;
   savedProducts!: EntityTable<FoodItem, 'id'>;
+  records!: EntityTable<PersonalRecord, 'id'>;
 
   constructor(name = 'tracker') {
     super(name);
@@ -50,6 +52,8 @@ export class TrackerDb extends Dexie {
     });
     // Packaged products seen before, so they can be found offline. Local only, never exported.
     this.version(2).stores({ savedProducts: 'id' });
+    // Personal records: measurements of an exercise on a day.
+    this.version(3).stores({ records: 'id, exerciseKey, date' });
   }
 }
 

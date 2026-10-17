@@ -8,6 +8,7 @@ import { FoodPicker } from '../ui/FoodPicker';
 import { ToastProvider } from '../ui/hooks';
 import { PrivacyPolicy, TermsOfService } from '../ui/Legal';
 import { ProfileScreen } from '../ui/ProfileScreen';
+import { RecordsScreen } from '../ui/Records';
 import { Today } from '../ui/Today';
 import { Tracker } from '../ui/Tracker';
 import { TrainingPlanScreen } from '../ui/TrainingPlanScreen';
@@ -71,6 +72,7 @@ export const App = () => {
               <Route path="/day/:date" element={<Day />} />
               <Route path="/workouts" element={<Workouts />} />
               <Route path="/workouts/plan/:id" element={<TrainingPlanScreen />} />
+              <Route path="/records/:key" element={<RecordsScreen />} />
               <Route path="/exercises/pick" element={<ExercisePicker />} />
               <Route path="/exercises/:id" element={<ExerciseDetail />} />
               <Route path="/food" element={<Food />} />

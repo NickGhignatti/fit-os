@@ -3,6 +3,7 @@ import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import type { FoodItem } from './nutrition';
 import type { Profile, WeightEntry } from './profile';
+import type { PersonalRecord } from './records';
 import type { TrainingPlan } from './trainingPlan';
 import type { Workout } from './workout';
 
@@ -104,3 +105,18 @@ export const profileSchema: Schema<Profile> = z.object({
 });
 
 export const weightEntrySchema: Schema<WeightEntry> = z.object({ id, date, kg: z.number().finite().positive().max(1000) });
+
+export const personalRecordSchema: Schema<PersonalRecord> = z
+  .object({
+    id,
+    exerciseKey: text(200).min(1),
+    exerciseName: text(120).min(1),
+    catalogId: text(120).nullable(),
+    metric: z.enum(['weight', 'reps', 'time', 'distance']),
+    value: z.number().finite().positive().max(10_000_000),
+    reps: z.number().int().min(1).max(1_000).nullable(),
+    date,
+    note: text(500),
+  })
+  // A lift needs the reps it was done for; the other measurements have none.
+  .refine((r) => (r.metric === 'weight' ? r.reps !== null : r.reps === null));

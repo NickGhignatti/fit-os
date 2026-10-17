@@ -10,6 +10,7 @@ import type {
   DietPlanRepository,
   FavoriteFoodRepository,
   FoodLogRepository,
+  PersonalRecordRepository,
   PlanRepository,
   ProfileRepository,
   Stream,
@@ -17,6 +18,7 @@ import type {
   TransactionRunner,
   WorkoutRepository,
 } from '../domain/repositories';
+import { newestFirst, type PersonalRecord } from '../domain/records';
 import { rank } from '../domain/textSearch';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { DaySummary, Workout } from '../domain/workout';
@@ -234,5 +236,29 @@ export class DexieProfileRepository implements ProfileRepository {
 
   deleteWeight(id: string): Promise<void> {
     return this.db.weightEntries.delete(id);
+  }
+}
+
+export class DexiePersonalRecords implements PersonalRecordRepository {
+  constructor(private readonly db: TrackerDb) {}
+
+  observeAll(): Stream<PersonalRecord[]> {
+    return live(async () => newestFirst(await this.db.records.toArray()));
+  }
+
+  observeFor(exerciseKey: string): Stream<PersonalRecord[]> {
+    return live(() => this.getFor(exerciseKey));
+  }
+
+  async getFor(exerciseKey: string): Promise<PersonalRecord[]> {
+    return newestFirst(await this.db.records.where('exerciseKey').equals(exerciseKey).toArray());
+  }
+
+  async save(record: PersonalRecord): Promise<void> {
+    await this.db.records.put(record);
+  }
+
+  delete(id: string): Promise<void> {
+    return this.db.records.delete(id);
   }
 }

@@ -1,0 +1,169 @@
+import 'fake-indexeddb/auto';
+import { describe, expect, it } from 'vitest';
+import { exportBackup, parseBackup, restoreBackup } from '../data/backup';
+import { TrackerDb } from '../data/db';
+import { DexiePersonalRecords } from '../data/repositories';
+import { formatDistance, formatDuration, parseDuration, describeRecord, impliedOneRepMax } from '../ui/format';
+import {
+  beatsBest, bestOf, exerciseKey, groupByExercise, isBetter, newestFirst, oneRepMax, type PersonalRecord,
+} from './records';
+import { personalRecordSchema } from './schemas';
+
+let counter = 0;
+const rec = (over: Partial<PersonalRecord> = {}): PersonalRecord => ({
+  id: `r${++counter}`, exerciseKey: 'name:squat', exerciseName: 'Squat', catalogId: null,
+  metric: 'weight', value: 100, reps: 5, date: '2026-10-01', note: '', ...over,
+});
+
+describe('one-rep max', () => {
+  it('is the weight itself for a single, and grows with reps (Epley)', () => {
+    expect(oneRepMax(140, 1)).toBe(140);
+    expect(oneRepMax(100, 5)).toBeCloseTo(116.67, 2);
+    expect(oneRepMax(100, 10)).toBeCloseTo(133.33, 2);
+  });
+});
+
+describe('what counts as better', () => {
+  it('compares lifts by the one-rep max they imply, not by raw weight', () => {
+    expect(isBetter(rec({ value: 100, reps: 5 }), rec({ value: 105, reps: 1 }))).toBe(true); // 116.7 > 105
+    expect(isBetter(rec({ value: 105, reps: 1 }), rec({ value: 100, reps: 5 }))).toBe(false);
+    expect(isBetter(rec({ value: 100, reps: 5 }), rec({ value: 100, reps: 5 }))).toBe(false); // equal is not better
+  });
+
+  it('treats more reps and more distance as better, and a shorter time as better', () => {
+    expect(isBetter(rec({ metric: 'reps', value: 30, reps: null }), rec({ metric: 'reps', value: 25, reps: null }))).toBe(true);
+    expect(isBetter(rec({ metric: 'distance', value: 5200, reps: null }), rec({ metric: 'distance', value: 5000, reps: null }))).toBe(true);
+    expect(isBetter(rec({ metric: 'time', value: 1300, reps: null }), rec({ metric: 'time', value: 1325, reps: null }))).toBe(true);
+    expect(isBetter(rec({ metric: 'time', value: 1400, reps: null }), rec({ metric: 'time', value: 1325, reps: null }))).toBe(false);
+  });
+
+  it('finds the best per metric, and the earlier record wins a tie', () => {
+    const early = rec({ id: 'a', date: '2026-01-01', value: 100, reps: 5 });
+    const later = rec({ id: 'b', date: '2026-06-01', value: 100, reps: 5 });
+    const heavier = rec({ id: 'c', date: '2026-03-01', value: 110, reps: 3 });
+    expect(bestOf([later, early], 'weight')?.id).toBe('a');
+    expect(bestOf([early, later, heavier], 'weight')?.id).toBe('c'); // 121 > 116.7
+    expect(bestOf([early], 'time')).toBeUndefined();
+    expect(bestOf([], 'weight')).toBeUndefined();
+  });
+
+  it('only calls it a new best when something existed to beat', () => {
+    const existing = [rec({ value: 100, reps: 5 })];
+    expect(beatsBest(rec({ value: 105, reps: 5 }), existing)).toBe(true);
+    expect(beatsBest(rec({ value: 95, reps: 5 }), existing)).toBe(false);
+    expect(beatsBest(rec({ value: 200, reps: 1 }), [])).toBe(false); // the very first record
+    expect(beatsBest(rec({ metric: 'time', value: 100, reps: null }), existing)).toBe(false); // other metric: nothing to beat
+  });
+});
+
+describe('exercises', () => {
+  it('are the same exercise whether picked or typed, ignoring case, accents and punctuation', () => {
+    expect(exerciseKey('Back Squat', null)).toBe(exerciseKey('  back-squat ', null));
+    expect(exerciseKey('Stacco', null)).toBe(exerciseKey('stàcco', null));
+    expect(exerciseKey('Anything', '3_4_Sit-Up')).toBe('3_4_Sit-Up'); // catalogue id wins
+  });
+
+  it('are grouped, most recently active first, each with its bests', () => {
+    const groups = groupByExercise([
+      rec({ exerciseKey: 'a', exerciseName: 'Squat', date: '2026-01-01', value: 100, reps: 5 }),
+      rec({ exerciseKey: 'a', exerciseName: 'Squat', date: '2026-02-01', value: 110, reps: 5 }),
+      rec({ exerciseKey: 'a', exerciseName: 'Squat', date: '2026-03-01', metric: 'reps', value: 12, reps: null }),
+      rec({ exerciseKey: 'b', exerciseName: 'Run', date: '2026-05-01', metric: 'time', value: 1300, reps: null }),
+    ]);
+    expect(groups.map((g) => g.exerciseName)).toEqual(['Run', 'Squat']);
+    const squat = groups[1]!;
+    expect(squat.records.map((r) => r.date)).toEqual(['2026-03-01', '2026-02-01', '2026-01-01']);
+    expect(squat.bests.map((b) => [b.metric, b.value])).toEqual([['weight', 110], ['reps', 12]]);
+  });
+
+  it('sort newest first', () => {
+    expect(newestFirst([rec({ id: 'a', date: '2026-01-01' }), rec({ id: 'b', date: '2026-02-01' })]).map((r) => r.id)).toEqual(['b', 'a']);
+  });
+});
+
+describe('showing a measurement', () => {
+  it('formats times, distances and lifts', () => {
+    expect(formatDuration(1305)).toBe('21:45');
+    expect(formatDuration(3725)).toBe('1:02:05');
+    expect(formatDuration(59)).toBe('0:59');
+    expect(formatDistance(800)).toBe('800 m');
+    expect(formatDistance(5200)).toBe('5.2 km');
+    expect(describeRecord(rec({ value: 100, reps: 5 }))).toBe('100 kg × 5');
+    expect(describeRecord(rec({ value: 140, reps: 1 }))).toBe('140 kg');
+    expect(describeRecord(rec({ metric: 'reps', value: 1, reps: null }))).toBe('1 rep');
+    expect(impliedOneRepMax(rec({ value: 100, reps: 5 }))).toBe('≈ 116.67 kg 1RM');
+    expect(impliedOneRepMax(rec({ value: 140, reps: 1 }))).toBeNull();
+  });
+
+  it('reads times the way people type them', () => {
+    expect(parseDuration('21:45')).toBe(1305);
+    expect(parseDuration('1:02:05')).toBe(3725);
+    expect(parseDuration('90')).toBe(90);
+    for (const bad of ['', 'abc', '12:75', '1:2:3:4', '-5', '0']) expect(parseDuration(bad)).toBeNull();
+  });
+});
+
+describe('validation', () => {
+  const ok = { id: 'x', exerciseKey: 'k', exerciseName: 'Squat', catalogId: null, metric: 'weight', value: 100, reps: 5, date: '2026-10-01', note: '' };
+
+  it('accepts well-formed records and insists a lift has reps and the rest do not', () => {
+    expect(personalRecordSchema.safeParse(ok).success).toBe(true);
+    expect(personalRecordSchema.safeParse({ ...ok, reps: null }).success).toBe(false); // a lift without reps
+    expect(personalRecordSchema.safeParse({ ...ok, metric: 'time' }).success).toBe(false); // time with reps
+    expect(personalRecordSchema.safeParse({ ...ok, metric: 'time', reps: null }).success).toBe(true);
+  });
+
+  it('rejects nonsense and hostile values', () => {
+    for (const bad of [{ value: 0 }, { value: -5 }, { value: 1e12 }, { reps: 0 }, { reps: 2.5 }, { date: 'yesterday' }, { metric: 'speed' }, { note: 'x'.repeat(501) }, { exerciseName: '' }]) {
+      expect(personalRecordSchema.safeParse({ ...ok, ...bad }).success, JSON.stringify(bad)).toBe(false);
+    }
+  });
+});
+
+describe('storage', () => {
+  it('keeps records per exercise, newest first, and observes changes', async () => {
+    const db = new TrackerDb('records-store');
+    const repo = new DexiePersonalRecords(db);
+    await repo.save(rec({ id: 'a', exerciseKey: 'squat', date: '2026-01-01' }));
+    await repo.save(rec({ id: 'b', exerciseKey: 'squat', date: '2026-03-01' }));
+    await repo.save(rec({ id: 'c', exerciseKey: 'bench', date: '2026-02-01' }));
+
+    expect((await repo.getFor('squat')).map((r) => r.id)).toEqual(['b', 'a']);
+    const seen = new Promise<PersonalRecord[]>((resolve) => {
+      const stop = repo.observeFor('bench').subscribe((v) => { if (v.length === 0) { stop(); resolve(v); } });
+    });
+    await repo.delete('c');
+    expect(await seen).toEqual([]);
+  });
+
+  it('go through a backup, and a backup written before records existed still loads', async () => {
+    const source = new TrackerDb('records-source');
+    await new DexiePersonalRecords(source).save(rec({ id: 'keep', value: 120, reps: 3 }));
+    const file = JSON.stringify(await exportBackup(source));
+    const parsed = parseBackup(file);
+    if (!parsed.ok) throw new Error(parsed.error);
+
+    const target = new TrackerDb('records-target');
+    await restoreBackup(target, parsed.backup);
+    expect((await target.records.toArray()).map((r) => r.id)).toEqual(['keep']);
+
+    const legacy = JSON.parse(file) as { data: Record<string, unknown> };
+    delete legacy.data.records;
+    const old = parseBackup(JSON.stringify(legacy));
+    expect(old.ok && old.backup.data.records).toEqual([]);
+  });
+
+  it('upgrade an existing device without losing what it holds', async () => {
+    const name = 'records-upgrade';
+    const v2 = new (await import('dexie')).default(name);
+    v2.version(1).stores({ workouts: 'id, date', trainingPlans: 'id, name', dietPlans: 'id, name', foodLogDays: 'date', customFoods: 'id', favoriteFoods: 'id, addedAt', weightEntries: 'id, &date', profile: 'key' });
+    v2.version(2).stores({ savedProducts: 'id' });
+    await v2.table('weightEntries').put({ id: 'w1', date: '2026-10-01', kg: 80 });
+    v2.close();
+
+    const upgraded = new TrackerDb(name);
+    expect(await upgraded.weightEntries.count()).toBe(1);
+    await upgraded.records.put(rec({ id: 'new' }));
+    expect(await upgraded.records.count()).toBe(1);
+  });
+});

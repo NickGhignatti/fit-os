@@ -7,6 +7,7 @@ import { ExerciseBrowser } from './Exercises';
 import { shortDayName, today } from './format';
 import { PageHeader, Segmented } from './kit';
 import { PlanList, TRAINING_TEXTS } from './Plans';
+import { RecordsTab } from './Records';
 import { ReceiveButton } from './Transfer';
 
 export const trainingSummary = (plan: TrainingPlan): string => {
@@ -19,11 +20,12 @@ export const trainingSummary = (plan: TrainingPlan): string => {
   return days.map(shortDayName).join(' · ');
 };
 
-type Tab = 'plans' | 'library';
+type Tab = 'plans' | 'library' | 'records';
 
 export const Workouts = () => {
   const [params, setParams] = useSearchParams();
-  const tab: Tab = params.get('tab') === 'library' ? 'library' : 'plans';
+  const requested = params.get('tab');
+  const tab: Tab = requested === 'library' || requested === 'records' ? requested : 'plans';
   const date = today();
   const { repos, community } = useContainer();
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ export const Workouts = () => {
 
   const tabs = (
     <Segmented<Tab> label="Workouts" value={tab} onChange={(t) => setParams(t === 'plans' ? {} : { tab: t }, { replace: true })}
-      options={[{ value: 'plans', label: 'My plans' }, { value: 'library', label: 'Exercise library' }]} />
+      options={[{ value: 'plans', label: 'My plans' }, { value: 'library', label: 'Library' }, { value: 'records', label: 'Records' }]} />
   );
 
   return (
@@ -41,6 +43,8 @@ export const Workouts = () => {
       {tabs}
       {tab === 'library' ? (
         <ExerciseBrowser />
+      ) : tab === 'records' ? (
+        <RecordsTab />
       ) : (
         <PlanList
           plans={plans}
