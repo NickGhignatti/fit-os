@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { Blob as NodeBlob } from 'node:buffer';
 import { webcrypto } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { newTrainingPlan } from '../domain/edit';
+import { addMeal, newDietPlan, newTrainingPlan } from '../domain/edit';
 import { InMemoryTransferGateway } from '../transfer/gateway';
 import { makeDevice, renderApp } from './testing';
 
@@ -383,5 +383,69 @@ describe('moving a plan to another device', () => {
     expect(await screen.findByRole('button', { name: 'Receive from another device' })).toBeDisabled();
     expect(screen.getByText(/isn't set up in this build/)).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Food' }));
+  });
+});
+
+describe('staying on the same day of a weekly plan', () => {
+  it('returns to the chosen weekday after adding an exercise, instead of Monday', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const plan = newTrainingPlan('Split', 'weekly');
+    await device.repos.trainingPlans.save(plan);
+    renderApp(`/workouts/plan/${plan.id}`, device);
+
+    await user.click(await screen.findByRole('tab', { name: /Wed/ }));
+    expect(screen.getByRole('tab', { name: /Wed/ })).toHaveAttribute('aria-selected', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await user.type(await screen.findByLabelText('Search exercises'), 'squat');
+    await user.click((await screen.findAllByRole('button', { name: /squat/i }))[0]!);
+    await user.click(within(await dialog('Add exercise')).getByRole('button', { name: 'Add' }));
+
+    // back on the plan: still Wednesday, and the exercise is there
+    expect(await screen.findByText(/3 × 10/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Wed/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /Mon/ })).toHaveAttribute('aria-selected', 'false');
+    const saved = (await device.repos.trainingPlans.getPlan(plan.id))!;
+    expect(Object.keys(saved.sessions)).toEqual(['3']); // it went into Wednesday
+  });
+
+  it('returns to the chosen weekday after adding a food to a weekly diet', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const { plan } = addMeal(newDietPlan('Week', 'weekly'), 4, 'Lunch', '');
+    await device.repos.dietPlans.save(plan);
+    renderApp(`/food/plan/${plan.id}`, device);
+
+    await user.click(await screen.findByRole('tab', { name: /Thu/ }));
+    const lunch = await screen.findByRole('region', { name: 'Lunch' });
+    await user.click(within(lunch).getByRole('button', { name: 'Add item' }));
+    await user.type(await screen.findByLabelText('Search foods'), 'mela');
+    await user.click((await screen.findAllByRole('button', { name: /per 100 g/ }))[0]!);
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Add' }));
+
+    expect(await screen.findByText(/\d+ g · \d+ kcal/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Thu/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('region', { name: 'Lunch' })).toBeInTheDocument();
+  });
+
+  it('opens on the day in the address, and falls back to the first day for a bad one', async () => {
+    const device = makeDevice();
+    const plan = newTrainingPlan('Split', 'weekly');
+    await device.repos.trainingPlans.save(plan);
+    renderApp(`/workouts/plan/${plan.id}?day=5`, device);
+    expect(await screen.findByRole('tab', { name: /Fri/ })).toHaveAttribute('aria-selected', 'true');
+    cleanup();
+
+    renderApp(`/workouts/plan/${plan.id}?day=99`, device);
+    expect(await screen.findByRole('tab', { name: /Mon/ })).toHaveAttribute('aria-selected', 'true');
+    cleanup();
+
+    const daily = newTrainingPlan('Daily', 'daily');
+    await device.repos.trainingPlans.save(daily);
+    renderApp(`/workouts/plan/${daily.id}?day=3`, device); // a daily plan has no weekdays
+    expect(await screen.findByRole('heading', { name: 'Daily' })).toBeInTheDocument();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.getByText(/No exercises yet/)).toBeInTheDocument();
   });
 });

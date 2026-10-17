@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import type { Recurrence } from '../domain/plan';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import type { PlanDay, Recurrence } from '../domain/plan';
 import type { PlanRepository } from '../domain/repositories';
 import { Empty, Loading, Modal, ActionMenu, ConfirmDialog, PromptDialog, Segmented, type MenuAction } from './kit';
 
@@ -143,4 +143,15 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, crea
       )}
     </>
   );
+};
+
+/**
+ * The day of a weekly plan being looked at. It lives in the address (?day=3), not in memory, so
+ * going to a picker and back, a refresh, or a shared link all stay on the same day.
+ */
+export const usePlanDay = (days: readonly PlanDay[]): [PlanDay, (day: PlanDay) => void] => {
+  const [params, setParams] = useSearchParams();
+  const requested = Number(params.get('day'));
+  const day = days.find((d) => d === requested) ?? days[0] ?? 0;
+  return [day, (next) => setParams({ day: String(next) }, { replace: true })];
 };

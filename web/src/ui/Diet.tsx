@@ -9,7 +9,7 @@ import { copyDietDay } from '../domain/useCases';
 import { dayName, formatGrams, formatKcal, parseNumber, shortDayName } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Empty, Loading, MacroChips, Modal, PageHeader } from './kit';
-import { DIET_TEXTS, PlanList, PlanMenu } from './Plans';
+import { DIET_TEXTS, PlanList, PlanMenu, usePlanDay } from './Plans';
 import { PublishButton } from './Community';
 import { ReceiveButton, SendButton } from './Transfer';
 
@@ -119,7 +119,7 @@ const PlanBody = ({ plan }: { plan: DietPlan }) => {
   const toast = useToast();
   const navigate = useNavigate();
   const days = daysOf(plan.recurrence);
-  const [day, setDay] = useState<PlanDay>(days[0] ?? 0);
+  const [day, setDay] = usePlanDay(days);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const meals = mealsOnDay(plan, day);
   const total = nutrientsOnDay(plan, day);
