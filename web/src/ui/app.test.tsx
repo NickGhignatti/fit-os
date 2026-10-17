@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import 'fake-indexeddb/auto';
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Blob as NodeBlob } from 'node:buffer';
 import { webcrypto } from 'node:crypto';
@@ -194,8 +194,8 @@ describe('the calorie tracker', () => {
 
     await user.click(screen.getByRole('button', { name: /200 g/ }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove' }));
-    expect(await screen.findAllByText('Pending')).not.toHaveLength(0);
-    expect(screen.queryByText(/200 g/)).not.toBeInTheDocument();
+    // "Pending" was already on screen for the other meals, so it proves nothing: wait for the entry itself to go.
+    await waitFor(() => expect(screen.queryByText(/200 g/)).not.toBeInTheDocument());
   });
 
   it('creates a custom food and logs it', async () => {

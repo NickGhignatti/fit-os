@@ -11,6 +11,9 @@ import { makeDevice, renderApp } from './testing';
 afterEach(cleanup);
 
 const dialog = (name: string | RegExp) => screen.findByRole('dialog', { name });
+
+/** Gives asynchronous work time to show something, before asserting that nothing appeared. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 150));
 type User = ReturnType<typeof userEvent.setup>;
 
 /** Records tab -> Add record -> fill the dialog -> Save. */
@@ -224,6 +227,7 @@ describe('during a workout', () => {
     renderApp('/', lighter);
     await startAndTick(user);
     await screen.findByText('1/1 sets done');
+    await settle();
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument();
     cleanup();
 
@@ -232,6 +236,7 @@ describe('during a workout', () => {
     renderApp('/', first);
     await startAndTick(user);
     await screen.findByText('1/1 sets done');
+    await settle();
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument(); // the first record beats nothing
   });
 
@@ -248,6 +253,7 @@ describe('during a workout', () => {
 
     await user.click(screen.getByRole('button', { name: 'Set 1 done' })); // un-tick
     await screen.findByText('0/1 sets done');
+    await settle();
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument();
   });
 

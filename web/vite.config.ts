@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
-    test: { environment: 'node' },
+    // The screen tests drive a real IndexedDB; build servers are slower than a laptop, so allow for it.
+    test: { environment: 'node', testTimeout: 30_000, hookTimeout: 30_000 },
   };
 });
