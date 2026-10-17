@@ -3,13 +3,17 @@ package com.nickghignatti.tracker.ui.calories
 import com.nickghignatti.tracker.MainDispatcherRule
 import com.nickghignatti.tracker.domain.fake.FakeDietPlanRepository
 import com.nickghignatti.tracker.domain.fake.FakeFoodLogRepository
+import com.nickghignatti.tracker.domain.fake.FakeProfileRepository
+import com.nickghignatti.tracker.domain.fake.FakeWeightRepository
 import com.nickghignatti.tracker.domain.fake.ImmediateTransactionRunner
 import com.nickghignatti.tracker.domain.fake.basicFood
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.Portion
+import com.nickghignatti.tracker.domain.model.Profile
 import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.domain.usecase.LogPlannedMealUseCase
 import com.nickghignatti.tracker.domain.usecase.ObserveCalorieDayUseCase
+import com.nickghignatti.tracker.domain.usecase.ObserveDailyTargetsUseCase
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -32,6 +36,8 @@ class CaloriesViewModelTest {
     private val clock = Clock.fixed(today.atStartOfDay().toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
     private val foodLog = FakeFoodLogRepository()
     private val dietPlans = FakeDietPlanRepository()
+    private val profiles = FakeProfileRepository()
+    private val weights = FakeWeightRepository()
     private val oats = basicFood("1", "Avena", kcal = 370.0)
     // Created lazily so viewModelScope binds to the dispatcher installed by the rule.
     private val viewModel by lazy {
@@ -39,6 +45,7 @@ class CaloriesViewModelTest {
             clock = clock,
             observeCalorieDay = ObserveCalorieDayUseCase(foodLog, dietPlans),
             defaultMealNames = { listOf("Colazione", "Pranzo", "Cena") },
+            observeDailyTargets = ObserveDailyTargetsUseCase(profiles, weights),
             foodLog = foodLog,
             logPlannedMeal = LogPlannedMealUseCase(foodLog, ImmediateTransactionRunner()),
         )
@@ -51,6 +58,14 @@ class CaloriesViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(today, state.date)
         assertEquals(listOf("Colazione", "Pranzo", "Cena"), state.day.meals.map { it.name })
+    }
+
+    @Test
+    fun `the daily goal comes from the profile`() = runTest {
+        profiles.saveProfile(Profile(customKcal = 2_000.0))
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+
+        assertEquals(2_000.0, viewModel.uiState.value.targets!!.nutrients.kcal, 0.0)
     }
 
     @Test

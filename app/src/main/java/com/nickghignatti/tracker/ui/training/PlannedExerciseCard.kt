@@ -3,13 +3,13 @@ package com.nickghignatti.tracker.ui.training
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,13 +28,16 @@ import com.nickghignatti.tracker.domain.model.PlannedExercise
 import com.nickghignatti.tracker.domain.model.PlannedSet
 import com.nickghignatti.tracker.domain.model.SetPlan
 import com.nickghignatti.tracker.ui.components.CancelButton
+import com.nickghignatti.tracker.ui.components.Hairline
 import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.NumberField
 import com.nickghignatti.tracker.ui.components.OverflowMenu
+import com.nickghignatti.tracker.ui.components.TrackerCard
 import com.nickghignatti.tracker.ui.exercises.HowToButton
 import com.nickghignatti.tracker.ui.format.formatWeight
 import com.nickghignatti.tracker.ui.format.parseWeight
 import com.nickghignatti.tracker.ui.format.setLabel
+import com.nickghignatti.tracker.ui.theme.Tracker
 import com.nickghignatti.tracker.ui.theme.TrackerTheme
 
 @Composable
@@ -45,53 +48,48 @@ internal fun PlannedExerciseCard(
     modifier: Modifier = Modifier,
     onOpenExercise: (catalogId: String) -> Unit = {},
 ) {
-    ElevatedCard(modifier.fillMaxWidth()) {
-        Column(Modifier.padding(vertical = 8.dp)) {
-            Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(exercise.name, style = MaterialTheme.typography.titleMedium)
-                    if (exercise.notes.isNotBlank()) {
-                        Text(
-                            exercise.notes,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+    TrackerCard(modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = Tracker.dimens.sm)) {
+        Row(Modifier.padding(start = Tracker.dimens.lg, end = Tracker.dimens.xs), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(vertical = Tracker.dimens.xs)) {
+                Text(exercise.name, style = Tracker.type.bodyLg, color = Tracker.colors.ink)
+                if (exercise.notes.isNotBlank()) {
+                    Text(exercise.notes, style = Tracker.type.bodySm, color = Tracker.colors.inkSecondary)
                 }
-                exercise.catalogId?.let { catalogId -> HowToButton(exercise.name) { onOpenExercise(catalogId) } }
-                OverflowMenu(
-                    listOf(
-                        MenuItem(stringResource(R.string.exercise_add_set)) { onAction(TrainingPlanAction.AddSet(exercise)) },
-                        MenuItem(stringResource(R.string.exercise_edit)) { onOpenDialog(TrainingPlanDialog.EditExercise(exercise)) },
-                        MenuItem(stringResource(R.string.action_delete)) { onOpenDialog(TrainingPlanDialog.DeleteExercise(exercise)) },
-                    ),
-                )
             }
-            if (exercise.sets.isEmpty()) {
+            exercise.catalogId?.let { catalogId -> HowToButton(exercise.name) { onOpenExercise(catalogId) } }
+            OverflowMenu(
+                listOf(
+                    MenuItem(stringResource(R.string.exercise_add_set)) { onAction(TrainingPlanAction.AddSet(exercise)) },
+                    MenuItem(stringResource(R.string.exercise_edit)) { onOpenDialog(TrainingPlanDialog.EditExercise(exercise)) },
+                    MenuItem(stringResource(R.string.action_delete)) { onOpenDialog(TrainingPlanDialog.DeleteExercise(exercise)) },
+                ),
+            )
+        }
+        if (exercise.sets.isEmpty()) {
+            Text(
+                stringResource(R.string.exercise_no_sets),
+                style = Tracker.type.bodyMd,
+                color = Tracker.colors.inkSecondary,
+                modifier = Modifier.padding(horizontal = Tracker.dimens.lg, vertical = Tracker.dimens.xs),
+            )
+        }
+        exercise.sets.forEachIndexed { index, set ->
+            Hairline()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = Tracker.dimens.rowMinHeight + Tracker.dimens.sm)
+                    .clickable { onOpenDialog(TrainingPlanDialog.EditSet(set, index + 1)) }
+                    .padding(horizontal = Tracker.dimens.lg),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    stringResource(R.string.exercise_no_sets),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    stringResource(R.string.set_number, index + 1),
+                    style = Tracker.type.labelSm,
+                    color = Tracker.colors.inkSecondary,
+                    modifier = Modifier.width(56.dp),
                 )
-            }
-            exercise.sets.forEachIndexed { index, set ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .clickable { onOpenDialog(TrainingPlanDialog.EditSet(set, index + 1)) }
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        stringResource(R.string.set_number, index + 1),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.width(56.dp),
-                    )
-                    Text(setLabel(set.reps, set.weight), style = MaterialTheme.typography.bodyLarge)
-                }
+                Text(setLabel(set.reps, set.weight), style = Tracker.type.bodyMd, color = Tracker.colors.ink)
             }
         }
     }

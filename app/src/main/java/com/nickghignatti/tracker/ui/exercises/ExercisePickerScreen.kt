@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,7 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +36,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.FilterPill
+import com.nickghignatti.tracker.ui.components.TrackerTopBar
+import com.nickghignatti.tracker.ui.components.TrackerBackButton
 import com.nickghignatti.tracker.domain.model.Equipment
 import com.nickghignatti.tracker.domain.model.ExerciseInfo
 import com.nickghignatti.tracker.domain.model.Muscle
@@ -73,14 +74,7 @@ internal fun ExercisePickerScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.dialog_add_exercise_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.action_back))
-                    }
-                },
-            )
+            TrackerTopBar(title = stringResource(R.string.dialog_add_exercise_title), navigation = { TrackerBackButton(onBack) },)
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
@@ -149,19 +143,19 @@ internal fun ExercisePickerScreen(
 }
 
 @Composable
-private fun <T> ChipRow(values: List<T>, selected: T?, label: @Composable (T) -> String, onToggle: (T) -> Unit) {
+internal fun <T> ChipRow(values: List<T>, selected: T?, label: @Composable (T) -> String, onToggle: (T) -> Unit) {
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         values.forEach { value ->
-            FilterChip(selected = value == selected, onClick = { onToggle(value) }, label = { Text(label(value)) })
+            FilterPill(text = label(value), selected = value == selected, onClick = { onToggle(value) })
         }
     }
 }
 
 @Composable
-private fun ExerciseRow(exercise: ExerciseInfo, onClick: () -> Unit, onInfo: () -> Unit) {
+internal fun ExerciseRow(exercise: ExerciseInfo, onClick: () -> Unit, onInfo: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -1,12 +1,15 @@
 package com.nickghignatti.tracker.ui.calories
 
 import com.nickghignatti.tracker.domain.model.CalorieDay
+import com.nickghignatti.tracker.domain.model.DailyTargets
 import com.nickghignatti.tracker.domain.model.Meal
 import java.time.LocalDate
 
 data class CaloriesUiState(
     val day: CalorieDay,
     val today: LocalDate,
+    /** The profile's daily goal; null until the profile has enough data. */
+    val targets: DailyTargets? = null,
     val isLoading: Boolean = true,
 ) {
     val date: LocalDate get() = day.date

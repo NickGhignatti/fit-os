@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.FilterPill
 import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.ui.components.CancelButton
@@ -49,7 +49,7 @@ internal fun MealDialog(existing: Meal?, onSave: (name: String, time: String) ->
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         MEAL_SUGGESTIONS.forEach { suggestionRes ->
                             val suggestion = stringResource(suggestionRes)
-                            AssistChip(onClick = { name = suggestion }, label = { Text(suggestion) })
+                            FilterPill(suggestion, selected = name == suggestion, onClick = { name = suggestion })
                         }
                     }
                 }

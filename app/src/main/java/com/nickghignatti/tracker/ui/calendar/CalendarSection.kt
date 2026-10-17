@@ -1,7 +1,6 @@
 package com.nickghignatti.tracker.ui.calendar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,13 +9,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,11 +28,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.TrackerCard
 import com.nickghignatti.tracker.ui.format.displayName
+import com.nickghignatti.tracker.ui.theme.Tracker
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
@@ -50,14 +50,14 @@ fun CalendarSection(
     val locale = Locale.getDefault()
     val firstDayOfWeek = remember(locale) { WeekFields.of(locale).firstDayOfWeek }
 
-    Column(modifier) {
+    TrackerCard(modifier.fillMaxWidth()) {
         MonthHeader(state, onAction)
         Row(Modifier.padding(vertical = 8.dp)) {
             orderedWeek(firstDayOfWeek).forEach { day ->
                 Text(
                     day.displayName(TextStyle.SHORT),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = Tracker.type.labelSm,
+                    color = Tracker.colors.inkSecondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f),
                 )
@@ -99,7 +99,8 @@ private fun MonthHeader(state: CalendarUiState, onAction: (CalendarAction) -> Un
         }
         Text(
             state.month.displayName(),
-            style = MaterialTheme.typography.titleLarge,
+            style = Tracker.type.headlineMd,
+            color = Tracker.colors.ink,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
         )
@@ -122,7 +123,7 @@ private fun DayCell(
 ) {
     Box(modifier.aspectRatio(1f).padding(2.dp)) {
         if (date == null) return@Box
-        val colors = MaterialTheme.colorScheme
+        val colors = Tracker.colors
         val description = when (status) {
             null -> date.dayOfMonth.toString()
             DayStatus.Completed -> stringResource(R.string.calendar_day_completed, date.dayOfMonth)
@@ -132,7 +133,7 @@ private fun DayCell(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(CircleShape)
-                .then(if (isToday) Modifier.border(2.dp, colors.primary, CircleShape) else Modifier)
+                .then(if (isToday) Modifier.background(colors.ink) else Modifier)
                 .clickable(onClick = onClick)
                 .semantics { contentDescription = description },
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -140,16 +141,15 @@ private fun DayCell(
         ) {
             Text(
                 date.dayOfMonth.toString(),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isToday) FontWeight.Bold else null,
-                color = if (isToday) colors.primary else colors.onSurface,
+                style = Tracker.type.bodyMd,
+                color = if (isToday) colors.inkInverse else colors.ink,
             )
             Spacer(Modifier.height(2.dp))
             StatusDot(
                 when (status) {
                     null -> Color.Transparent
-                    DayStatus.Completed -> colors.primary
-                    DayStatus.Planned -> colors.tertiary
+                    DayStatus.Completed -> if (isToday) colors.inkInverse else colors.accent
+                    DayStatus.Planned -> colors.inkTertiary
                 },
             )
         }
@@ -164,8 +164,8 @@ private fun StatusDot(color: Color) {
 @Composable
 private fun Legend(modifier: Modifier = Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        LegendItem(MaterialTheme.colorScheme.tertiary, stringResource(R.string.calendar_legend_planned))
-        LegendItem(MaterialTheme.colorScheme.primary, stringResource(R.string.calendar_legend_completed))
+        LegendItem(Tracker.colors.inkTertiary, stringResource(R.string.calendar_legend_planned))
+        LegendItem(Tracker.colors.accent, stringResource(R.string.calendar_legend_completed))
     }
 }
 
@@ -173,6 +173,6 @@ private fun Legend(modifier: Modifier = Modifier) {
 private fun LegendItem(color: Color, label: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         StatusDot(color)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, style = Tracker.type.bodySm, color = Tracker.colors.inkSecondary)
     }
 }

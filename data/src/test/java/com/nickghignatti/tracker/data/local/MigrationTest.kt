@@ -6,11 +6,14 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.nickghignatti.tracker.data.repository.RoomDietPlanRepository
 import com.nickghignatti.tracker.data.repository.RoomFoodLogRepository
+import com.nickghignatti.tracker.data.repository.RoomProfileRepository
+import com.nickghignatti.tracker.data.repository.RoomWeightRepository
 import com.nickghignatti.tracker.data.repository.RoomSavedProductRepository
 import com.nickghignatti.tracker.data.repository.RoomTrainingPlanRepository
 import com.nickghignatti.tracker.data.repository.RoomWorkoutRepository
 import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.PlanDay
+import com.nickghignatti.tracker.domain.model.Profile
 import com.nickghignatti.tracker.domain.model.PlannedExercise
 import com.nickghignatti.tracker.domain.model.PlannedSet
 import com.nickghignatti.tracker.domain.model.Recurrence
@@ -121,6 +124,17 @@ class MigrationTest {
         val exercise = RoomWorkoutRepository(openMigrated()).getWorkout(1)!!.exercises.single()
         assertEquals("Squat", exercise.name)
         assertNull(exercise.catalogId)
+    }
+
+    @Test
+    fun `5 to 6 starts with an empty profile and weight log`() = runTest {
+        helper.createDatabase(DB_NAME, 5).close()
+
+        helper.runMigrationsAndValidate(DB_NAME, 6, true, Migration5To6).close()
+
+        val db = openMigrated()
+        assertEquals(Profile(), RoomProfileRepository(db).observeProfile().first())
+        assertTrue(RoomWeightRepository(db).observeEntries().first().isEmpty())
     }
 
     private fun openMigrated(): AppDatabase =

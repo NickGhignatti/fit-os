@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -18,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.FilterPill
 import com.nickghignatti.tracker.domain.model.FoodItem
 import com.nickghignatti.tracker.domain.model.Nutrients
 import com.nickghignatti.tracker.domain.model.Portion
@@ -57,11 +57,12 @@ fun AmountDialog(
                     decimal = true, isError = gramsValue == null,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(onClick = { grams = formatWeight(DEFAULT_GRAMS) }, label = { Text(stringResource(R.string.amount_100g)) })
+                    FilterPill(stringResource(R.string.amount_100g), selected = false, onClick = { grams = formatWeight(DEFAULT_GRAMS) })
                     food.servingGrams?.let { serving ->
-                        AssistChip(
+                        FilterPill(
+                            stringResource(R.string.amount_serving, formatWeight(serving)),
+                            selected = false,
                             onClick = { grams = formatWeight(serving) },
-                            label = { Text(stringResource(R.string.amount_serving, formatWeight(serving))) },
                         )
                     }
                 }

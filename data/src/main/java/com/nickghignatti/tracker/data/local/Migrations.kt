@@ -3,7 +3,7 @@ package com.nickghignatti.tracker.data.local
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-internal val ALL_MIGRATIONS = arrayOf<Migration>(Migration1To2, Migration2To3, Migration3To4, Migration4To5)
+internal val ALL_MIGRATIONS = arrayOf<Migration>(Migration1To2, Migration2To3, Migration3To4, Migration4To5, Migration5To6)
 
 /**
  * Version 2 replaces templates and the single weekly meal plan with training and diet plans:
@@ -142,5 +142,21 @@ internal object Migration4To5 : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `exercises` ADD COLUMN `catalogId` TEXT")
         db.execSQL("ALTER TABLE `plan_exercises` ADD COLUMN `catalogId` TEXT")
+    }
+}
+
+/** Version 6 adds the profile and the weight log. */
+internal object Migration5To6 : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `profile` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `sex` TEXT, " +
+                "`birthDate` INTEGER, `heightCm` REAL, `activity` TEXT NOT NULL, `pace` TEXT NOT NULL, " +
+                "`customKcal` REAL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `weight_entries` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`date` INTEGER NOT NULL, `kg` REAL NOT NULL)",
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_weight_entries_date` ON `weight_entries` (`date`)")
     }
 }

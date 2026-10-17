@@ -5,15 +5,10 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -26,6 +21,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.BottomBarItem
+import com.nickghignatti.tracker.ui.components.TrackerBottomBar
 import com.nickghignatti.tracker.ui.calories.CaloriesScreen
 import com.nickghignatti.tracker.ui.day.DayScreen
 import com.nickghignatti.tracker.ui.day.DayViewModel
@@ -40,6 +37,7 @@ import com.nickghignatti.tracker.ui.exercises.ExerciseTarget
 import com.nickghignatti.tracker.ui.food.FoodSearchScreen
 import com.nickghignatti.tracker.ui.food.FoodSearchViewModel
 import com.nickghignatti.tracker.ui.food.FoodTarget
+import com.nickghignatti.tracker.ui.profile.ProfileEditScreen
 import com.nickghignatti.tracker.ui.profile.ProfileScreen
 import com.nickghignatti.tracker.ui.today.TodayScreen
 import com.nickghignatti.tracker.ui.training.TrainingPlanScreen
@@ -47,16 +45,16 @@ import com.nickghignatti.tracker.ui.training.TrainingPlanViewModel
 import com.nickghignatti.tracker.ui.training.TrainingPlansScreen
 import java.time.LocalDate
 
-/** The bottom bar, left to right, with Home in the middle. */
+/** The bottom bar, left to right. */
 private enum class TopLevelDestination(
     val route: Any,
     @param:StringRes val label: Int,
     @param:DrawableRes val icon: Int,
 ) {
+    Home(TodayRoute, R.string.nav_home, R.drawable.ic_today),
     Training(TrainingRoute, R.string.nav_training, R.drawable.ic_fitness),
     Diet(DietRoute, R.string.nav_diet, R.drawable.ic_restaurant),
-    Home(TodayRoute, R.string.nav_home, R.drawable.ic_home),
-    Calories(CaloriesRoute, R.string.nav_calories, R.drawable.ic_calories),
+    Calories(CaloriesRoute, R.string.nav_calories, R.drawable.ic_tracker),
     Profile(ProfileRoute, R.string.nav_profile, R.drawable.ic_person),
 }
 
@@ -89,16 +87,14 @@ fun TrackerNavHost() {
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
-                    TopLevelDestination.entries.forEach { item ->
-                        NavigationBarItem(
-                            selected = destination?.hierarchy?.any { it.hasRoute(item.route::class) } == true,
-                            onClick = { nav.openTopLevel(item) },
-                            icon = { Icon(painterResource(item.icon), contentDescription = null) },
-                            label = { Text(stringResource(item.label)) },
-                        )
-                    }
-                }
+                val items = TopLevelDestination.entries
+                TrackerBottomBar(
+                    items = items.map { BottomBarItem(stringResource(it.label), it.icon) },
+                    selectedIndex = items.indexOfFirst { item ->
+                        destination?.hierarchy?.any { it.hasRoute(item.route::class) } == true
+                    },
+                    onSelect = { nav.openTopLevel(items[it]) },
+                )
             }
         },
     ) { padding ->
@@ -107,7 +103,13 @@ fun TrackerNavHost() {
             startDestination = TodayRoute,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
-            composable<TrainingRoute> { TrainingPlansScreen(onOpenPlan = { nav.navigate(TrainingPlanRoute(it)) }) }
+            composable<TrainingRoute> {
+                TrainingPlansScreen(
+                    onOpenPlan = { nav.navigate(TrainingPlanRoute(it)) },
+                    onOpenDay = nav::openDay,
+                    onOpenExercise = { nav.navigate(ExerciseDetailRoute(it)) },
+                )
+            }
             composable<TrainingPlanRoute> { entry ->
                 val planId = entry.toRoute<TrainingPlanRoute>().planId
                 TrainingPlanScreen(
@@ -131,6 +133,8 @@ fun TrackerNavHost() {
                     onOpenDay = nav::openDay,
                     onOpenTraining = { nav.openTopLevel(TopLevelDestination.Training) },
                     onOpenDiet = { nav.openTopLevel(TopLevelDestination.Diet) },
+                    onOpenCalories = { nav.openTopLevel(TopLevelDestination.Calories) },
+                    onOpenProfile = { nav.openTopLevel(TopLevelDestination.Profile) },
                 )
             }
             composable<WorkoutExercisePickerRoute> { entry ->
@@ -156,10 +160,14 @@ fun TrackerNavHost() {
                     viewModel = hiltViewModel<ExerciseDetailViewModel, ExerciseDetailViewModel.Factory> { it.create(id) },
                 )
             }
-            composable<CaloriesRoute> { CaloriesScreen(onAddFood = { date, meal -> nav.navigate(LogFoodRoute(date, meal)) }) }
+            composable<CaloriesRoute> { CaloriesScreen(onAddFood = { date, meal, scan -> nav.navigate(LogFoodRoute(date, meal, scan)) }) }
             composable<LogFoodRoute> { entry ->
                 val route = entry.toRoute<LogFoodRoute>()
-                FoodSearchScreen(onDone = { nav.popBackStack() }, viewModel = foodSearchViewModel(FoodTarget.Log(route.date, route.meal)))
+                FoodSearchScreen(
+                    onDone = { nav.popBackStack() },
+                    viewModel = foodSearchViewModel(FoodTarget.Log(route.date, route.meal)),
+                    startScanner = route.scan,
+                )
             }
             composable<DietFoodRoute> { entry ->
                 val route = entry.toRoute<DietFoodRoute>()
@@ -168,7 +176,10 @@ fun TrackerNavHost() {
                     viewModel = foodSearchViewModel(FoodTarget.DietMeal(route.mealId, route.mealName)),
                 )
             }
-            composable<ProfileRoute> { ProfileScreen(onOpenDay = nav::openDay) }
+            composable<ProfileRoute> {
+                ProfileScreen(onOpenDay = nav::openDay, onEditProfile = { nav.navigate(ProfileEditRoute) })
+            }
+            composable<ProfileEditRoute> { ProfileEditScreen(onDone = { nav.popBackStack() }) }
             composable<DayRoute> { entry ->
                 val date = entry.toRoute<DayRoute>().date
                 DayScreen(

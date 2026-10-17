@@ -20,7 +20,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -28,7 +27,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,12 +45,17 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.SectionLabel
+import com.nickghignatti.tracker.ui.theme.Tracker
+import com.nickghignatti.tracker.ui.components.ProgressTrack
+import com.nickghignatti.tracker.ui.components.TrackerTopBar
+import com.nickghignatti.tracker.ui.components.TrackerBackButton
 import com.nickghignatti.tracker.domain.model.FoodItem
 import com.nickghignatti.tracker.ui.diet.FoodDialog
 import kotlinx.coroutines.launch
 
 @Composable
-fun FoodSearchScreen(onDone: () -> Unit, viewModel: FoodSearchViewModel) {
+fun FoodSearchScreen(onDone: () -> Unit, viewModel: FoodSearchViewModel, startScanner: Boolean = false) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val resources = LocalResources.current
@@ -69,7 +72,7 @@ fun FoodSearchScreen(onDone: () -> Unit, viewModel: FoodSearchViewModel) {
         }
     }
 
-    FoodSearchScreen(state, viewModel::onAction, onBack = onDone, snackbar = snackbar)
+    FoodSearchScreen(state, viewModel::onAction, onBack = onDone, snackbar = snackbar, startScanner = startScanner)
 }
 
 private sealed interface FoodSearchDialog {
@@ -83,6 +86,7 @@ internal fun FoodSearchScreen(
     onAction: (FoodSearchAction) -> Unit,
     onBack: () -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    startScanner: Boolean = false,
 ) {
     var dialog by remember { mutableStateOf<FoodSearchDialog?>(null) }
     val scope = rememberCoroutineScope()
@@ -92,17 +96,13 @@ internal fun FoodSearchScreen(
         onUnavailable = { scope.launch { snackbar.showSnackbar(resources.getString(R.string.food_scanner_unavailable)) } },
     )
     val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) { if (startScanner) scan() else focus.requestFocus() }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.food_search_title, state.target.mealName)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.action_back))
-                    }
-                },
+            TrackerTopBar(
+                title = stringResource(R.string.food_search_title, state.target.mealName),
+                navigation = { TrackerBackButton(onBack) },
                 actions = {
                     IconButton(onClick = scan) {
                         Icon(painterResource(R.drawable.ic_barcode), stringResource(R.string.food_scan_barcode))
@@ -122,7 +122,7 @@ internal fun FoodSearchScreen(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).focusRequester(focus),
             )
-            if (state.isLookingUpBarcode) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
+            if (state.isLookingUpBarcode) ProgressTrack(0.35f, Modifier.padding(horizontal = Tracker.dimens.pageMargin, vertical = Tracker.dimens.sm))
             LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                 if (state.query.isBlank()) suggestions(state, onAction) else results(state, onAction)
                 item {
@@ -246,7 +246,7 @@ private fun FoodRow(food: FoodItem, isFavorite: Boolean, onClick: () -> Unit, on
             Icon(
                 painterResource(if (isFavorite) R.drawable.ic_star else R.drawable.ic_star_border),
                 contentDescription = stringResource(if (isFavorite) R.string.food_unfavorite else R.string.food_favorite),
-                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (isFavorite) Tracker.colors.accent else Tracker.colors.inkTertiary,
             )
         }
     }
@@ -265,11 +265,9 @@ private fun ExtraActions(state: FoodSearchUiState, onCreateCustom: () -> Unit, o
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(
+    SectionLabel(
         text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 4.dp),
+        Modifier.padding(start = Tracker.dimens.pageMargin, top = Tracker.dimens.lg, end = Tracker.dimens.pageMargin, bottom = Tracker.dimens.xs),
     )
 }
 

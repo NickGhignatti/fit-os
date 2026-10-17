@@ -1,6 +1,13 @@
 package com.nickghignatti.tracker.ui.plans
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,10 +17,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,7 +37,10 @@ import com.nickghignatti.tracker.domain.model.Recurrence
 import com.nickghignatti.tracker.ui.calendar.orderedWeek
 import com.nickghignatti.tracker.ui.components.CancelButton
 import com.nickghignatti.tracker.ui.components.SentenceTextField
+import com.nickghignatti.tracker.ui.components.TrackerChip
 import com.nickghignatti.tracker.ui.format.displayName
+import com.nickghignatti.tracker.ui.theme.ChipKind
+import com.nickghignatti.tracker.ui.theme.Tracker
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
@@ -58,7 +65,7 @@ fun rememberLocalWeek(): List<DayOfWeek> {
     return remember(locale) { orderedWeek(WeekFields.of(locale).firstDayOfWeek) }
 }
 
-/** Weekday tabs for editing a weekly plan one day at a time; today is marked. */
+/** Day strip for editing a weekly plan one day at a time; the selected day is a raised cell, today is dotted. */
 @Composable
 fun WeekdayTabs(
     selected: DayOfWeek,
@@ -67,28 +74,57 @@ fun WeekdayTabs(
     modifier: Modifier = Modifier,
 ) {
     val week = rememberLocalWeek()
-    PrimaryScrollableTabRow(selectedTabIndex = week.indexOf(selected), edgePadding = 8.dp, modifier = modifier) {
+    Row(
+        modifier = modifier
+            .padding(horizontal = Tracker.dimens.pageMargin, vertical = Tracker.dimens.md)
+            .fillMaxWidth()
+            .clip(Tracker.dimens.control)
+            .background(Tracker.colors.surfaceMuted)
+            .border(Tracker.dimens.borderWidth, Tracker.colors.border, Tracker.dimens.control)
+            .padding(Tracker.dimens.xs)
+            .selectableGroup(),
+    ) {
         week.forEach { day ->
-            val label = day.displayName(TextStyle.SHORT)
-            Tab(
-                selected = day == selected,
-                onClick = { onSelect(day) },
-                text = { Text(if (day == today) stringResource(R.string.today_tab_marker, label) else label) },
-            )
+            val isSelected = day == selected
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = Tracker.dimens.buttonHeight)
+                    .clip(Tracker.dimens.small)
+                    .then(
+                        if (isSelected) {
+                            Modifier
+                                .background(Tracker.colors.surface)
+                                .border(Tracker.dimens.borderWidth, Tracker.colors.border, Tracker.dimens.small)
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(day) }),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    day.displayName(TextStyle.SHORT),
+                    style = Tracker.type.labelMd,
+                    color = if (isSelected) Tracker.colors.ink else Tracker.colors.inkSecondary,
+                    maxLines = 1,
+                )
+                Box(
+                    Modifier
+                        .padding(top = Tracker.dimens.xs)
+                        .size(Tracker.dimens.xs)
+                        .clip(CircleShape)
+                        .background(if (day == today) Tracker.colors.accent else Color.Transparent),
+                )
+            }
         }
     }
 }
 
 @Composable
 internal fun PlanLabel(text: String, highlighted: Boolean = false) {
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = if (highlighted) colors.primaryContainer else colors.surfaceVariant,
-        contentColor = if (highlighted) colors.onPrimaryContainer else colors.onSurfaceVariant,
-    ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
-    }
+    TrackerChip(text, kind = if (highlighted) ChipKind.Accent else ChipKind.Neutral)
 }
 
 @Composable

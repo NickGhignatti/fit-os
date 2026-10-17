@@ -6,9 +6,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.nickghignatti.tracker.domain.model.ActivityLevel
 import com.nickghignatti.tracker.domain.model.FoodId
+import com.nickghignatti.tracker.domain.model.GoalPace
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.Recurrence
+import com.nickghignatti.tracker.domain.model.Sex
 import java.time.LocalDate
 
 // `position` columns keep the user's ordering; mappers sort by them.
@@ -277,4 +280,30 @@ internal data class FavoriteFoodEntity(
 internal data class RecentFoodRow(
     @Embedded val food: FoodColumns,
     val lastId: Long,
+)
+
+// ---- Profile ----------------------------------------------------------------
+
+/** A single row: the app has one user. */
+@Entity(tableName = "profile")
+internal data class ProfileEntity(
+    @PrimaryKey val id: Int = SINGLE_ROW_ID,
+    val name: String,
+    val sex: Sex?,
+    val birthDate: LocalDate?,
+    val heightCm: Double?,
+    val activity: ActivityLevel,
+    val pace: GoalPace,
+    val customKcal: Double?,
+) {
+    companion object {
+        const val SINGLE_ROW_ID = 1
+    }
+}
+
+@Entity(tableName = "weight_entries", indices = [Index(value = ["date"], unique = true)])
+internal data class WeightEntryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val date: LocalDate,
+    val kg: Double,
 )

@@ -2,12 +2,18 @@ package com.nickghignatti.tracker.ui.today
 
 import com.nickghignatti.tracker.MainDispatcherRule
 import com.nickghignatti.tracker.domain.fake.FakeDietPlanRepository
+import com.nickghignatti.tracker.domain.fake.FakeFoodLogRepository
+import com.nickghignatti.tracker.domain.fake.FakeProfileRepository
 import com.nickghignatti.tracker.domain.fake.FakeTrainingPlanRepository
+import com.nickghignatti.tracker.domain.fake.FakeWeightRepository
 import com.nickghignatti.tracker.domain.fake.FakeWorkoutRepository
 import com.nickghignatti.tracker.domain.fake.ImmediateTransactionRunner
 import com.nickghignatti.tracker.domain.model.ExercisePlan
 import com.nickghignatti.tracker.domain.model.PlanDay
 import com.nickghignatti.tracker.domain.model.Recurrence
+import com.nickghignatti.tracker.domain.usecase.LogPlannedMealUseCase
+import com.nickghignatti.tracker.domain.usecase.ObserveCalorieDayUseCase
+import com.nickghignatti.tracker.domain.usecase.ObserveDailyTargetsUseCase
 import com.nickghignatti.tracker.domain.usecase.ObserveDayAgendaUseCase
 import com.nickghignatti.tracker.domain.usecase.StartPlannedSessionUseCase
 import java.time.Clock
@@ -31,12 +37,18 @@ class TodayViewModelTest {
     private val clock = Clock.fixed(today.atStartOfDay().toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
     private val workouts = FakeWorkoutRepository()
     private val trainingPlans = FakeTrainingPlanRepository()
+    private val dietPlans = FakeDietPlanRepository()
+    private val foodLog = FakeFoodLogRepository()
     // Created lazily so viewModelScope binds to the dispatcher installed by the rule.
     private val viewModel by lazy {
         TodayViewModel(
             clock,
-            ObserveDayAgendaUseCase(workouts, trainingPlans, FakeDietPlanRepository()),
+            ObserveDayAgendaUseCase(workouts, trainingPlans, dietPlans),
+            ObserveCalorieDayUseCase(foodLog, dietPlans),
+            ObserveDailyTargetsUseCase(FakeProfileRepository(), FakeWeightRepository()),
+            { listOf("Breakfast", "Lunch") },
             StartPlannedSessionUseCase(workouts, trainingPlans, ImmediateTransactionRunner()),
+            LogPlannedMealUseCase(foodLog, ImmediateTransactionRunner()),
         )
     }
 

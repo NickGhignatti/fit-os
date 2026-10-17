@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +29,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.theme.Tracker
+import com.nickghignatti.tracker.ui.components.TrackerFab
+import com.nickghignatti.tracker.ui.components.TrackerTopBar
+import com.nickghignatti.tracker.ui.components.TrackerBackButton
 import com.nickghignatti.tracker.domain.model.Exercise
 import com.nickghignatti.tracker.domain.model.ExerciseSet
 import com.nickghignatti.tracker.domain.model.Workout
@@ -92,30 +94,14 @@ internal fun DayScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(if (state.isToday) stringResource(R.string.day_today) else state.date.dayOfWeek.displayName())
-                        Text(
-                            state.date.formatted(FormatStyle.LONG),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.action_back))
-                    }
-                },
+            TrackerTopBar(
+                title = if (state.isToday) stringResource(R.string.day_today) else state.date.dayOfWeek.displayName(),
+                subtitle = state.date.formatted(FormatStyle.LONG),
+                navigation = { TrackerBackButton(onBack) },
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { dialog = DayDialog.NewWorkout },
-                icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
-                text = { Text(stringResource(R.string.day_add_workout)) },
-            )
+            TrackerFab(stringResource(R.string.day_add_workout), onClick = { dialog = DayDialog.NewWorkout })
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -125,8 +111,8 @@ internal fun DayScreen(
                 EmptyState(stringResource(R.string.day_empty), Modifier.padding(padding))
             else -> LazyColumn(
                 modifier = Modifier.padding(padding),
-                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = Tracker.dimens.pageMargin, top = Tracker.dimens.md, end = Tracker.dimens.pageMargin, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(Tracker.dimens.md),
             ) {
                 state.pendingSession?.let { session ->
                     item(key = "pending") {

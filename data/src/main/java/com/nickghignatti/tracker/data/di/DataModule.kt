@@ -9,6 +9,8 @@ import com.nickghignatti.tracker.data.repository.RoomCustomFoodRepository
 import com.nickghignatti.tracker.data.repository.RoomDietPlanRepository
 import com.nickghignatti.tracker.data.repository.RoomFavoriteFoodRepository
 import com.nickghignatti.tracker.data.repository.RoomFoodLogRepository
+import com.nickghignatti.tracker.data.repository.RoomProfileRepository
+import com.nickghignatti.tracker.data.repository.RoomWeightRepository
 import com.nickghignatti.tracker.data.repository.RoomSavedProductRepository
 import com.nickghignatti.tracker.data.repository.RoomTrainingPlanRepository
 import com.nickghignatti.tracker.data.repository.RoomTransactionRunner
@@ -20,9 +22,11 @@ import com.nickghignatti.tracker.domain.repository.ExerciseCatalogRepository
 import com.nickghignatti.tracker.domain.repository.FavoriteFoodRepository
 import com.nickghignatti.tracker.domain.repository.FoodLogRepository
 import com.nickghignatti.tracker.domain.repository.ProductRepository
+import com.nickghignatti.tracker.domain.repository.ProfileRepository
 import com.nickghignatti.tracker.domain.repository.SavedProductRepository
 import com.nickghignatti.tracker.domain.repository.TrainingPlanRepository
 import com.nickghignatti.tracker.domain.repository.TransactionRunner
+import com.nickghignatti.tracker.domain.repository.WeightRepository
 import com.nickghignatti.tracker.domain.repository.WorkoutRepository
 import dagger.Binds
 import dagger.Module
@@ -65,6 +69,12 @@ abstract class DataModule {
 
     @Binds
     internal abstract fun bindExerciseCatalogRepository(impl: FreeExerciseDbRepository): ExerciseCatalogRepository
+
+    @Binds
+    internal abstract fun bindProfileRepository(impl: RoomProfileRepository): ProfileRepository
+
+    @Binds
+    internal abstract fun bindWeightRepository(impl: RoomWeightRepository): WeightRepository
 
     @Binds
     internal abstract fun bindTransactionRunner(impl: RoomTransactionRunner): TransactionRunner

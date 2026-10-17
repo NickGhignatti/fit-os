@@ -265,3 +265,25 @@ internal interface SavedProductDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(product: SavedProductEntity)
 }
+
+@Dao
+internal interface ProfileDao {
+    @Query("SELECT * FROM profile WHERE id = ${ProfileEntity.SINGLE_ROW_ID}")
+    fun observe(): Flow<ProfileEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(profile: ProfileEntity)
+}
+
+@Dao
+internal interface WeightDao {
+    @Query("SELECT * FROM weight_entries ORDER BY date")
+    fun observeAll(): Flow<List<WeightEntryEntity>>
+
+    /** The unique date makes a second weigh-in on the same day replace the first. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(entry: WeightEntryEntity)
+
+    @Query("DELETE FROM weight_entries WHERE id = :id")
+    suspend fun delete(id: Long)
+}

@@ -25,8 +25,8 @@ data object CaloriesRoute
 
 /** Picking a food to log as eaten, on a day and under a meal. */
 @Serializable
-data class LogFoodRoute(val epochDay: Long, val meal: String) {
-    constructor(date: LocalDate, meal: String) : this(date.toEpochDay(), meal)
+data class LogFoodRoute(val epochDay: Long, val meal: String, val scan: Boolean = false) {
+    constructor(date: LocalDate, meal: String, scan: Boolean = false) : this(date.toEpochDay(), meal, scan)
 
     val date: LocalDate get() = LocalDate.ofEpochDay(epochDay)
 }
@@ -37,6 +37,9 @@ data class DietFoodRoute(val mealId: Long, val mealName: String)
 
 @Serializable
 data object ProfileRoute
+
+@Serializable
+data object ProfileEditRoute
 
 /** Picking a catalogue exercise for a logged workout. */
 @Serializable

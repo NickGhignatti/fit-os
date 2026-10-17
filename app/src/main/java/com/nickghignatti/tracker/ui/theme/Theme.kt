@@ -1,47 +1,59 @@
 package com.nickghignatti.tracker.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF2E7D32),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFB9F0B4),
-    onPrimaryContainer = Color(0xFF002204),
-    secondary = Color(0xFF52634F),
-    tertiary = Color(0xFF38656A),
-)
+private val LocalTrackerColors = staticCompositionLocalOf<TrackerColors> { error("TrackerTheme missing") }
+private val LocalTrackerType = staticCompositionLocalOf<TrackerType> { error("TrackerTheme missing") }
+private val LocalTrackerDimens = staticCompositionLocalOf<TrackerDimens> { error("TrackerTheme missing") }
+private val LocalTrackerStyles = staticCompositionLocalOf<TrackerStyles> { error("TrackerTheme missing") }
 
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFF9ED49A),
-    onPrimary = Color(0xFF00390A),
-    primaryContainer = Color(0xFF1B5E20),
-    onPrimaryContainer = Color(0xFFB9F0B4),
-    secondary = Color(0xFFB9CCB4),
-    tertiary = Color(0xFFA0CFD4),
-)
+/** Entry point for design tokens: `Tracker.colors.accent`, `Tracker.type.metricXl`, `Tracker.dimens.card`. */
+object Tracker {
+    val colors: TrackerColors
+        @Composable @ReadOnlyComposable get() = LocalTrackerColors.current
+    val type: TrackerType
+        @Composable @ReadOnlyComposable get() = LocalTrackerType.current
+    val dimens: TrackerDimens
+        @Composable @ReadOnlyComposable get() = LocalTrackerDimens.current
+    val styles: TrackerStyles
+        @Composable @ReadOnlyComposable get() = LocalTrackerStyles.current
+}
 
-/** Uses the wallpaper-based palette on Android 12+, a green fallback otherwise. */
+/**
+ * Applies the design tokens (colours and sizes from XML, type from [TrackerType]) and mirrors them
+ * into Material so stock components inherit the look. Dynamic colour is intentionally not used:
+ * the palette is part of the design.
+ */
 @Composable
 fun TrackerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    type: TrackerType = TrackerType(),
+    styles: (TrackerColors) -> TrackerStyles = TrackerStyles::defaultFor,
     content: @Composable () -> Unit,
 ) {
-    val colors = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
+    val colors = loadTrackerColors()
+    val dimens = loadTrackerDimens()
+    CompositionLocalProvider(
+        LocalTrackerColors provides colors,
+        LocalTrackerType provides type,
+        LocalTrackerDimens provides dimens,
+        LocalTrackerStyles provides styles(colors),
+    ) {
+        MaterialTheme(
+            colorScheme = colors.toMaterial(),
+            typography = type.toMaterial(),
+            shapes = Shapes(
+                extraSmall = dimens.input,
+                small = dimens.small,
+                medium = dimens.control,
+                large = dimens.card,
+                extraLarge = dimens.card,
+            ),
+            content = content,
+        )
     }
-    MaterialTheme(colorScheme = colors, content = content)
 }

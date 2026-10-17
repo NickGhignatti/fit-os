@@ -21,8 +21,10 @@ import androidx.room.TypeConverters
         CustomFoodEntity::class,
         FavoriteFoodEntity::class,
         SavedProductEntity::class,
+        ProfileEntity::class,
+        WeightEntryEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -34,6 +36,8 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun customFoodDao(): CustomFoodDao
     abstract fun favoriteFoodDao(): FavoriteFoodDao
     abstract fun savedProductDao(): SavedProductDao
+    abstract fun profileDao(): ProfileDao
+    abstract fun weightDao(): WeightDao
 
     companion object {
         private const val NAME = "tracker.db"

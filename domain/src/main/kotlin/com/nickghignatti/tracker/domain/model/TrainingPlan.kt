@@ -15,9 +15,15 @@ data class TrainingPlan(
 
     fun sessionOn(date: LocalDate): List<PlannedExercise> = sessionOn(recurrence.dayOf(date))
 
+    /** The first session from [date] on, [date] included, looking a week ahead; empty if the plan has none. */
+    fun nextSessionFrom(date: LocalDate): List<PlannedExercise> =
+        (0L..DAYS_AHEAD).map { sessionOn(date.plusDays(it)) }.firstOrNull { it.isNotEmpty() }.orEmpty()
+
     /** The days with something to do, in week order. */
     val trainingDays: List<PlanDay> get() = recurrence.days.filter { sessionOn(it).isNotEmpty() }
 }
+
+private const val DAYS_AHEAD = 6L
 
 /** An exercise stored in a plan; unlike [ExercisePlan] it has ids, so it can be edited in place. */
 data class PlannedExercise(

@@ -2,23 +2,16 @@ package com.nickghignatti.tracker.ui.day
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -26,10 +19,17 @@ import com.nickghignatti.tracker.R
 import com.nickghignatti.tracker.domain.model.Exercise
 import com.nickghignatti.tracker.domain.model.ExerciseSet
 import com.nickghignatti.tracker.domain.model.Workout
+import com.nickghignatti.tracker.ui.components.CheckTarget
+import com.nickghignatti.tracker.ui.components.Hairline
 import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.OverflowMenu
+import com.nickghignatti.tracker.ui.components.ProgressTrack
+import com.nickghignatti.tracker.ui.components.TrackerButton
+import com.nickghignatti.tracker.ui.components.TrackerCard
 import com.nickghignatti.tracker.ui.exercises.HowToButton
 import com.nickghignatti.tracker.ui.format.setLabel
+import com.nickghignatti.tracker.ui.theme.ButtonKind
+import com.nickghignatti.tracker.ui.theme.Tracker
 import com.nickghignatti.tracker.ui.theme.TrackerTheme
 import java.time.LocalDate
 
@@ -42,45 +42,44 @@ internal fun WorkoutCard(
     onOpenExercise: (catalogId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ElevatedCard(modifier.fillMaxWidth()) {
-        Column(Modifier.padding(vertical = 12.dp)) {
-            Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(workout.title, style = MaterialTheme.typography.titleLarge)
-                    if (workout.totalSets > 0) {
-                        Text(
-                            stringResource(R.string.workout_sets_done, workout.doneSets, workout.totalSets),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+    TrackerCard(modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = Tracker.dimens.md)) {
+        Row(Modifier.padding(start = Tracker.dimens.lg, end = Tracker.dimens.xs), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(workout.title, style = Tracker.type.headlineMd, color = Tracker.colors.ink)
+                if (workout.totalSets > 0) {
+                    Text(
+                        stringResource(R.string.workout_sets_done, workout.doneSets, workout.totalSets),
+                        style = Tracker.type.tabularCaption,
+                        color = Tracker.colors.inkSecondary,
+                    )
                 }
-                OverflowMenu(
-                    listOf(
-                        MenuItem(stringResource(R.string.action_rename)) { onOpenDialog(DayDialog.RenameWorkout(workout)) },
-                        MenuItem(stringResource(R.string.workout_save_as_plan)) { onOpenDialog(DayDialog.SaveAsPlan(workout)) },
-                        MenuItem(stringResource(R.string.workout_copy_to_day)) { onOpenDialog(DayDialog.CopyWorkout(workout)) },
-                        MenuItem(stringResource(R.string.action_delete)) { onOpenDialog(DayDialog.DeleteWorkout(workout)) },
-                    ),
-                )
             }
-            if (workout.totalSets > 0) {
-                LinearProgressIndicator(
-                    progress = { workout.doneSets.toFloat() / workout.totalSets },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
-            workout.exercises.forEach { exercise ->
-                ExerciseBlock(exercise, onOpenDialog, onAction, onOpenExercise)
-            }
-            TextButton(
+            OverflowMenu(
+                listOf(
+                    MenuItem(stringResource(R.string.action_rename)) { onOpenDialog(DayDialog.RenameWorkout(workout)) },
+                    MenuItem(stringResource(R.string.workout_save_as_plan)) { onOpenDialog(DayDialog.SaveAsPlan(workout)) },
+                    MenuItem(stringResource(R.string.workout_copy_to_day)) { onOpenDialog(DayDialog.CopyWorkout(workout)) },
+                    MenuItem(stringResource(R.string.action_delete)) { onOpenDialog(DayDialog.DeleteWorkout(workout)) },
+                ),
+            )
+        }
+        if (workout.totalSets > 0) {
+            ProgressTrack(
+                fraction = workout.doneSets.toFloat() / workout.totalSets,
+                modifier = Modifier.padding(horizontal = Tracker.dimens.lg, vertical = Tracker.dimens.sm),
+            )
+        }
+        workout.exercises.forEach { exercise ->
+            ExerciseBlock(exercise, onOpenDialog, onAction, onOpenExercise)
+        }
+        Row(Modifier.padding(horizontal = Tracker.dimens.md).padding(top = Tracker.dimens.md)) {
+            TrackerButton(
+                text = stringResource(R.string.workout_add_exercise),
                 onClick = onAddExercise,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            ) {
-                Icon(painterResource(R.drawable.ic_add), contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.workout_add_exercise))
-            }
+                kind = ButtonKind.Secondary,
+                icon = R.drawable.ic_add,
+                compact = true,
+            )
         }
     }
 }
@@ -92,16 +91,13 @@ private fun ExerciseBlock(
     onAction: (DayAction) -> Unit,
     onOpenExercise: (catalogId: String) -> Unit,
 ) {
-    Column(Modifier.padding(top = 8.dp)) {
-        Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(exercise.name, style = MaterialTheme.typography.titleMedium)
+    Column(Modifier.padding(top = Tracker.dimens.sm)) {
+        Hairline()
+        Row(Modifier.padding(start = Tracker.dimens.lg, end = Tracker.dimens.xs), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(vertical = Tracker.dimens.sm)) {
+                Text(exercise.name, style = Tracker.type.bodyLg, color = Tracker.colors.ink)
                 if (exercise.notes.isNotBlank()) {
-                    Text(
-                        exercise.notes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Text(exercise.notes, style = Tracker.type.bodySm, color = Tracker.colors.inkSecondary)
                 }
             }
             exercise.catalogId?.let { catalogId -> HowToButton(exercise.name) { onOpenExercise(catalogId) } }
@@ -116,9 +112,9 @@ private fun ExerciseBlock(
         if (exercise.sets.isEmpty()) {
             Text(
                 stringResource(R.string.exercise_no_sets),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                style = Tracker.type.bodyMd,
+                color = Tracker.colors.inkSecondary,
+                modifier = Modifier.padding(horizontal = Tracker.dimens.lg, vertical = Tracker.dimens.xs),
             )
         }
         exercise.sets.forEachIndexed { index, set ->
@@ -137,28 +133,28 @@ private fun SetRow(number: Int, set: ExerciseSet, onToggle: () -> Unit, onClick:
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
+            .heightIn(min = Tracker.dimens.rowMinHeight + Tracker.dimens.sm)
             .clickable(onClick = onClick)
-            .padding(start = 16.dp, end = 8.dp),
+            .padding(start = Tracker.dimens.lg, end = Tracker.dimens.lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             stringResource(R.string.set_number, number),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = Tracker.type.labelSm,
+            color = Tracker.colors.inkSecondary,
             modifier = Modifier.width(56.dp),
         )
         Column(Modifier.weight(1f)) {
-            Text(setLabel(set.plannedReps, set.plannedWeight), style = MaterialTheme.typography.bodyLarge)
+            Text(setLabel(set.plannedReps, set.plannedWeight), style = Tracker.type.tabularCaption.copy(fontSize = Tracker.type.bodyMd.fontSize), color = Tracker.colors.ink)
             if (set.deviatesFromPlan) {
                 Text(
                     stringResource(R.string.set_did, setLabel(set.actualReps ?: set.plannedReps, set.actualWeight)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    style = Tracker.type.bodySm,
+                    color = Tracker.colors.accent,
                 )
             }
         }
-        Checkbox(checked = set.done, onCheckedChange = { onToggle() })
+        CheckTarget(checked = set.done, onCheckedChange = { onToggle() })
     }
 }
 

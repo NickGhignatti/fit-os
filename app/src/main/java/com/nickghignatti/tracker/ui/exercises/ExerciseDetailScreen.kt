@@ -18,7 +18,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -31,10 +30,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.theme.Tracker
+import com.nickghignatti.tracker.ui.components.TrackerTopBar
+import com.nickghignatti.tracker.ui.components.TrackerBackButton
 import com.nickghignatti.tracker.domain.model.ExerciseInfo
 import com.nickghignatti.tracker.domain.repository.ExerciseCatalogRepository
 import com.nickghignatti.tracker.ui.common.stateInWhileSubscribed
-import com.nickghignatti.tracker.ui.components.SectionHeader
+import com.nickghignatti.tracker.ui.components.SectionLabel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -73,14 +75,7 @@ internal fun ExerciseDetailScreen(state: ExerciseDetailUiState, onBack: () -> Un
     val exercise = state.exercise
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(exercise?.name.orEmpty()) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.action_back))
-                    }
-                },
-            )
+            TrackerTopBar(title = exercise?.name.orEmpty(), navigation = { TrackerBackButton(onBack) },)
         },
     ) { padding ->
         if (exercise == null) {
@@ -98,13 +93,13 @@ internal fun ExerciseDetailScreen(state: ExerciseDetailUiState, onBack: () -> Un
         ) {
             Photos(exercise)
             Facts(exercise)
-            SectionHeader(stringResource(R.string.exercises_instructions), R.drawable.ic_fitness)
+            SectionLabel(stringResource(R.string.exercises_instructions))
             exercise.instructions.forEachIndexed { index, step ->
                 Row {
                     Text(
                         "${index + 1}.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        style = Tracker.type.tabularCaption,
+                        color = Tracker.colors.inkSecondary,
                         modifier = Modifier.width(28.dp),
                     )
                     Text(step, style = MaterialTheme.typography.bodyLarge)

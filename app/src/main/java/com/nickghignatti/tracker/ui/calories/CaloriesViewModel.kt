@@ -6,6 +6,7 @@ import com.nickghignatti.tracker.domain.model.CalorieDay
 import com.nickghignatti.tracker.domain.repository.FoodLogRepository
 import com.nickghignatti.tracker.domain.usecase.LogPlannedMealUseCase
 import com.nickghignatti.tracker.domain.usecase.ObserveCalorieDayUseCase
+import com.nickghignatti.tracker.domain.usecase.ObserveDailyTargetsUseCase
 import com.nickghignatti.tracker.ui.common.stateInWhileSubscribed
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
@@ -15,7 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,6 +27,7 @@ class CaloriesViewModel @Inject constructor(
     clock: Clock,
     observeCalorieDay: ObserveCalorieDayUseCase,
     defaultMealNames: DefaultMealNames,
+    observeDailyTargets: ObserveDailyTargetsUseCase,
     private val foodLog: FoodLogRepository,
     private val logPlannedMeal: LogPlannedMealUseCase,
 ) : ViewModel() {
@@ -33,11 +35,13 @@ class CaloriesViewModel @Inject constructor(
     private val date = MutableStateFlow(today)
     private val defaultMeals = defaultMealNames.get()
 
+    private val targets = observeDailyTargets(today)
+
     val uiState: StateFlow<CaloriesUiState> = date
         .flatMapLatest { shown ->
-            observeCalorieDay(shown, defaultMeals)
-                .map { CaloriesUiState(it, today, isLoading = false) }
-                .onStart { emit(CaloriesUiState(CalorieDay(shown, emptyList()), today)) }
+            combine(observeCalorieDay(shown, defaultMeals), targets) { day, goal ->
+                CaloriesUiState(day, today, goal, isLoading = false)
+            }.onStart { emit(CaloriesUiState(CalorieDay(shown, emptyList()), today)) }
         }
         .stateInWhileSubscribed(this, CaloriesUiState(CalorieDay(today, emptyList()), today))
 

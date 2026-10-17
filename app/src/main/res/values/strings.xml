@@ -2,10 +2,10 @@
     <string name="app_name">Tracker</string>
 
     <!-- Navigation -->
-    <string name="nav_training">Training</string>
-    <string name="nav_diet">Diet</string>
-    <string name="nav_home">Home</string>
-    <string name="nav_calories">Calories</string>
+    <string name="nav_training">Workouts</string>
+    <string name="nav_diet">Food</string>
+    <string name="nav_home">Today</string>
+    <string name="nav_calories">Tracker</string>
     <string name="nav_profile">Profile</string>
 
     <!-- Common -->
@@ -129,7 +129,8 @@
     <string name="dialog_set_delete">Delete set</string>
 
     <!-- Diet -->
-    <string name="diet_title">Diet</string>
+    <string name="diet_title">Food</string>
+    <string name="diet_daily_budget">Daily budget</string>
     <string name="diet_new">New diet</string>
     <string name="diet_default_name">Diet</string>
     <string name="diet_plans_empty">No diets yet.\nTap “New diet” to create a daily or weekly one.</string>
@@ -144,7 +145,12 @@
     <string name="diet_empty">No meals planned for %1$s.\nTap “Add meal” to start.</string>
     <string name="meal_edit">Edit meal</string>
     <string name="meal_delete">Delete meal</string>
-    <string name="meal_add_food">Add food</string>
+    <string name="meal_add_food">Add item</string>
+    <string name="meal_scheduled">Scheduled %1$s</string>
+    <plurals name="meal_items_scheduled">
+        <item quantity="one">%1$d item scheduled</item>
+        <item quantity="other">%1$d items scheduled</item>
+    </plurals>
     <string name="meal_no_foods">No foods listed</string>
     <string name="meal_breakfast">Breakfast</string>
     <string name="meal_snack">Snack</string>
@@ -220,7 +226,23 @@
     <string name="category_cardio">Cardio</string>
 
     <!-- Calories -->
-    <string name="calories_title">Calories</string>
+    <string name="calories_title">Tracker</string>
+    <string name="calories_energy_balance">Daily energy balance</string>
+    <string name="calories_target">Target %1$s</string>
+    <string name="calories_eaten_label">Eaten</string>
+    <string name="calories_remaining">Remaining</string>
+    <string name="calories_over_label">Over</string>
+    <string name="calories_consumed">%1$s%% consumed</string>
+    <string name="calories_scan">Scan</string>
+    <string name="calories_search">Search food</string>
+    <string name="calories_logged_meals">Logged meals</string>
+    <string name="calories_meals_logged">%1$d of %2$d logged</string>
+    <string name="calories_pending">Pending</string>
+    <string name="calories_log_meal">Log %1$s</string>
+    <plurals name="calories_items_logged">
+        <item quantity="one">%1$d item logged</item>
+        <item quantity="other">%1$d items logged</item>
+    </plurals>
     <string name="calories_today">Today</string>
     <string name="calories_yesterday">Yesterday</string>
     <string name="calories_tomorrow">Tomorrow</string>
@@ -230,15 +252,20 @@
     <string name="calories_of_planned">of %1$s planned</string>
     <string name="calories_left">%1$d kcal left</string>
     <string name="calories_over">%1$d kcal over the plan</string>
-    <string name="calories_no_plan_hint">With an active diet, its planned calories show up here to compare.</string>
+    <string name="calories_no_goal_hint">Set up your profile to get a daily goal, or plan your diet with foods from the database.</string>
+    <string name="calories_of_goal">of %1$s goal</string>
+    <string name="calories_over_goal">%1$d kcal over the goal</string>
+    <string name="calories_diet_plans">Your diet plans %1$s</string>
     <string name="calories_planned_value">%1$s planned</string>
     <string name="calories_log_as_planned">Log as planned</string>
     <string name="calories_add_food">Add food</string>
     <string name="calories_no_nutrition_data">no nutrition data</string>
+    <string name="unit_kcal">kcal</string>
     <string name="kcal_value">%1$d kcal</string>
     <string name="macros_value">P %1$d g · C %2$d g · F %3$d g</string>
     <string name="portion_value">%1$s g · %2$s</string>
     <string name="per_100g">%1$s per 100 g</string>
+    <string name="grams_label">%1$s g</string>
     <string name="grams_value">%1$d g</string>
     <string name="grams_of_planned">%1$d / %2$d g</string>
     <string name="label_protein">Protein</string>
@@ -278,6 +305,81 @@
 
     <!-- Profile -->
     <string name="profile_title">Profile</string>
-    <string name="profile_coming_soon">Your personal page is coming soon.</string>
     <string name="profile_section_calendar">Calendar</string>
+    <string name="profile_about">About you</string>
+    <string name="profile_about_empty">Tell the app a little about you to get a daily calorie goal.</string>
+    <string name="profile_set_up">Set up profile</string>
+    <string name="profile_age_value">%1$d years</string>
+    <string name="profile_height_value">%1$s cm</string>
+    <string name="profile_daily_goal">Daily goal</string>
+    <string name="profile_goal_missing">To work out your goal the app still needs: %1$s.</string>
+    <string name="profile_goal_computed">From your profile and latest weight (Mifflin–St Jeor). Protein 1.8 g per kg, fat 25%, carbs the rest.</string>
+    <string name="profile_goal_custom">Your own calorie target. Protein, fat and carbs are split from it.</string>
+    <string name="profile_edit_title">Edit profile</string>
+    <string name="profile_name_optional">Name (optional)</string>
+    <string name="profile_sex">Sex</string>
+    <string name="profile_birth_date">Birth date</string>
+    <string name="profile_choose_date">Choose a date</string>
+    <string name="profile_height">Height</string>
+    <string name="profile_height_cm">Height (cm)</string>
+    <string name="profile_activity">Activity</string>
+    <string name="profile_goal">Goal</string>
+    <string name="profile_custom_kcal_title">Your own target</string>
+    <string name="profile_custom_kcal">Daily calories (optional)</string>
+    <string name="profile_custom_kcal_hint">Leave empty to use the goal worked out from your profile, e.g. if a dietitian gave you a number.</string>
+    <string name="sex_male">Male</string>
+    <string name="sex_female">Female</string>
+    <string name="activity_sedentary">Sedentary</string>
+    <string name="activity_sedentary_description">Desk job, little or no exercise</string>
+    <string name="activity_light">Lightly active</string>
+    <string name="activity_light_description">Exercise 1–3 days a week</string>
+    <string name="activity_moderate">Moderately active</string>
+    <string name="activity_moderate_description">Exercise 3–5 days a week</string>
+    <string name="activity_active">Very active</string>
+    <string name="activity_active_description">Hard exercise 6–7 days a week</string>
+    <string name="activity_very_active">Extremely active</string>
+    <string name="activity_very_active_description">Physical job plus hard training</string>
+    <string name="pace_lose_fast">Lose 0.75 kg a week</string>
+    <string name="pace_lose">Lose 0.5 kg a week</string>
+    <string name="pace_lose_slow">Lose 0.25 kg a week</string>
+    <string name="pace_maintain">Keep my weight</string>
+    <string name="pace_gain_slow">Gain 0.25 kg a week</string>
+    <string name="pace_gain">Gain 0.5 kg a week</string>
+    <string name="weight_title">Weight</string>
+    <string name="weight_log">Log weight</string>
+    <string name="weight_empty">No weigh-ins yet. Log your weight to see its trend and get a daily goal.</string>
+    <string name="weight_change_since">%1$s kg since %2$s</string>
+    <string name="weight_dialog_title">Weight</string>
+    <string name="weight_chart_readout">%1$s: %2$s kg</string>
+    <string name="weight_chart_description">Weight trend, from %1$s to %2$s kg over %3$d weigh-ins</string>
+    <string name="kg_value">%1$s kg</string>
+    <string name="today_energy_consumed">Energy consumed</string>
+    <string name="today_of_goal">/ %1$s kcal</string>
+    <plurals name="today_exercise_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <string name="today_sets_done">%1$d of %2$d sets done</string>
+    <string name="today_continue_workout">Continue workout</string>
+    <string name="today_section_nutrition">Nutrition checklist</string>
+    <string name="today_meals_logged">%1$d of %2$d logged</string>
+    <string name="today_section_quick">Quick actions</string>
+    <string name="today_quick_food">+ Food</string>
+    <string name="today_quick_food_hint">Log or quick add</string>
+    <string name="today_quick_weight">+ Weight</string>
+    <string name="today_quick_weight_hint">Morning log</string>
+    <string name="today_log_meal">Log %1$s as planned</string>
+    <string name="workouts_title">Workouts</string>
+    <string name="workouts_tab_plans">My plans</string>
+    <string name="workouts_tab_library">Exercise library</string>
+    <string name="workouts_active_program">Active program</string>
+    <string name="workouts_sessions_completed">%1$d of %2$d sessions completed</string>
+    <string name="workouts_no_active">No active plan. Set one as active to follow it here.</string>
+    <string name="workouts_start_today">Start today\'s session</string>
+    <string name="workouts_saved_plans">Saved plans</string>
+    <string name="workouts_plan_count">%1$d total</string>
+    <string name="workouts_next">Next: %1$s</string>
+    <string name="workouts_start">Start</string>
+    <string name="workouts_open">Open</string>
+    <string name="workouts_open_plan">Open plan</string>
 </resources>

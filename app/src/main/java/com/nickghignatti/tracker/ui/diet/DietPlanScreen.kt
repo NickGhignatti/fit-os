@@ -2,20 +2,31 @@
 
 package com.nickghignatti.tracker.ui.diet
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import com.nickghignatti.tracker.ui.components.SectionLabel
+import com.nickghignatti.tracker.ui.components.TrackerCard
+import com.nickghignatti.tracker.ui.theme.Macro
+import com.nickghignatti.tracker.ui.theme.Tracker
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +39,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nickghignatti.tracker.R
+import com.nickghignatti.tracker.ui.components.TrackerFab
+import com.nickghignatti.tracker.ui.components.TrackerTopBar
+import com.nickghignatti.tracker.ui.components.TrackerBackButton
 import com.nickghignatti.tracker.domain.model.Food
 import com.nickghignatti.tracker.domain.model.Meal
 import com.nickghignatti.tracker.domain.model.Nutrients
@@ -39,7 +53,6 @@ import com.nickghignatti.tracker.ui.components.MenuItem
 import com.nickghignatti.tracker.ui.components.OverflowMenu
 import com.nickghignatti.tracker.ui.food.AmountDialog
 import com.nickghignatti.tracker.ui.food.kcalLabel
-import com.nickghignatti.tracker.ui.food.macrosLabel
 import com.nickghignatti.tracker.ui.format.displayName
 import com.nickghignatti.tracker.ui.plans.WeekdayTabs
 import com.nickghignatti.tracker.ui.plans.rememberLocalWeek
@@ -80,24 +93,10 @@ internal fun DietPlanScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(plan?.name.orEmpty())
-                        if (plan != null) {
-                            Text(
-                                recurrenceLabel(plan.recurrence),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.action_back))
-                    }
-                },
+            TrackerTopBar(
+                title = plan?.name.orEmpty(),
+                subtitle = plan?.let { recurrenceLabel(it.recurrence) },
+                navigation = { TrackerBackButton(onBack) },
                 actions = {
                     if (isWeekly) {
                         OverflowMenu(listOf(MenuItem(stringResource(R.string.diet_copy_day, dayName)) { dialog = DietDialog.CopyDay }))
@@ -107,11 +106,7 @@ internal fun DietPlanScreen(
         },
         floatingActionButton = {
             state.planDay?.let { day ->
-                ExtendedFloatingActionButton(
-                    onClick = { dialog = DietDialog.NewMeal(day) },
-                    icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
-                    text = { Text(stringResource(R.string.diet_add_meal)) },
-                )
+                TrackerFab(stringResource(R.string.diet_add_meal), onClick = { dialog = DietDialog.NewMeal(day) })
             }
         },
     ) { padding ->
@@ -134,7 +129,7 @@ internal fun DietPlanScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     state.planDay?.let(plan::nutrientsOn)?.let { total ->
-                        item(key = "total") { DayTotal(total) }
+                        item(key = "total") { DailyBudget(total) }
                     }
                     items(state.meals, key = { it.id }) { meal ->
                         MealCard(
@@ -200,10 +195,70 @@ internal fun DietPlanScreen(
     }
 }
 
+/** The day's planned energy, split by where it comes from, with each macro's grams and kcal. */
 @Composable
-private fun DayTotal(total: Nutrients) {
-    Column {
-        Text(stringResource(R.string.diet_day_total, kcalLabel(total.kcal)), style = MaterialTheme.typography.titleMedium)
-        Text(macrosLabel(total), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun DailyBudget(total: Nutrients) {
+    val shares = listOf(
+        Triple(Macro.Protein, total.protein, total.protein * KCAL_PER_G_PROTEIN),
+        Triple(Macro.Carbs, total.carbs, total.carbs * KCAL_PER_G_CARBS),
+        Triple(Macro.Fat, total.fat, total.fat * KCAL_PER_G_FAT),
+    )
+    val macroKcal = shares.sumOf { it.third }
+    TrackerCard(Modifier.fillMaxWidth()) {
+        SectionLabel(stringResource(R.string.diet_daily_budget))
+        Row(Modifier.padding(top = Tracker.dimens.xs), verticalAlignment = Alignment.Bottom) {
+            Text(total.kcal.roundToInt().let { "%,d".format(it) }, style = Tracker.type.metricXl, color = Tracker.colors.ink)
+            Text(
+                " " + stringResource(R.string.unit_kcal),
+                style = Tracker.type.bodyMd,
+                color = Tracker.colors.inkSecondary,
+                modifier = Modifier.padding(bottom = Tracker.dimens.xs),
+            )
+        }
+        if (macroKcal > 0) {
+            Row(
+                Modifier
+                    .padding(vertical = Tracker.dimens.md)
+                    .fillMaxWidth()
+                    .height(Tracker.dimens.progressThicknessThin * 2)
+                    .clip(CircleShape),
+            ) {
+                shares.forEach { (macro, _, kcal) ->
+                    if (kcal > 0) Box(Modifier.weight(kcal.toFloat()).fillMaxHeight().background(Tracker.styles.macro(macro)))
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Tracker.dimens.sm)) {
+            shares.forEach { (macro, grams, kcal) ->
+                BudgetTile(macro, macroName(macro), grams, kcal, Modifier.weight(1f))
+            }
+        }
     }
 }
+
+@Composable
+private fun BudgetTile(macro: Macro, name: String, grams: Double, kcal: Double, modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .clip(Tracker.dimens.control)
+            .background(Tracker.colors.surfaceMuted)
+            .padding(Tracker.dimens.md),
+    ) {
+        Text(name, style = Tracker.type.labelMd, color = Tracker.styles.macro(macro))
+        Text(stringResource(R.string.grams_value, grams.roundToInt()), style = Tracker.type.bodyLg, color = Tracker.colors.ink)
+        Text(kcalLabel(kcal), style = Tracker.type.tabularCaption, color = Tracker.colors.inkSecondary)
+    }
+}
+
+@Composable
+private fun macroName(macro: Macro): String = stringResource(
+    when (macro) {
+        Macro.Protein -> R.string.label_protein
+        Macro.Carbs -> R.string.label_carbs
+        Macro.Fat -> R.string.label_fat
+    },
+)
+
+private const val KCAL_PER_G_PROTEIN = 4.0
+private const val KCAL_PER_G_CARBS = 4.0
+private const val KCAL_PER_G_FAT = 9.0
