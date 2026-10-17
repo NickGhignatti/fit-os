@@ -10,6 +10,7 @@ import {
   weightEntrySchema,
   workoutSchema,
 } from '../domain/schemas';
+import { defaultProfile } from '../domain/profile';
 import type { TrackerDb } from './db';
 
 /**
@@ -58,7 +59,7 @@ const readProfile = async (db: TrackerDb) => {
   const row = await db.profile.get('me');
   if (!row) return null;
   const { key: _key, ...profile } = row;
-  return profile;
+  return { ...defaultProfile, ...profile };
 };
 
 export type ParsedBackup = { readonly ok: true; readonly backup: Backup } | { readonly ok: false; readonly error: string };

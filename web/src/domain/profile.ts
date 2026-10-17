@@ -33,6 +33,10 @@ export interface Profile {
   readonly pace: GoalPace;
   /** A calorie target the user chose themselves; replaces the computed one when set. */
   readonly customKcal: number | null;
+  /** Macro targets in grams the user chose themselves; each replaces its computed value when set. */
+  readonly customProtein: number | null;
+  readonly customCarbs: number | null;
+  readonly customFat: number | null;
 }
 
 export const defaultProfile: Profile = {
@@ -42,6 +46,9 @@ export const defaultProfile: Profile = {
   activity: 'moderate',
   pace: 'maintain',
   customKcal: null,
+  customProtein: null,
+  customCarbs: null,
+  customFat: null,
 };
 
 /** Whole years between [birthDate] and [date], like java.time.Period.between(..).years. */
@@ -62,6 +69,6 @@ export interface WeightEntry {
 /** What to eat in a day. */
 export interface DailyTargets {
   readonly nutrients: Nutrients;
-  /** True when the calories are the user's own number rather than computed. */
+  /** True when any of the numbers is the user's own rather than computed. */
   readonly isCustom: boolean;
 }

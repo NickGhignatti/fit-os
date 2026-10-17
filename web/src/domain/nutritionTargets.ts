@@ -40,13 +40,32 @@ const split = (kcal: number, weightKg: number | null): Nutrients => {
   };
 };
 
-/** Null when neither a custom target nor the data to compute one is available. */
+/** Energy of the macros the user set, when they set all three. */
+const kcalOfMacros = (protein: number, carbs: number, fat: number): number =>
+  protein * KCAL_PER_G_PROTEIN + carbs * KCAL_PER_G_CARBS + fat * KCAL_PER_G_FAT;
+
+/**
+ * The day's targets. Every custom number wins over its computed one:
+ *  - calories: the custom value, else the one the three custom macros add up to, else computed;
+ *  - protein and fat: the custom value, else computed;
+ *  - carbs: the custom value, else whatever calories are left after protein and fat.
+ * Null when nothing is custom and the data to compute calories is missing.
+ */
 export const targetsForProfile = (
   profile: Profile,
   weightKg: number | null,
   age: number | null,
 ): DailyTargets | null => {
-  const custom = profile.customKcal;
-  const kcal = custom ?? computedKcal(profile, weightKg, age);
-  return kcal === null ? null : { nutrients: split(kcal, weightKg), isCustom: custom !== null };
+  const { customKcal, customProtein, customCarbs, customFat } = profile;
+  const allMacros = customProtein !== null && customCarbs !== null && customFat !== null;
+  const kcal =
+    customKcal ?? (allMacros ? kcalOfMacros(customProtein, customCarbs, customFat) : computedKcal(profile, weightKg, age));
+  if (kcal === null) return null;
+
+  const base = split(kcal, weightKg);
+  const protein = customProtein ?? base.protein;
+  const fat = customFat ?? base.fat;
+  const carbs = customCarbs ?? Math.max(0, (kcal - protein * KCAL_PER_G_PROTEIN - fat * KCAL_PER_G_FAT) / KCAL_PER_G_CARBS);
+  const isCustom = [customKcal, customProtein, customCarbs, customFat].some((v) => v !== null);
+  return { nutrients: { kcal, protein, carbs, fat }, isCustom };
 };

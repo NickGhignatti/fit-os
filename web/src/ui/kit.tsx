@@ -132,9 +132,9 @@ export const MacroChips = ({ n }: { n: Nutrients }) => (
   </span>
 );
 
-export const ProgressBar = ({ value, max, label }: { value: number; max: number; label: string }) => (
+export const ProgressBar = ({ value, max, label, color }: { value: number; max: number; label: string; color?: string }) => (
   <div className="progress" role="progressbar" aria-label={label} aria-valuenow={Math.round(value)} aria-valuemax={Math.round(max)}>
-    <span style={{ width: `${max > 0 ? Math.min(100, (value / max) * 100) : 0}%` }} />
+    <span style={{ width: `${max > 0 ? Math.min(100, (value / max) * 100) : 0}%`, ...(color ? { background: color } : {}) }} />
   </div>
 );
 

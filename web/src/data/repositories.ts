@@ -213,7 +213,7 @@ export class DexieProfileRepository implements ProfileRepository {
       const row = await this.db.profile.get('me');
       if (!row) return defaultProfile;
       const { key: _key, ...profile } = row;
-      return profile;
+      return { ...defaultProfile, ...profile };
     });
   }
 

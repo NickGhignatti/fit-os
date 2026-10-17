@@ -219,6 +219,88 @@ describe('the calorie tracker', () => {
   });
 });
 
+describe('custom daily targets', () => {
+  it('sets calories and macros from the pencil on the Tracker, and shows progress against them', async () => {
+    const user = userEvent.setup();
+    renderApp('/tracker');
+    expect(await screen.findByText(/Set up your profile/)).toBeInTheDocument(); // nothing known yet
+
+    await user.click(screen.getByRole('button', { name: 'Edit daily targets' }));
+    const form = await dialog('Daily targets');
+    await user.type(within(form).getByLabelText('Calories (kcal)'), '2200');
+    await user.type(within(form).getByLabelText('Protein (g)'), '160');
+    await user.type(within(form).getByLabelText('Fat (g)'), '70');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    const card = await screen.findByRole('region', { name: 'Daily energy balance' });
+    expect(card).toHaveTextContent('of 2200 goal');
+    expect(card).toHaveTextContent('2200 kcal left');
+    expect(card).toHaveTextContent('0 / 160 g'); // protein, as typed
+    expect(card).toHaveTextContent('0 / 70 g'); // fat, as typed
+    // carbs are what is left: (2200 − 160·4 − 70·9) / 4 = 232.5, shown rounded
+    expect(card).toHaveTextContent(/0 \/ 23[23] g/);
+    expect(within(card).getByRole('progressbar', { name: 'Protein eaten' })).toBeInTheDocument();
+  });
+
+  it('shows the automatic value as a hint, reflects it back when reopened, and resets', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    await device.repos.profile.saveProfile({
+      sex: 'male', birthDate: '1996-01-01', heightCm: 180, activity: 'moderate', pace: 'maintain',
+      customKcal: null, customProtein: null, customCarbs: null, customFat: null,
+    });
+    await device.repos.profile.setWeight('2026-10-01', 80);
+    renderApp('/tracker', device);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit daily targets' }));
+    const form = await dialog('Daily targets');
+    expect(within(form).getByLabelText('Protein (g)')).toHaveAttribute('placeholder', 'automatic: 144');
+    expect(within(form).getByRole('button', { name: 'Reset to automatic' })).toBeDisabled();
+
+    await user.type(within(form).getByLabelText('Protein (g)'), '200');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText(/0 \/ 200 g/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Edit daily targets' }));
+    const again = await dialog('Daily targets');
+    expect(within(again).getByLabelText('Protein (g)')).toHaveValue('200');
+    expect(within(again).getByLabelText('Calories (kcal)')).toHaveValue(''); // still automatic
+    await user.click(within(again).getByRole('button', { name: 'Reset to automatic' }));
+    expect(await screen.findByText(/0 \/ 144 g/)).toBeInTheDocument();
+  });
+
+  it('refuses out-of-range numbers and explains what the macros add up to', async () => {
+    const user = userEvent.setup();
+    renderApp('/tracker');
+    await user.click(await screen.findByRole('button', { name: 'Edit daily targets' }));
+    const form = await dialog('Daily targets');
+
+    await user.type(within(form).getByLabelText('Calories (kcal)'), '50');
+    expect(within(form).getByText(/Between 500 and 10000 kcal/)).toBeInTheDocument();
+    expect(within(form).getByRole('button', { name: 'Save' })).toBeDisabled();
+    await user.clear(within(form).getByLabelText('Calories (kcal)'));
+
+    await user.type(within(form).getByLabelText('Protein (g)'), '150');
+    await user.type(within(form).getByLabelText('Carbs (g)'), '250');
+    await user.type(within(form).getByLabelText('Fat (g)'), '70');
+    expect(within(form).getByRole('status')).toHaveTextContent('Your calories will be 2230 kcal, from your macros.');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('of 2230 goal')).toBeInTheDocument();
+  });
+
+  it('can also be opened from the Profile goal card', async () => {
+    const user = userEvent.setup();
+    renderApp('/profile');
+    await user.click(await screen.findByRole('button', { name: 'Customize targets' }));
+    const form = await dialog('Daily targets');
+    await user.type(within(form).getByLabelText('Calories (kcal)'), '1900');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    const goal = await screen.findByRole('region', { name: 'Daily goal' });
+    expect(goal).toHaveTextContent('1900 kcal');
+    expect(goal).toHaveTextContent('Includes your own numbers');
+  });
+});
+
 describe('the profile', () => {
   it('works out a daily goal from the profile and a weigh-in', async () => {
     const user = userEvent.setup();

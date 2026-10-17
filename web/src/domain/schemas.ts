@@ -97,6 +97,10 @@ export const profileSchema: Schema<Profile> = z.object({
   activity: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
   pace: z.enum(['lose_fast', 'lose', 'lose_slow', 'maintain', 'gain_slow', 'gain']),
   customKcal: count(20_000).nullable(),
+  // Added later: files written before have no such keys.
+  customProtein: count(2_000).nullable().default(null),
+  customCarbs: count(2_000).nullable().default(null),
+  customFat: count(2_000).nullable().default(null),
 });
 
 export const weightEntrySchema: Schema<WeightEntry> = z.object({ id, date, kg: z.number().finite().positive().max(1000) });

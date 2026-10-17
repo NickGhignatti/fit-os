@@ -7,6 +7,7 @@ import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKcal, formatKg, parseNumber, today } from './format';
 import { useToast } from './hooks';
 import { ConfirmDialog, Loading, MacroChips, Modal, PageHeader, PromptDialog } from './kit';
+import { TargetsDialog } from './TargetsDialog';
 import { ReceiveButton } from './Transfer';
 
 const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave: (p: Profile) => void; onClose: () => void }) => {
@@ -15,17 +16,15 @@ const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave:
   const [height, setHeight] = useState(profile.heightCm === null ? '' : String(profile.heightCm));
   const [activity, setActivity] = useState<ActivityLevel>(profile.activity);
   const [pace, setPace] = useState<GoalPace>(profile.pace);
-  const [custom, setCustom] = useState(profile.customKcal === null ? '' : String(profile.customKcal));
   const h = parseNumber(height);
-  const k = parseNumber(custom);
-  const valid = (height.trim() === '' || (h !== null && h >= 50 && h <= 260)) && (custom.trim() === '' || (k !== null && k >= 500 && k <= 10_000));
+  const valid = (height.trim() === '' || (h !== null && h >= 50 && h <= 260));
 
   return (
     <Modal title="Edit profile" onClose={onClose}>
       <form className="stack" onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
-        onSave({ sex: sex || null, birthDate: birthDate || null, heightCm: height.trim() === '' ? null : h, activity, pace, customKcal: custom.trim() === '' ? null : k });
+        onSave({ ...profile, sex: sex || null, birthDate: birthDate || null, heightCm: height.trim() === '' ? null : h, activity, pace });
         onClose();
       }}>
         <label className="stack"><span className="small muted">Sex</span>
@@ -45,9 +44,6 @@ const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave:
           <select className="field" value={pace} onChange={(e) => setPace(e.target.value as GoalPace)}>
             {(Object.keys(PACE_KG_PER_WEEK) as GoalPace[]).map((p) => <option key={p} value={p}>{PACE_LABEL[p]}</option>)}
           </select></label>
-        <label className="stack"><span className="small muted">Your own target: daily calories (optional)</span>
-          <input className="field" inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} />
-          <span className="small muted">Leave empty to use the goal worked out from your profile, e.g. if a dietitian gave you a number.</span></label>
         <div className="actions">
           <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn" disabled={!valid}>Save</button>
@@ -139,7 +135,7 @@ export const ProfileScreen = () => {
   const profile = useStream((c) => c.repos.profile.observeProfile());
   const weights = useStream((c) => c.repos.profile.observeWeights());
   const targets = useStream((c) => observeDailyTargets(c.repos.profile, date), [date]);
-  const [dialog, setDialog] = useState<'profile' | 'weight' | null>(null);
+  const [dialog, setDialog] = useState<'profile' | 'weight' | 'targets' | null>(null);
 
   if (!profile || !weights || targets === undefined) return <Loading />;
 
@@ -173,13 +169,14 @@ export const ProfileScreen = () => {
             <MacroChips n={targets.nutrients} />
             <p className="small muted">
               {targets.isCustom
-                ? 'Your own calorie target. Protein, fat and carbs are split from it.'
+                ? 'Includes your own numbers. Anything you did not set is worked out from your profile.'
                 : 'From your profile and latest weight (Mifflin–St Jeor). Protein 1.8 g per kg, fat 25% of calories, carbs for the rest.'}
             </p>
           </>
         ) : (
-          <p className="muted">To work out your goal the app still needs: {missing.join(', ') || 'a few details'}.</p>
+          <p className="muted">To work out your goal the app still needs: {missing.join(', ') || 'a few details'}. Or set your own targets.</p>
         )}
+        <button className="btn secondary" style={{ marginTop: 8 }} onClick={() => setDialog('targets')}>Customize targets</button>
       </section>
 
       <h2>Weight</h2>
@@ -208,6 +205,7 @@ export const ProfileScreen = () => {
       </p>
 
       {dialog === 'profile' && <ProfileDialog profile={profile} onClose={() => setDialog(null)} onSave={(p) => void repos.profile.saveProfile(p)} />}
+      {dialog === 'targets' && <TargetsDialog onClose={() => setDialog(null)} />}
       {dialog === 'weight' && (
         <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" initial={latest ? String(latest.kg) : ''} onClose={() => setDialog(null)}
           validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}
