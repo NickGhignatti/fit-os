@@ -1,0 +1,149 @@
+/* Design tokens: "Quiet Swiss Modern", ported from the Android app's res/values/colors.xml.
+   Colours are named by role, never by hue, so a re-skin is an edit to this block only. */
+:root {
+  --canvas: #fbfbfa;
+  --surface: #ffffff;
+  --surface-muted: #f4f4f2;
+  --track: #f3f4f6;
+  --border: #e5e7eb;
+  --divider: #eceef0;
+
+  --ink: #111315;
+  --ink-secondary: #6b7280;
+  --ink-tertiary: #9ca3af;
+  --ink-inverse: #ffffff;
+  --ink-pressed: #272a30;
+
+  --accent: #15803d;
+  --on-accent: #ffffff;
+  --accent-container: #dcfce7;
+  --on-accent-container: #166534;
+
+  --protein: #4338ca;
+  --protein-container: #eef2ff;
+  --carbs: #d97706;
+  --carbs-container: #fef3c7;
+  --fat: #dc2626;
+  --fat-container: #fee2e2;
+
+  --chip: #f3f4f6;
+  --on-chip: #4b5563;
+  --danger: #ba1a1a;
+  --danger-container: #ffdad6;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --gutter: 16px;
+  --tabbar-height: 60px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: 16px/1.4 var(--font);
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ---- Frame ------------------------------------------------------------------------------ */
+.app { display: flex; flex-direction: column; height: 100%; max-width: 640px; margin: 0 auto; }
+
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gutter);
+  padding-top: calc(var(--gutter) + env(safe-area-inset-top));
+}
+
+.tabbar {
+  display: flex;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--divider);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--ink-tertiary);
+  text-decoration: none;
+  font-size: 12px;
+}
+.tab svg { width: 24px; height: 24px; }
+.tab[aria-current='page'] { color: var(--ink); font-weight: 600; }
+
+/* ---- Type ------------------------------------------------------------------------------- */
+h1 { font-size: 28px; line-height: 1.15; margin: 0 0 4px; letter-spacing: -0.02em; }
+h2 { font-size: 18px; margin: 24px 0 8px; }
+.muted { color: var(--ink-secondary); }
+.small { font-size: 13px; }
+
+/* ---- Components ------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.row { display: flex; align-items: center; gap: 12px; }
+.row.between { justify-content: space-between; }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.grow { flex: 1; min-width: 0; }
+
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--ink);
+  color: var(--ink-inverse);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+.btn:active { background: var(--ink-pressed); }
+.btn.secondary { background: var(--chip); color: var(--ink); }
+.btn.done { background: var(--accent); color: var(--on-accent); }
+.btn.danger { background: var(--danger-container); color: var(--danger); }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--chip);
+  color: var(--on-chip);
+  font-size: 13px;
+}
+.chip.protein { background: var(--protein-container); color: var(--protein); }
+.chip.carbs { background: var(--carbs-container); color: var(--carbs); }
+.chip.fat { background: var(--fat-container); color: var(--fat); }
+.chip.done { background: var(--accent-container); color: var(--on-accent-container); }
+
+.field {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+.empty { text-align: center; padding: 48px 16px; color: var(--ink-secondary); }
+
+.progress { height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
+.progress > span { display: block; height: 100%; background: var(--accent); }

@@ -1,0 +1,67 @@
+import type { LocalDate } from './plan';
+import type { Nutrients } from './nutrition';
+
+export type Sex = 'male' | 'female';
+
+/** Multipliers of the resting burn for daily activity, training included (the usual Harris–Benedict factors). */
+export const ACTIVITY_FACTOR = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+} as const;
+export type ActivityLevel = keyof typeof ACTIVITY_FACTOR;
+
+/** How fast to change weight, in kg per week; negative loses. */
+export const PACE_KG_PER_WEEK = {
+  lose_fast: -0.75,
+  lose: -0.5,
+  lose_slow: -0.25,
+  maintain: 0,
+  gain_slow: 0.25,
+  gain: 0.5,
+} as const;
+export type GoalPace = keyof typeof PACE_KG_PER_WEEK;
+
+/** What the app knows about the user, to work out a daily goal. Everything is optional until set. */
+export interface Profile {
+  readonly sex: Sex | null;
+  readonly birthDate: LocalDate | null;
+  readonly heightCm: number | null;
+  readonly activity: ActivityLevel;
+  readonly pace: GoalPace;
+  /** A calorie target the user chose themselves; replaces the computed one when set. */
+  readonly customKcal: number | null;
+}
+
+export const defaultProfile: Profile = {
+  sex: null,
+  birthDate: null,
+  heightCm: null,
+  activity: 'moderate',
+  pace: 'maintain',
+  customKcal: null,
+};
+
+/** Whole years between [birthDate] and [date], like java.time.Period.between(..).years. */
+export const ageOn = (profile: Profile, date: LocalDate): number | null => {
+  if (!profile.birthDate) return null;
+  const [by, bm, bd] = profile.birthDate.split('-').map(Number) as [number, number, number];
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
+};
+
+/** One weigh-in; there is at most one per day. */
+export interface WeightEntry {
+  readonly id: string;
+  readonly date: LocalDate;
+  readonly kg: number;
+}
+
+/** What to eat in a day. */
+export interface DailyTargets {
+  readonly nutrients: Nutrients;
+  /** True when the calories are the user's own number rather than computed. */
+  readonly isCustom: boolean;
+}

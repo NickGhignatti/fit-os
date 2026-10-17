@@ -8,3 +8,8 @@ local.properties
 captures/
 *.apk
 *.aab
+
+# Local configuration and secrets, anywhere in the repo. Templates are named .env.example.
+.env
+.env.*
+!.env.example
