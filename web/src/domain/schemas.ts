@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EQUIPMENT, MUSCLES, type CustomExercise } from './catalog';
 import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import type { FoodItem } from './nutrition';
@@ -120,3 +121,11 @@ export const personalRecordSchema: Schema<PersonalRecord> = z
   })
   // A lift needs the reps it was done for; the other measurements have none.
   .refine((r) => (r.metric === 'weight' ? r.reps !== null : r.reps === null));
+
+export const customExerciseSchema: Schema<CustomExercise> = z.object({
+  id: z.string().regex(/^custom:.{1,64}$/),
+  name: text(120).min(1),
+  muscle: z.enum(MUSCLES).nullable(),
+  equipment: z.enum(EQUIPMENT).nullable(),
+  notes: text(2_000),
+});

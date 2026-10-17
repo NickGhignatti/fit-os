@@ -1,4 +1,5 @@
 import Dexie, { liveQuery, type EntityTable } from 'dexie';
+import type { CustomExercise } from '../domain/catalog';
 import type { DietPlan } from '../domain/diet';
 import type { FoodLogDay } from '../domain/foodLog';
 import type { FoodItem } from '../domain/nutrition';
@@ -37,6 +38,7 @@ export class TrackerDb extends Dexie {
   profile!: EntityTable<ProfileRow, 'key'>;
   savedProducts!: EntityTable<FoodItem, 'id'>;
   records!: EntityTable<PersonalRecord, 'id'>;
+  customExercises!: EntityTable<CustomExercise, 'id'>;
 
   constructor(name = 'tracker') {
     super(name);
@@ -54,6 +56,8 @@ export class TrackerDb extends Dexie {
     this.version(2).stores({ savedProducts: 'id' });
     // Personal records: measurements of an exercise on a day.
     this.version(3).stores({ records: 'id, exerciseKey, date' });
+    // Exercises the user made up, next to the bundled catalogue.
+    this.version(4).stores({ customExercises: 'id, name' });
   }
 }
 

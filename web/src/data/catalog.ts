@@ -4,6 +4,8 @@ import {
   matches,
   searchableName,
   type BasicFoodRepository,
+  type CustomExerciseRepository,
+  customToInfo,
   type Equipment,
   type ExerciseCatalogRepository,
   type ExerciseCategory,
@@ -109,6 +111,32 @@ export class StaticExerciseCatalog implements ExerciseCatalogRepository {
 
   async get(id: string): Promise<ExerciseInfo | undefined> {
     return (await this.exercises()).find((e) => e.id === id);
+  }
+}
+
+/**
+ * The bundled catalogue and the user's own exercises as one library: both are searched together,
+ * and an id finds either. Custom ones are read fresh each time, so a new one shows up at once.
+ */
+export class ExerciseLibrary implements ExerciseCatalogRepository {
+  constructor(
+    private readonly bundled: ExerciseCatalogRepository,
+    private readonly custom: CustomExerciseRepository,
+  ) {}
+
+  /**
+   * With a search, the best matches whether yours or bundled. Without one, your own exercises come first
+   * (they would otherwise be lost somewhere in an alphabetical list of nearly nine hundred), then the rest.
+   */
+  async search(query: string, filter: ExerciseFilter): Promise<ExerciseInfo[]> {
+    const [bundled, custom] = await Promise.all([this.bundled.search('', filter), this.custom.getAll()]);
+    const own = custom.map(customToInfo).filter((e) => matches(filter, e));
+    return query.trim() === '' ? [...own, ...bundled] : rank(query, [...own, ...bundled], (e) => e.name);
+  }
+
+  async get(id: string): Promise<ExerciseInfo | undefined> {
+    const own = (await this.custom.getAll()).find((e) => e.id === id);
+    return own ? customToInfo(own) : this.bundled.get(id);
   }
 }
 

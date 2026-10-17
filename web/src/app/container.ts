@@ -1,6 +1,7 @@
-import { DexieSavedProducts, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
+import { DexieSavedProducts, ExerciseLibrary, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
 import { TrackerDb } from '../data/db';
 import {
+  DexieCustomExercises,
   DexieCustomFoodRepository,
   DexieFavoriteFoodRepository,
   DexieFoodLogRepository,
@@ -29,7 +30,8 @@ export interface Container {
     readonly profile: DexieProfileRepository;
     readonly records: DexiePersonalRecords;
     readonly transaction: DexieTransactionRunner;
-    readonly exercises: StaticExerciseCatalog;
+    readonly exercises: ExerciseLibrary;
+    readonly customExercises: DexieCustomExercises;
     readonly basicFoods: StaticBasicFoods;
     readonly products: OpenFoodFactsRepository;
     readonly savedProducts: DexieSavedProducts;
@@ -40,7 +42,9 @@ export interface Container {
   readonly community: Community | null;
 }
 
-export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb()): Container => ({
+export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb()): Container => {
+  const customExercises = new DexieCustomExercises(db);
+  return {
   db,
   repos: {
     workouts: new DexieWorkoutRepository(db),
@@ -52,11 +56,13 @@ export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb
     profile: new DexieProfileRepository(db),
     records: new DexiePersonalRecords(db),
     transaction: new DexieTransactionRunner(db),
-    exercises: new StaticExerciseCatalog(),
+    exercises: new ExerciseLibrary(new StaticExerciseCatalog(), customExercises),
+    customExercises,
     basicFoods: new StaticBasicFoods(),
     products: new OpenFoodFactsRepository(),
     savedProducts: new DexieSavedProducts(db),
   },
   transfer: config.transferEnabled ? new SupabaseTransferGateway(config.supabaseUrl, config.supabaseKey) : null,
   community: config.transferEnabled ? createCommunity(config.supabaseUrl, config.supabaseKey) : null,
-});
+};
+};

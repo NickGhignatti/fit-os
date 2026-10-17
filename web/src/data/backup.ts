@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { DietPlan } from '../domain/diet';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import {
+  customExerciseSchema,
   dietPlanSchema,
   foodItemSchema,
   foodLogDaySchema,
@@ -36,6 +37,7 @@ const backupSchema = z.object({
     profile: profileSchema.nullable(),
     // Added later: backups written before have no records.
     records: z.array(personalRecordSchema).max(50_000).default([]),
+    customExercises: z.array(customExerciseSchema).max(5_000).default([]),
   }),
 });
 
@@ -56,6 +58,7 @@ export const exportBackup = (db: TrackerDb, now: () => Date = () => new Date()):
       weights: await db.weightEntries.toArray(),
       profile: await readProfile(db),
       records: await db.records.toArray(),
+      customExercises: await db.customExercises.toArray(),
     },
   }));
 
@@ -104,6 +107,7 @@ export const restoreBackup = (db: TrackerDb, { data }: Backup): Promise<void> =>
     await restoreWeights(db, data.weights);
     if (data.profile) await db.profile.put({ key: 'me', ...data.profile });
     await db.records.bulkPut(data.records);
+    await db.customExercises.bulkPut(data.customExercises);
   });
 
 const restorePlans = async (

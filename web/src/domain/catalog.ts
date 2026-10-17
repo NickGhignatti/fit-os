@@ -1,4 +1,5 @@
 import type { FoodItem } from './nutrition';
+import type { Stream } from './repositories';
 import { rank } from './textSearch';
 
 // ---- Exercises --------------------------------------------------------------
@@ -33,6 +34,8 @@ export interface ExerciseInfo {
   readonly instructions: readonly string[];
   /** Photos of the movement, usually its start and end position. */
   readonly imageUrls: readonly string[];
+  /** True for an exercise the user made up; false or absent for the bundled catalogue. */
+  readonly custom?: boolean;
 }
 
 /** Filters for browsing the catalogue; null means any. */
@@ -46,6 +49,45 @@ export const noFilter: ExerciseFilter = { muscle: null, equipment: null };
 export const matches = (filter: ExerciseFilter, e: ExerciseInfo): boolean =>
   (filter.muscle === null || e.primaryMuscles.includes(filter.muscle)) &&
   (filter.equipment === null || filter.equipment === e.equipment);
+
+/** An exercise the user made up. It lives on this device only, next to the bundled catalogue. */
+export interface CustomExercise {
+  /** "custom:" followed by a unique id, so it can never clash with a catalogue id. */
+  readonly id: string;
+  readonly name: string;
+  readonly muscle: Muscle | null;
+  readonly equipment: Equipment | null;
+  readonly notes: string;
+}
+
+const CUSTOM_PREFIX = 'custom:';
+
+export const customExerciseId = (unique: string): string => `${CUSTOM_PREFIX}${unique}`;
+
+export const isCustomId = (id: string | null | undefined): boolean => id != null && id.startsWith(CUSTOM_PREFIX);
+
+/** A custom exercise as the rest of the app sees any exercise. */
+export const customToInfo = (e: CustomExercise): ExerciseInfo => ({
+  id: e.id,
+  name: e.name,
+  category: 'strength',
+  level: 'beginner',
+  equipment: e.equipment,
+  primaryMuscles: e.muscle ? [e.muscle] : [],
+  secondaryMuscles: [],
+  instructions: e.notes.trim() ? [e.notes.trim()] : [],
+  imageUrls: [],
+  custom: true,
+});
+
+export interface CustomExerciseRepository {
+  /** Sorted by name. */
+  observeAll(): Stream<CustomExercise[]>;
+  getAll(): Promise<CustomExercise[]>;
+  /** Creates the exercise, or replaces the stored one with the same id. */
+  save(exercise: CustomExercise): Promise<void>;
+  delete(id: string): Promise<void>;
+}
 
 export interface ExerciseCatalogRepository {
   /** Exercises passing [filter] and matching [query] (all of them for a blank query), best first. */

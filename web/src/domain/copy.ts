@@ -1,3 +1,4 @@
+import { isCustomId } from './catalog';
 import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import { newId } from './id';
@@ -14,13 +15,16 @@ type MakeId = () => string;
 const mapValues = <T, U>(record: Readonly<Record<number, T>>, f: (value: T) => U): Record<number, U> =>
   Object.fromEntries(Object.entries(record).map(([day, value]) => [day, f(value)]));
 
+/** A user's own exercise exists only on their device, so a link to it means nothing anywhere else. */
+const portable = (catalogId: string | null): string | null => (isCustomId(catalogId) ? null : catalogId);
+
 /** An inactive copy: receiving a plan must not silently replace the one in use. */
 export const copyTrainingPlan = (plan: TrainingPlan, makeId: MakeId = newId): TrainingPlan => ({
   ...plan,
   id: makeId(),
   isActive: false,
   sessions: mapValues(plan.sessions, (exercises) =>
-    exercises.map((e) => ({ ...e, id: makeId(), sets: e.sets.map((s) => ({ ...s, id: makeId() })) })),
+    exercises.map((e) => ({ ...e, id: makeId(), catalogId: portable(e.catalogId), sets: e.sets.map((s) => ({ ...s, id: makeId() })) })),
   ),
 });
 
@@ -38,7 +42,7 @@ export const copyWorkout = (workout: Workout, makeId: MakeId = newId): Workout =
   ...workout,
   id: makeId(),
   planId: null,
-  exercises: workout.exercises.map((e) => ({ ...e, id: makeId(), sets: e.sets.map((s) => ({ ...s, id: makeId() })) })),
+  exercises: workout.exercises.map((e) => ({ ...e, id: makeId(), catalogId: portable(e.catalogId), sets: e.sets.map((s) => ({ ...s, id: makeId() })) })),
 });
 
 /** [incoming] appended to [existing] (same date), as new entries. */

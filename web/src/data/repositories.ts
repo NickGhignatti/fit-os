@@ -1,5 +1,6 @@
 import type { Table } from 'dexie';
 import type { DietPlan } from '../domain/diet';
+import type { CustomExercise, CustomExerciseRepository } from '../domain/catalog';
 import { emptyDay, type FoodLogDay } from '../domain/foodLog';
 import { newId } from '../domain/id';
 import type { FoodItem, Nutrients } from '../domain/nutrition';
@@ -295,5 +296,27 @@ export class DexiePersonalRecords implements PersonalRecordRepository {
 
   delete(id: string): Promise<void> {
     return this.db.records.delete(id);
+  }
+}
+
+const byExerciseName = (a: CustomExercise, b: CustomExercise) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+export class DexieCustomExercises implements CustomExerciseRepository {
+  constructor(private readonly db: TrackerDb) {}
+
+  observeAll(): Stream<CustomExercise[]> {
+    return live(() => this.getAll());
+  }
+
+  async getAll(): Promise<CustomExercise[]> {
+    return (await this.db.customExercises.toArray()).sort(byExerciseName);
+  }
+
+  async save(exercise: CustomExercise): Promise<void> {
+    await this.db.customExercises.put(exercise);
+  }
+
+  delete(id: string): Promise<void> {
+    return this.db.customExercises.delete(id);
   }
 }
