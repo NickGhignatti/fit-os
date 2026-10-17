@@ -93,8 +93,8 @@ class DexiePlanRepository<P extends PlanLike> implements PlanRepository<P> {
     );
   }
 
-  observePlan(id: string): Stream<P | undefined> {
-    return live(() => this.table.get(id));
+  observePlan(id: string): Stream<P | null> {
+    return live(async () => (await this.table.get(id)) ?? null);
   }
 
   observeActivePlan(): Stream<P | undefined> {

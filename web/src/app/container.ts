@@ -1,3 +1,4 @@
+import { DexieSavedProducts, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
 import { TrackerDb } from '../data/db';
 import {
   DexieCustomFoodRepository,
@@ -24,6 +25,10 @@ export interface Container {
     readonly favorites: DexieFavoriteFoodRepository;
     readonly profile: DexieProfileRepository;
     readonly transaction: DexieTransactionRunner;
+    readonly exercises: StaticExerciseCatalog;
+    readonly basicFoods: StaticBasicFoods;
+    readonly products: OpenFoodFactsRepository;
+    readonly savedProducts: DexieSavedProducts;
   };
   /** Null when no Supabase is configured: sending and receiving are then unavailable. */
   readonly transfer: TransferGateway | null;
@@ -40,6 +45,10 @@ export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb
     favorites: new DexieFavoriteFoodRepository(db),
     profile: new DexieProfileRepository(db),
     transaction: new DexieTransactionRunner(db),
+    exercises: new StaticExerciseCatalog(),
+    basicFoods: new StaticBasicFoods(),
+    products: new OpenFoodFactsRepository(),
+    savedProducts: new DexieSavedProducts(db),
   },
   transfer: config.transferEnabled ? new SupabaseTransferGateway(config.supabaseUrl, config.supabaseKey) : null,
 });

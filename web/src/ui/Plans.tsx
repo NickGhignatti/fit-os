@@ -1,0 +1,146 @@
+import { useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import type { Recurrence } from '../domain/plan';
+import type { PlanRepository } from '../domain/repositories';
+import { Empty, Loading, Modal, ActionMenu, ConfirmDialog, PromptDialog, Segmented, type MenuAction } from './kit';
+
+export interface PlanLike {
+  readonly id: string;
+  readonly name: string;
+  readonly recurrence: Recurrence;
+  readonly isActive: boolean;
+}
+
+export interface PlanTexts {
+  /** "workout" or "diet": used in sentences. */
+  readonly noun: string;
+  readonly newLabel: string;
+  readonly defaultName: string;
+  readonly empty: string;
+  readonly daily: string;
+  readonly weekly: string;
+  readonly deleteMessage: string;
+}
+
+export const TRAINING_TEXTS: PlanTexts = {
+  noun: 'workout',
+  newLabel: 'New workout',
+  defaultName: 'Workout',
+  empty: 'No workouts yet.\nTap “New workout” to create a daily or weekly one.',
+  daily: 'The same workout every day',
+  weekly: 'Its own workout on each day of the week',
+  deleteMessage: 'Its exercises will be removed. Workouts you already logged from it are kept.',
+};
+
+export const DIET_TEXTS: PlanTexts = {
+  noun: 'diet',
+  newLabel: 'New diet',
+  defaultName: 'Diet',
+  empty: 'No diets yet.\nTap “New diet” to create a daily or weekly one.',
+  daily: 'The same meals every day',
+  weekly: 'Its own meals on each day of the week',
+  deleteMessage: 'Its meals and foods will be removed.',
+};
+
+export const NewPlanDialog = ({ texts, onCreate, onClose }: {
+  texts: PlanTexts; onCreate: (name: string, recurrence: Recurrence) => void; onClose: () => void;
+}) => {
+  const [name, setName] = useState(texts.defaultName);
+  const [recurrence, setRecurrence] = useState<Recurrence>('daily');
+  return (
+    <Modal title={texts.newLabel} onClose={onClose}>
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (name.trim()) { onCreate(name.trim(), recurrence); onClose(); } }}>
+        <label className="stack"><span className="small muted">Name</span>
+          <input className="field" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></label>
+        <span className="small muted">Repeats</span>
+        <Segmented<Recurrence> label="Repeats" value={recurrence} onChange={setRecurrence}
+          options={[{ value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }]} />
+        <p className="small muted">{recurrence === 'daily' ? texts.daily : texts.weekly}</p>
+        <div className="actions">
+          <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn" disabled={!name.trim()}>Create</button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+/** The ⋮ menu of a plan: rename, make active, delete, plus [extra] actions of the screen. */
+export const PlanMenu = <P extends PlanLike>({ plan, repo, texts, extra = [], afterDelete }: {
+  plan: P; repo: PlanRepository<P>; texts: PlanTexts; extra?: readonly MenuAction[]; afterDelete?: () => void;
+}) => {
+  const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null);
+  return (
+    <>
+      <ActionMenu actions={[
+        { label: 'Rename', onSelect: () => setDialog('rename') },
+        { label: plan.isActive ? 'Deactivate' : 'Set as active', onSelect: () => void repo.setActivePlan(plan.isActive ? undefined : plan.id) },
+        ...extra,
+        { label: 'Delete', danger: true, onSelect: () => setDialog('delete') },
+      ]} />
+      {dialog === 'rename' && (
+        <PromptDialog title="Rename" label="Name" initial={plan.name} onClose={() => setDialog(null)}
+          onSubmit={(name) => void repo.save({ ...plan, name })} />
+      )}
+      {dialog === 'delete' && (
+        <ConfirmDialog title={`Delete “${plan.name}”?`} message={texts.deleteMessage} onClose={() => setDialog(null)}
+          onConfirm={() => void repo.delete(plan.id).then(afterDelete)} />
+      )}
+    </>
+  );
+};
+
+export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, create, href, header }: {
+  plans: readonly P[] | undefined;
+  repo: PlanRepository<P>;
+  texts: PlanTexts;
+  summary: (plan: P) => string;
+  create: (name: string, recurrence: Recurrence) => P;
+  href: (plan: P) => string;
+  header?: ReactNode;
+}) => {
+  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
+  if (!plans) return <Loading />;
+  const active = plans.find((p) => p.isActive);
+
+  return (
+    <>
+      {header}
+      {active && (
+        <section className="card" aria-label={`Active ${texts.noun}`}>
+          <div className="small muted">Active</div>
+          <div className="title">{active.name}</div>
+          <div className="small muted">{summary(active)}</div>
+          <Link className="btn" style={{ display: 'inline-block', marginTop: 8, textDecoration: 'none' }} to={href(active)}>Open</Link>
+        </section>
+      )}
+      {plans.length === 0 ? (
+        <Empty>{texts.empty.split('\n').map((line, i) => <div key={i}>{line}</div>)}</Empty>
+      ) : (
+        <section className="card" aria-label="Saved plans">
+          <div className="small muted">{plans.length} total</div>
+          {plans.map((plan) => (
+            <div key={plan.id} className="list-item" style={{ cursor: 'default' }}>
+              <Link to={href(plan)} className="grow" style={{ color: 'inherit', textDecoration: 'none' }}>
+                <div className="title">{plan.name} {plan.isActive && <span className="badge">Active</span>}</div>
+                <div className="small muted">{plan.recurrence === 'daily' ? 'Daily' : 'Weekly'} · {summary(plan)}</div>
+              </Link>
+              <button className="btn secondary" aria-label={`${plan.isActive ? 'Deactivate' : 'Set as active'} ${plan.name}`}
+                onClick={() => void repo.setActivePlan(plan.isActive ? undefined : plan.id)}>
+                {plan.isActive ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
+      <button className="btn" onClick={() => setCreating(true)}>{texts.newLabel}</button>
+      {creating && (
+        <NewPlanDialog texts={texts} onClose={() => setCreating(false)} onCreate={(name, recurrence) => {
+          const plan = create(name, recurrence);
+          void repo.save(plan).then(() => navigate(href(plan)));
+        }} />
+      )}
+    </>
+  );
+};

@@ -147,3 +147,100 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 
 .progress { height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
 .progress > span { display: block; height: 100%; background: var(--accent); }
+
+/* ---- Page chrome ------------------------------------------------------------------------ */
+.page-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.page-header h1 { margin: 0; }
+.icon-btn {
+  appearance: none; border: 0; background: transparent; color: var(--ink);
+  min-width: 44px; min-height: 44px; border-radius: 999px; font-size: 22px; line-height: 1; cursor: pointer;
+}
+.icon-btn:active { background: var(--track); }
+
+.chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.danger-text { color: var(--danger); }
+.link { appearance: none; border: 0; background: none; padding: 0; color: var(--ink); text-decoration: underline; cursor: pointer; }
+
+/* ---- Dialogs ---------------------------------------------------------------------------- */
+.backdrop {
+  position: fixed; inset: 0; z-index: 50; background: rgba(17, 19, 21, 0.45);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.modal {
+  width: 100%; max-width: 640px; max-height: 88%; overflow-y: auto;
+  background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px var(--gutter) calc(20px + env(safe-area-inset-bottom));
+}
+.modal-title { margin: 0 0 12px; }
+@media (min-width: 700px) {
+  .backdrop { align-items: center; }
+  .modal { border-radius: var(--radius); }
+}
+.menu-item {
+  appearance: none; border: 0; background: var(--surface-muted); text-align: left;
+  padding: 14px 16px; border-radius: var(--radius-sm); min-height: 48px; cursor: pointer;
+}
+
+/* ---- Controls --------------------------------------------------------------------------- */
+.seg { display: flex; background: var(--track); border-radius: 999px; padding: 3px; margin-bottom: 12px; }
+.seg button {
+  flex: 1; appearance: none; border: 0; background: transparent; border-radius: 999px;
+  padding: 8px 10px; min-height: 40px; cursor: pointer; color: var(--ink-secondary);
+}
+.seg button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+.pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; }
+.pill {
+  flex: none; appearance: none; border: 1px solid var(--border); background: var(--surface);
+  border-radius: 999px; padding: 6px 14px; min-height: 36px; cursor: pointer; color: var(--ink);
+}
+.pill.on { background: var(--ink); color: var(--ink-inverse); border-color: var(--ink); }
+
+/* ---- Lists and rows --------------------------------------------------------------------- */
+.list-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  appearance: none; border: 0; background: transparent; padding: 12px 0; min-height: 56px;
+  border-bottom: 1px solid var(--divider); cursor: pointer; color: inherit; text-decoration: none;
+}
+.list-item:last-child { border-bottom: 0; }
+.title { font-weight: 600; }
+.badge { background: var(--accent-container); color: var(--on-accent-container); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+
+.set-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--divider); }
+.check {
+  flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border);
+  background: transparent; color: var(--on-accent); font-size: 20px; cursor: pointer;
+}
+.check.on { background: var(--accent); border-color: var(--accent); }
+
+.week { display: flex; gap: 6px; }
+.week .day {
+  flex: 1; text-align: center; padding: 8px 0; border-radius: var(--radius-sm); background: var(--track);
+  font-size: 12px; color: var(--ink-secondary);
+}
+.week .day.done { background: var(--accent-container); color: var(--on-accent-container); font-weight: 600; }
+.week .day.today { outline: 2px solid var(--ink); }
+
+.big-number { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.code { font-size: 34px; font-weight: 700; letter-spacing: 0.08em; text-align: center; padding: 16px 0; font-variant-numeric: tabular-nums; }
+.photo { width: 100%; border-radius: var(--radius-sm); background: var(--track); aspect-ratio: 4 / 3; object-fit: cover; }
+.photos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.calendar .head { font-size: 12px; color: var(--ink-tertiary); padding: 4px 0; }
+.calendar button {
+  appearance: none; border: 0; background: transparent; aspect-ratio: 1; border-radius: 50%; cursor: pointer;
+  font-size: 14px; color: var(--ink);
+}
+.calendar button.planned { box-shadow: inset 0 0 0 2px var(--border); }
+.calendar button.completed { background: var(--accent); color: var(--on-accent); }
+.calendar button.today { font-weight: 800; text-decoration: underline; }
+.calendar button.outside { color: var(--ink-tertiary); }
+
+video.scanner { width: 100%; border-radius: var(--radius-sm); background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
+svg.chart { width: 100%; height: auto; }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar-height) + 24px + env(safe-area-inset-bottom));
+  background: var(--ink); color: var(--ink-inverse); padding: 10px 18px; border-radius: 999px; z-index: 60; max-width: 90%;
+}

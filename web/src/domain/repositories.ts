@@ -30,8 +30,8 @@ export interface WorkoutRepository {
 export interface PlanRepository<P> {
   /** Plans sorted by name. */
   observePlans(): Stream<P[]>;
-  /** Emits undefined once the plan is deleted. */
-  observePlan(id: string): Stream<P | undefined>;
+  /** Emits null once the plan is deleted (or if it never existed). */
+  observePlan(id: string): Stream<P | null>;
   observeActivePlan(): Stream<P | undefined>;
   getPlan(id: string): Promise<P | undefined>;
   getActivePlan(): Promise<P | undefined>;

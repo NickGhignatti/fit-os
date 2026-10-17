@@ -137,13 +137,13 @@ describe('plans', () => {
     expect(await repo.getActivePlan()).toBeUndefined();
   });
 
-  it('emits undefined for a deleted plan; diet and training plans are separate', async () => {
+  it('emits null for a deleted plan; diet and training plans are separate', async () => {
     const repo = dexieTrainingPlans(db);
     const p = plan();
     await repo.save(p);
-    const gone = nextWhere(repo.observePlan(p.id), (v) => v === undefined);
+    const gone = nextWhere(repo.observePlan(p.id), (v) => v === null);
     await repo.delete(p.id);
-    expect(await gone).toBeUndefined();
+    expect(await gone).toBeNull();
     expect(await dexieDietPlans(db).getPlan(p.id)).toBeUndefined();
   });
 });

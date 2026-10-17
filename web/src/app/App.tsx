@@ -1,5 +1,15 @@
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Day } from '../ui/Day';
+import { DietPlanScreen, Food } from '../ui/Diet';
+import { ExerciseDetail, ExercisePicker } from '../ui/Exercises';
+import { FoodPicker } from '../ui/FoodPicker';
+import { ToastProvider } from '../ui/hooks';
+import { ProfileScreen } from '../ui/ProfileScreen';
+import { Today } from '../ui/Today';
+import { Tracker } from '../ui/Tracker';
+import { TrainingPlanScreen } from '../ui/TrainingPlanScreen';
+import { Workouts } from '../ui/Workouts';
 
 interface Tab {
   readonly path: string;
@@ -22,30 +32,65 @@ const TABS: readonly Tab[] = [
   { path: '/profile', label: 'Profile', icon: <Icon d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" /> },
 ];
 
-const Placeholder = ({ title }: { title: string }) => (
-  <>
-    <h1>{title}</h1>
-    <p className="muted">Coming next.</p>
-  </>
-);
+/** A bug in one screen should show a message and a way out, not a blank page. */
+class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
 
-export const App = () => (
-  <div className="app">
-    <main className="screen">
-      <Routes>
-        {TABS.map((tab) => (
-          <Route key={tab.path} path={tab.path} element={<Placeholder title={tab.label} />} />
-        ))}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </main>
-    <nav className="tabbar" aria-label="Main">
-      {TABS.map((tab) => (
-        <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className="tab">
-          {tab.icon}
-          <span>{tab.label}</span>
-        </NavLink>
-      ))}
-    </nav>
-  </div>
-);
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(error, info.componentStack);
+  }
+
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="empty" role="alert">
+        <p>Something went wrong on this screen.</p>
+        <button className="btn" onClick={() => window.location.assign('/')}>Back to Today</button>
+      </div>
+    );
+  }
+}
+
+export const App = () => {
+  // The tab bar belongs to the top-level screens; detail screens have a back button instead.
+  const { pathname } = useLocation();
+  const showTabs = TABS.some((t) => t.path === pathname);
+  return (
+    <ToastProvider>
+      <div className="app">
+        <main className="screen">
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Today />} />
+              <Route path="/day/:date" element={<Day />} />
+              <Route path="/workouts" element={<Workouts />} />
+              <Route path="/workouts/plan/:id" element={<TrainingPlanScreen />} />
+              <Route path="/exercises/pick" element={<ExercisePicker />} />
+              <Route path="/exercises/:id" element={<ExerciseDetail />} />
+              <Route path="/food" element={<Food />} />
+              <Route path="/food/plan/:id" element={<DietPlanScreen />} />
+              <Route path="/food/pick" element={<FoodPicker />} />
+              <Route path="/tracker" element={<Tracker />} />
+              <Route path="/profile" element={<ProfileScreen />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ErrorBoundary>
+        </main>
+        {showTabs && (
+          <nav className="tabbar" aria-label="Main">
+            {TABS.map((tab) => (
+              <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className="tab">
+                {tab.icon}
+                <span>{tab.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        )}
+      </div>
+    </ToastProvider>
+  );
+};

@@ -34,6 +34,7 @@ export class TrackerDb extends Dexie {
   favoriteFoods!: EntityTable<FavoriteRow, 'id'>;
   weightEntries!: EntityTable<WeightEntry, 'id'>;
   profile!: EntityTable<ProfileRow, 'key'>;
+  savedProducts!: EntityTable<FoodItem, 'id'>;
 
   constructor(name = 'tracker') {
     super(name);
@@ -47,6 +48,8 @@ export class TrackerDb extends Dexie {
       weightEntries: 'id, &date',
       profile: 'key',
     });
+    // Packaged products seen before, so they can be found offline. Local only, never exported.
+    this.version(2).stores({ savedProducts: 'id' });
   }
 }
 

@@ -130,16 +130,16 @@ export interface TrainingWeek {
   readonly completedCount: number;
 }
 
-/** Emits undefined while there is no active plan. */
+/** Emits null while there is no active plan. */
 export const observeTrainingWeek = (
   repos: { workouts: WorkoutRepository; trainingPlans: TrainingPlanRepository },
   today: LocalDate,
-): Stream<TrainingWeek | undefined> => {
+): Stream<TrainingWeek | null> => {
   const monday = mondayOnOrBefore(today);
   return combine(
     [repos.trainingPlans.observeActivePlan(), repos.workouts.observeDaySummaries(monday, addDays(monday, 6)), repos.workouts.observeWorkouts(today)],
     (plan, summaries, todays) => {
-      if (!plan) return undefined;
+      if (!plan) return null;
       const completed = new Set(summaries.filter((s) => s.totalSets > 0 && s.doneSets === s.totalSets).map((s) => s.date));
       const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
         .filter((d) => sessionOn(plan, d).length > 0)
