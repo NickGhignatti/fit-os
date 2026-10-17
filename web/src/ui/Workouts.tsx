@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { newTrainingPlan } from '../domain/edit';
 import { sessionOnDay, trainingDays, type TrainingPlan } from '../domain/trainingPlan';
@@ -25,7 +25,7 @@ export const Workouts = () => {
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'library' ? 'library' : 'plans';
   const date = today();
-  const { repos } = useContainer();
+  const { repos, community } = useContainer();
   const navigate = useNavigate();
   const plans = useStream((c) => c.repos.trainingPlans.observePlans());
   const week = useStream((c) => observeTrainingWeek(c.repos, date), [date]);
@@ -64,7 +64,12 @@ export const Workouts = () => {
           ) : week === null ? <p className="muted">No active plan. Set one as active to follow it here.</p> : undefined}
         />
       )}
-      {tab === 'plans' && <div style={{ marginTop: 12 }}><ReceiveButton /></div>}
+      {tab === 'plans' && (
+        <div className="stack" style={{ marginTop: 12 }}>
+          <ReceiveButton />
+          {community && <Link className="btn secondary" style={{ textAlign: 'center', textDecoration: 'none' }} to="/community">Browse community workouts</Link>}
+        </div>
+      )}
     </>
   );
 };

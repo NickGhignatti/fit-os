@@ -244,3 +244,15 @@ svg.chart { width: 100%; height: auto; }
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar-height) + 24px + env(safe-area-inset-bottom));
   background: var(--ink); color: var(--ink-inverse); padding: 10px 18px; border-radius: 999px; z-index: 60; max-width: 90%;
 }
+
+/* ---- Account and legal ------------------------------------------------------------------ */
+.btn.google {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; color: #1f1f1f; border: 1px solid #dadce0;
+}
+.btn.google:active { background: #f1f3f4; }
+.legal h2 { margin-top: 28px; }
+.legal h3 { font-size: 16px; margin: 18px 0 6px; }
+.legal p, .legal li { line-height: 1.6; }
+.legal ul { padding-left: 20px; }
+.legal a { color: var(--ink); }

@@ -10,6 +10,8 @@ import {
   dexieDietPlans,
   dexieTrainingPlans,
 } from '../data/repositories';
+import { createCommunity } from '../community/supabase';
+import type { Community } from '../community/ports';
 import { SupabaseTransferGateway, type TransferGateway } from '../transfer/gateway';
 import type { AppConfig } from './config';
 
@@ -32,6 +34,8 @@ export interface Container {
   };
   /** Null when no Supabase is configured: sending and receiving are then unavailable. */
   readonly transfer: TransferGateway | null;
+  /** Accounts and the public plan library. Null when no Supabase is configured. */
+  readonly community: Community | null;
 }
 
 export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb()): Container => ({
@@ -51,4 +55,5 @@ export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb
     savedProducts: new DexieSavedProducts(db),
   },
   transfer: config.transferEnabled ? new SupabaseTransferGateway(config.supabaseUrl, config.supabaseKey) : null,
+  community: config.transferEnabled ? createCommunity(config.supabaseUrl, config.supabaseKey) : null,
 });

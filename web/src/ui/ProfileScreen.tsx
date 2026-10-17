@@ -3,6 +3,7 @@ import { useContainer, useStream } from '../app/hooks';
 import { exportBackup, parseBackup, restoreBackup, type Backup } from '../data/backup';
 import { ACTIVITY_FACTOR, PACE_KG_PER_WEEK, ageOn, type ActivityLevel, type GoalPace, type Profile, type Sex, type WeightEntry } from '../domain/profile';
 import { observeDailyTargets } from '../domain/useCases';
+import { AccountSection } from './Account';
 import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKcal, formatKg, parseNumber, today } from './format';
 import { useToast } from './hooks';
@@ -197,6 +198,8 @@ export const ProfileScreen = () => {
 
       <h2>Calendar</h2>
       <Calendar />
+
+      <AccountSection />
 
       <DataSection />
 

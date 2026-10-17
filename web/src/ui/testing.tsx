@@ -8,6 +8,7 @@ import { createContainer, type Container } from '../app/container';
 import { ContainerProvider } from '../app/hooks';
 import { OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
 import { TrackerDb } from '../data/db';
+import type { Community } from '../community/ports';
 import type { TransferGateway } from '../transfer/gateway';
 
 // Tests run from web/. (jsdom's URL class is not accepted by Node's file reader, so no `new URL` here.)
@@ -16,7 +17,7 @@ const catalog = (name: string) => async () => readFileSync(join(process.cwd(), '
 let databases = 0;
 
 /** A "device": its own empty database, the real catalogue files, no internet, and an optional transfer server. */
-export const makeDevice = (transfer: TransferGateway | null = null): Container => {
+export const makeDevice = (transfer: TransferGateway | null = null, community: Community | null = null): Container => {
   const base = createContainer(readConfig('', ''), new TrackerDb(`ui-test-${databases++}`));
   const offline = async () => { throw new TypeError('offline'); };
   return {
@@ -28,6 +29,7 @@ export const makeDevice = (transfer: TransferGateway | null = null): Container =
       products: new OpenFoodFactsRepository({ products: 'https://off.invalid', search: 'https://off.invalid' }, offline as unknown as typeof fetch),
     },
     transfer,
+    community,
   };
 };
 

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { addMeal, deleteFood, deleteMeal, newDietPlan, updateFood, updateMeal } from '../domain/edit';
 import { mealNutrients, mealsOnDay, nutrientsOnDay, plannedDays, type DietPlan, type Meal, type PlannedFood } from '../domain/diet';
@@ -10,6 +10,7 @@ import { dayName, formatGrams, formatKcal, parseNumber, shortDayName } from './f
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Empty, Loading, MacroChips, Modal, PageHeader } from './kit';
 import { DIET_TEXTS, PlanList, PlanMenu } from './Plans';
+import { PublishButton } from './Community';
 import { ReceiveButton, SendButton } from './Transfer';
 
 const dietSummary = (plan: DietPlan): string => {
@@ -23,14 +24,17 @@ const dietSummary = (plan: DietPlan): string => {
 };
 
 export const Food = () => {
-  const { repos } = useContainer();
+  const { repos, community } = useContainer();
   const plans = useStream((c) => c.repos.dietPlans.observePlans());
   return (
     <>
       <PageHeader title="Food" />
       <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary}
         create={(name, recurrence) => newDietPlan(name, recurrence)} href={(p) => `/food/plan/${p.id}`} />
-      <div style={{ marginTop: 12 }}><ReceiveButton /></div>
+      <div className="stack" style={{ marginTop: 12 }}>
+        <ReceiveButton />
+        {community && <Link className="btn secondary" style={{ textAlign: 'center', textDecoration: 'none' }} to="/community">Browse community diets</Link>}
+      </div>
     </>
   );
 };
@@ -223,7 +227,10 @@ export const DietPlanScreen = () => {
       <PageHeader back title={plan.name} subtitle={`${plan.recurrence === 'daily' ? 'Daily' : 'Weekly'}${plan.isActive ? ' · Active' : ''}`}
         actions={<PlanMenu plan={plan} repo={repos.dietPlans} texts={DIET_TEXTS} afterDelete={() => navigate('/food', { replace: true })} />} />
       <PlanBody key={plan.id} plan={plan} />
-      <div style={{ marginTop: 12 }}><SendButton kind="diet_plan" data={plan} label="Send this diet to another device" /></div>
+      <div className="stack" style={{ marginTop: 12 }}>
+        <SendButton kind="diet_plan" data={plan} label="Send this diet to another device" />
+        <PublishButton kind="diet" plan={plan} />
+      </div>
     </>
   );
 };
