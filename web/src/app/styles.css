@@ -168,6 +168,12 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 }
 .fab:active { background: var(--ink-pressed); }
 .fab-space { height: 72px; }
+.play {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--ink); color: var(--ink-inverse);
+}
+.play:active { background: var(--ink-pressed); }
 
 .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }

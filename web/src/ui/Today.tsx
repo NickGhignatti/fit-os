@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
-import { newWorkout } from '../domain/edit';
 import { weekdayOf } from '../domain/plan';
-import { logPlannedMeal, observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, type TrainingWeek } from '../domain/useCases';
+import { observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, startPlannedSession, type TrainingWeek } from '../domain/useCases';
+import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, Loading, MacroChips, PageHeader, ProgressBar, ProgressRing, PromptDialog } from './kit';
-import { PendingSessionCard, WorkoutCard } from './WorkoutCard';
 
 interface Count { readonly done: number; readonly total: number }
+
+const PlayIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+);
 
 /**
  * Two rings for every active plan together: today's sets, and this week's sessions. Tapping a ring
@@ -92,7 +95,10 @@ export const Today = () => {
   if (!agenda || !calories || weeks === undefined || targets === undefined) return <Loading />;
 
   const goal = targets?.nutrients.kcal;
-  const restDay = agenda.hasTrainingPlan && agenda.pendingSessions.length === 0 && agenda.workouts.length === 0;
+  // Today lists only what is left to do; the workout itself is logged on the day's page.
+  const day = `/day/${date}`;
+  const unfinished = agenda.workouts.filter((w) => totalSetsOf(w) === 0 || doneSetsOf(w) < totalSetsOf(w));
+  const nothingToDo = agenda.pendingSessions.length === 0 && unfinished.length === 0;
 
   return (
     <>
@@ -113,16 +119,38 @@ export const Today = () => {
       {weeks.length > 0 ? (
         <TrainingProgress weeks={weeks} />
       ) : (
-        <section className="card">
-          <p className="muted">No active workout. Pick one to see it here every day.</p>
-          <Link className="btn secondary" to="/workouts">Choose a workout</Link>
+        <p className="muted">No active workout.</p>
+      )}
+      {nothingToDo ? (
+        agenda.workouts.length > 0 ? <p className="muted">Training done for today.</p>
+          : agenda.hasTrainingPlan && <p className="muted">Rest day: nothing planned.</p>
+      ) : (
+        <section className="card" aria-label="Training to do">
+          {agenda.pendingSessions.map((session) => (
+            <div key={session.planId} className="list-item" style={{ cursor: 'default' }}>
+              <div className="grow">
+                <div className="title">{session.title}</div>
+                <div className="small muted">
+                  {session.exercises.length} {session.exercises.length === 1 ? 'exercise' : 'exercises'} · {session.exercises.reduce((n, e) => n + e.sets.length, 0)} sets
+                </div>
+              </div>
+              <button className="play" aria-label={`Start ${session.title}`}
+                onClick={() => void startPlannedSession(repos, date, session.planId).then(() => navigate(day))}>
+                <PlayIcon />
+              </button>
+            </div>
+          ))}
+          {unfinished.map((w) => (
+            <div key={w.id} className="list-item" style={{ cursor: 'default' }}>
+              <div className="grow">
+                <div className="title">{w.title}</div>
+                <div className="small muted">{doneSetsOf(w)} of {totalSetsOf(w)} sets done</div>
+              </div>
+              <Link className="play" aria-label={`Continue ${w.title}`} to={day}><PlayIcon /></Link>
+            </div>
+          ))}
         </section>
       )}
-
-      {agenda.pendingSessions.map((session) => <PendingSessionCard key={session.planId} session={session} date={date} />)}
-      {agenda.workouts.map((w) => <WorkoutCard key={w.id} workout={w} />)}
-      {restDay && <p className="muted">Rest day: nothing planned.</p>}
-      <button className="btn secondary" onClick={() => void repos.workouts.save(newWorkout(date, 'Workout'))}>Add a workout</button>
 
       <h2>Meals</h2>
       {calories.hasDietPlan ? (
@@ -136,19 +164,11 @@ export const Today = () => {
                   {meal.entries.length > 0 ? formatKcal(meal.eaten.kcal) : meal.planned?.time ? `Scheduled ${meal.planned.time}` : 'Pending'}
                 </div>
               </div>
-              {meal.canLogAsPlanned && meal.planned && (
-                <button className="btn secondary" onClick={() => void logPlannedMeal(repos, date, meal.planned!).then((n) => toast(`Logged ${n} ${n === 1 ? 'food' : 'foods'} as ${meal.name}`))}>
-                  Log as planned
-                </button>
-              )}
             </div>
           ))}
         </section>
       ) : (
-        <section className="card">
-          <p className="muted">No active diet. Pick one to see your meals here.</p>
-          <Link className="btn secondary" to="/food">Choose a diet</Link>
-        </section>
+        <p className="muted">No active diet.</p>
       )}
 
       <div className="fab-space" />

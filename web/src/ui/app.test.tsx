@@ -88,8 +88,7 @@ describe('a workout plan, from creation to a logged session', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     await user.click(await screen.findByRole('link', { name: 'Today' }));
 
-    expect(await screen.findByText('From your plan · ', { exact: false })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Start workout' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Push day' }));
     expect(await screen.findByText('0/3 sets done')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Set 1 not done' }));
@@ -104,7 +103,7 @@ describe('a workout plan, from creation to a logged session', () => {
     await device.repos.trainingPlans.save({ ...newTrainingPlan('Legs', 'daily', { 0: [{ name: 'Squat', notes: '', catalogId: null, sets: [{ reps: 5, weight: 100 }] }] }), isActive: true });
     renderApp('/', device);
 
-    await user.click(await screen.findByRole('button', { name: 'Start workout' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Legs' }));
     await user.click(await screen.findByRole('button', { name: /^Set 1 \d/ }));
     const editor = await dialog('Set 1');
     const actual = within(editor).getAllByLabelText('Reps')[1]!;
@@ -123,7 +122,7 @@ describe('a workout plan, from creation to a logged session', () => {
 });
 
 describe('a diet, from creation to a logged meal', () => {
-  it('plans a meal with a real food, then logs it as planned from Today', async () => {
+  it('plans a meal with a real food, logs it as planned, and lists it on Today', async () => {
     const user = userEvent.setup();
     renderApp('/food');
 
@@ -156,13 +155,17 @@ describe('a diet, from creation to a logged meal', () => {
     await chooseFromMenu(user, 'More options', 'Set as active');
     await user.click(await screen.findByRole('button', { name: 'Back' }));
     await user.click(await screen.findByRole('link', { name: 'Today' }));
-
-    await user.click(await screen.findByRole('button', { name: 'Log as planned' }));
-    expect(await screen.findByText(/Logged 1 food as Lunch/)).toBeInTheDocument();
-    expect(await screen.findByText('logged')).toBeInTheDocument();
+    const meals = await screen.findByRole('region', { name: 'Nutrition checklist' });
+    expect(within(meals).getByText('Lunch')).toBeInTheDocument();
+    expect(within(meals).queryByRole('button')).not.toBeInTheDocument(); // a list only: food is added elsewhere
 
     await user.click(screen.getByRole('link', { name: 'Tracker' }));
+    await user.click(await screen.findByRole('button', { name: 'Log as planned' }));
+    expect(await screen.findByText(/Logged 1 food as Lunch/)).toBeInTheDocument();
     expect(await screen.findByText(/150 g · \d+ kcal/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: 'Today' }));
+    expect(await screen.findByText('logged')).toBeInTheDocument();
   });
 
   it('copies a weekly diet day onto other days', async () => {
@@ -493,29 +496,32 @@ describe('following several workouts at once', () => {
     expect(screen.getByRole('region', { name: 'Active program: Volleyball' })).toBeInTheDocument();
   });
 
-  it('shows a card and a week for each on Today, and finishing one does not tick the other', async () => {
+  it('lists each plan to do on Today, and finishing one does not tick the other', async () => {
     const user = userEvent.setup();
     const device = await twoPlans();
     for (const plan of (await device.db.trainingPlans.toArray())) await device.repos.trainingPlans.setPlanActive(plan.id, true);
     renderApp('/', device);
 
-    const lifting = await screen.findByRole('region', { name: 'Lifting, from your plan' });
-    const volley = await screen.findByRole('region', { name: 'Volleyball, from your plan' });
+    const todo = await screen.findByRole('region', { name: 'Training to do' });
+    expect(within(todo).getByRole('button', { name: 'Start Lifting' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Lifting, this week' })).not.toBeInTheDocument(); // folded until asked
     await user.click(screen.getByRole('button', { name: /^This week:/ }));
     expect(screen.getByRole('region', { name: 'Lifting, this week' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Volleyball, this week' })).toBeInTheDocument();
 
-    await user.click(within(volley).getByRole('button', { name: 'Start workout' }));
-    expect(await screen.findByRole('region', { name: 'Volleyball' })).toBeInTheDocument(); // the logged workout
+    await user.click(within(todo).getByRole('button', { name: 'Start Volleyball' })); // opens the day to log it
+    expect(await screen.findByRole('region', { name: 'Volleyball' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Lifting, from your plan' })).toBeInTheDocument(); // the other still waits
-    expect(screen.queryByRole('region', { name: 'Volleyball, from your plan' })).not.toBeInTheDocument();
-
     await user.click(screen.getByRole('button', { name: 'Set 1 not done' }));
     await screen.findByText('1/1 sets done');
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByRole('button', { name: 'Start Lifting' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start Volleyball' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Continue Volleyball' })).not.toBeInTheDocument(); // done, nothing left
+    await user.click(screen.getByRole('button', { name: /^This week:/ }));
     expect(await screen.findByRole('link', { name: /^Volleyball, .*, completed$/ })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^Lifting, .*, completed$/ })).not.toBeInTheDocument();
-    expect(within(lifting).queryByText(/Start workout/)).toBeInTheDocument();
   });
 
   it('sums today and the week of every plan in two rings that open to show what is left', async () => {
@@ -527,8 +533,10 @@ describe('following several workouts at once', () => {
     expect(await screen.findByRole('button', { name: 'Today: 0%, 0 of 2 sets' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByRole('button', { name: 'This week: 0%, 0 of 14 sessions' })).toBeInTheDocument();
 
-    await user.click(within(screen.getByRole('region', { name: 'Volleyball, from your plan' })).getByRole('button', { name: 'Start workout' }));
+    await user.click(screen.getByRole('button', { name: 'Start Volleyball' }));
     await user.click(await screen.findByRole('button', { name: 'Set 1 not done' }));
+    await screen.findByText('1/1 sets done');
+    await user.click(screen.getByRole('button', { name: 'Back' }));
     await user.click(await screen.findByRole('button', { name: 'Today: 50%, 1 of 2 sets' }));
 
     const detail = screen.getByRole('region', { name: 'Training progress' });
@@ -537,17 +545,23 @@ describe('following several workouts at once', () => {
     expect(screen.getByRole('button', { name: 'This week: 7%, 1 of 14 sessions' })).toBeInTheDocument();
   });
 
-  it('can start both on the same day', async () => {
+  it('can start both on the same day, and goes back to an unfinished one', async () => {
     const user = userEvent.setup();
     const device = await twoPlans();
     for (const plan of await device.db.trainingPlans.toArray()) await device.repos.trainingPlans.setPlanActive(plan.id, true);
     renderApp('/', device);
 
-    await user.click(within(await screen.findByRole('region', { name: 'Lifting, from your plan' })).getByRole('button', { name: 'Start workout' }));
-    await user.click(within(await screen.findByRole('region', { name: 'Volleyball, from your plan' })).getByRole('button', { name: 'Start workout' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Lifting' }));
+    await screen.findByRole('region', { name: 'Lifting' });
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Volleyball' }));
 
     expect(await screen.findByRole('region', { name: 'Lifting' })).toBeInTheDocument();
     expect(await screen.findByRole('region', { name: 'Volleyball' })).toBeInTheDocument();
     expect(await device.db.workouts.count()).toBe(2);
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByRole('link', { name: 'Continue Lifting' })).toHaveAttribute('href', expect.stringMatching(/^\/day\//));
+    expect(screen.getByRole('link', { name: 'Continue Volleyball' })).toBeInTheDocument();
   });
 });

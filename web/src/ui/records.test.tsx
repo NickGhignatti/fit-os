@@ -194,7 +194,7 @@ describe('during a workout', () => {
   });
 
   const startAndTick = async (user: User) => {
-    await user.click(await screen.findByRole('button', { name: 'Start workout' }));
+    await user.click(await screen.findByRole('button', { name: /^Start / }));
     await user.click(await screen.findByRole('button', { name: 'Set 1 not done' }));
   };
 
