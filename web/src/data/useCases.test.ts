@@ -237,6 +237,8 @@ describe('observing', () => {
     expect(v!.days.map((d) => [d.date, d.isCompleted])).toEqual([[MONDAY, false], ['2026-10-13', false]]); // Monday not done there
     expect(s!.hasPendingSessionToday).toBe(true); // Wednesday's session is not started
     expect(v!.hasPendingSessionToday).toBe(false); // Volleyball has none on Wednesday
+    expect(s!.days.map((d) => d.sets)).toEqual([{ done: 1, total: 1 }, { done: 0, total: 1 }]);
+    expect(v!.days.map((d) => d.sets)).toEqual([{ done: 0, total: 1 }, { done: 0, total: 1 }]); // started, then planned
     expect(s!.todaySets).toEqual({ done: 0, total: 1 }); // planned, not started
     expect(v!.todaySets).toBeNull();
 

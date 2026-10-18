@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { weekdayOf } from '../domain/plan';
@@ -9,6 +9,8 @@ import { useToast } from './hooks';
 import { ActionMenu, Loading, MacroChips, PageHeader, ProgressBar, ProgressRing, PromptDialog } from './kit';
 
 interface Count { readonly done: number; readonly total: number }
+
+const percentOf = (c: Count): number => (c.total > 0 ? Math.round(Math.min(c.done / c.total, 1) * 100) : 0);
 
 const PlayIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
@@ -26,7 +28,7 @@ const TrainingProgress = ({ weeks }: { weeks: readonly TrainingWeek[] }) => {
 
   const ring = (key: 'day' | 'week', label: string, count: Count, caption: string) => (
     <button className="ring-btn" aria-expanded={open === key} aria-controls={`training-${key}`}
-      aria-label={`${label}: ${count.total > 0 ? `${Math.round(Math.min(count.done / count.total, 1) * 100)}%, ` : ''}${caption}`}
+      aria-label={`${label}: ${count.total > 0 ? `${percentOf(count)}%, ` : ''}${caption}`}
       onClick={() => setOpen(open === key ? null : key)}>
       <ProgressRing value={count.done} max={count.total} />
       <span className="title">{label} {open === key ? '▴' : '▾'}</span>
@@ -67,8 +69,9 @@ const TrainingProgress = ({ weeks }: { weeks: readonly TrainingWeek[] }) => {
               <div className="week" style={{ marginTop: 8 }}>
                 {w.days.map((d) => (
                   <Link key={d.date} to={`/day/${d.date}`} className={`day ${d.isCompleted ? 'done' : ''} ${d.isToday ? 'today' : ''}`}
-                    aria-label={`${w.plan.name}, ${dateTitle(d.date)}${d.isCompleted ? ', completed' : ''}`}>
-                    {shortDayName(weekdayOf(d.date))}{d.isCompleted ? ' ✓' : ''}
+                    style={{ '--fill': `${percentOf(d.sets)}%` } as CSSProperties}
+                    aria-label={`${w.plan.name}, ${dateTitle(d.date)}, ${d.isCompleted ? 'completed' : `${percentOf(d.sets)}% done`}`}>
+                    {shortDayName(weekdayOf(d.date))}
                   </Link>
                 ))}
               </div>
@@ -99,6 +102,9 @@ export const Today = () => {
   const day = `/day/${date}`;
   const unfinished = agenda.workouts.filter((w) => totalSetsOf(w) === 0 || doneSetsOf(w) < totalSetsOf(w));
   const nothingToDo = agenda.pendingSessions.length === 0 && unfinished.length === 0;
+  // A section shows only on a day it has something for: no rest-day or no-plan filler.
+  const trainsToday = weeks.some((w) => w.todaySets !== null) || agenda.workouts.length > 0;
+  const eatsByPlan = calories.hasDietPlan && calories.meals.length > 0;
 
   return (
     <>
@@ -115,15 +121,10 @@ export const Today = () => {
         {goal === undefined && <p className="small muted"><Link to="/profile">Set up your profile</Link> to get a daily goal.</p>}
       </section>
 
-      <h2>Training</h2>
-      {weeks.length > 0 ? (
-        <TrainingProgress weeks={weeks} />
-      ) : (
-        <p className="muted">No active workout.</p>
-      )}
-      {nothingToDo ? (
-        agenda.workouts.length > 0 ? <p className="muted">Training done for today.</p>
-          : agenda.hasTrainingPlan && <p className="muted">Rest day: nothing planned.</p>
+      {trainsToday && <h2>Training</h2>}
+      {trainsToday && weeks.length > 0 && <TrainingProgress weeks={weeks} />}
+      {!trainsToday ? null : nothingToDo ? (
+        <p className="muted">Training done for today.</p>
       ) : (
         <section className="card" aria-label="Training to do">
           {agenda.pendingSessions.map((session) => (
@@ -152,8 +153,8 @@ export const Today = () => {
         </section>
       )}
 
-      <h2>Meals</h2>
-      {calories.hasDietPlan ? (
+      {eatsByPlan && <h2>Meals</h2>}
+      {eatsByPlan && (
         <section className="card" aria-label="Nutrition checklist">
           <div className="small muted">{calories.meals.filter((m) => m.entries.length > 0).length} of {calories.meals.length} logged</div>
           {calories.meals.map((meal) => (
@@ -167,8 +168,6 @@ export const Today = () => {
             </div>
           ))}
         </section>
-      ) : (
-        <p className="muted">No active diet.</p>
       )}
 
       <div className="fab-space" />

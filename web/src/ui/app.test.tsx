@@ -59,6 +59,23 @@ describe('the + on Today', () => {
   });
 });
 
+describe('what Today shows', () => {
+  it('leaves out training and meals on a day with nothing planned', async () => {
+    const device = makeDevice();
+    await device.repos.trainingPlans.save({ ...newTrainingPlan('Rest', 'weekly'), isActive: true }); // no session on any day
+    renderApp('/', device);
+    await screen.findByRole('region', { name: 'Energy consumed' });
+    expect(screen.queryByRole('heading', { name: 'Training' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Meals' })).not.toBeInTheDocument();
+    cleanup();
+
+    await device.repos.trainingPlans.save({ ...newTrainingPlan('Legs', 'daily', { 0: [{ name: 'Squat', notes: '', catalogId: null, sets: [{ reps: 5, weight: 100 }] }] }), isActive: true });
+    renderApp('/', device);
+    expect(await screen.findByRole('heading', { name: 'Training' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start Legs' })).toBeInTheDocument();
+  });
+});
+
 describe('a workout plan, from creation to a logged session', () => {
   it('builds a plan with a catalogue exercise, activates it, and ticks off sets on Today', async () => {
     const user = userEvent.setup();
@@ -522,6 +539,8 @@ describe('following several workouts at once', () => {
     await user.click(screen.getByRole('button', { name: /^This week:/ }));
     expect(await screen.findByRole('link', { name: /^Volleyball, .*, completed$/ })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^Lifting, .*, completed$/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /^Lifting, .*, 0% done$/ })[0]).toHaveStyle({ '--fill': '0%' });
+    expect(screen.getAllByRole('link', { name: /^Volleyball, .*, completed$/ })[0]).toHaveStyle({ '--fill': '100%' });
   });
 
   it('sums today and the week of every plan in two rings that open to show what is left', async () => {

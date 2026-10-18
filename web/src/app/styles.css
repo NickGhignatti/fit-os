@@ -246,11 +246,13 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 .ring-detail section + section { margin-top: 12px; }
 
 .week { display: flex; gap: 6px; }
+/* A day fills from the left as its sets get done; Today sets --fill. */
 .week .day {
-  flex: 1; text-align: center; padding: 8px 0; border-radius: var(--radius-sm); background: var(--track);
+  flex: 1; text-align: center; padding: 8px 0; border-radius: var(--radius-sm);
+  background: linear-gradient(to right, var(--accent-container) var(--fill, 0%), var(--track) var(--fill, 0%));
   font-size: 12px; color: var(--ink-secondary);
 }
-.week .day.done { background: var(--accent-container); color: var(--on-accent-container); font-weight: 600; }
+.week .day.done { color: var(--on-accent-container); font-weight: 600; }
 .week .day.today { outline: 2px solid var(--ink); }
 
 .big-number { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
