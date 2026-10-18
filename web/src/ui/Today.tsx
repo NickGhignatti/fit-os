@@ -3,11 +3,79 @@ import { Link } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { newWorkout } from '../domain/edit';
 import { weekdayOf } from '../domain/plan';
-import { logPlannedMeal, observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks } from '../domain/useCases';
+import { logPlannedMeal, observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, type TrainingWeek } from '../domain/useCases';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
-import { Loading, MacroChips, PageHeader, ProgressBar, PromptDialog } from './kit';
+import { Loading, MacroChips, PageHeader, ProgressBar, ProgressRing, PromptDialog } from './kit';
 import { PendingSessionCard, WorkoutCard } from './WorkoutCard';
+
+interface Count { readonly done: number; readonly total: number }
+
+/**
+ * Two rings for every active plan together: today's sets, and this week's sessions. Tapping a ring
+ * opens what it counts, plan by plan, so you see what is done and what is left.
+ */
+const TrainingProgress = ({ weeks }: { weeks: readonly TrainingWeek[] }) => {
+  const [open, setOpen] = useState<'day' | 'week' | null>(null);
+  const planned = weeks.filter((w) => w.todaySets !== null);
+  const day = planned.reduce<Count>((c, w) => ({ done: c.done + w.todaySets!.done, total: c.total + w.todaySets!.total }), { done: 0, total: 0 });
+  const week = weeks.reduce<Count>((c, w) => ({ done: c.done + w.completedCount, total: c.total + w.days.length }), { done: 0, total: 0 });
+
+  const ring = (key: 'day' | 'week', label: string, count: Count, caption: string) => (
+    <button className="ring-btn" aria-expanded={open === key} aria-controls={`training-${key}`}
+      aria-label={`${label}: ${count.total > 0 ? `${Math.round(Math.min(count.done / count.total, 1) * 100)}%, ` : ''}${caption}`}
+      onClick={() => setOpen(open === key ? null : key)}>
+      <ProgressRing value={count.done} max={count.total} />
+      <span className="title">{label} {open === key ? '▴' : '▾'}</span>
+      <span className="small muted">{caption}</span>
+    </button>
+  );
+
+  return (
+    <section className="card" aria-label="Training progress">
+      <div className="rings">
+        {ring('day', 'Today', day, planned.length === 0 ? 'Rest day' : `${day.done} of ${day.total} sets`)}
+        {ring('week', 'This week', week, `${week.done} of ${week.total} sessions`)}
+      </div>
+      {open === 'day' && (
+        <div id="training-day" className="ring-detail">
+          {planned.length === 0 && <p className="small muted">No session planned today.</p>}
+          {planned.map((w) => {
+            const sets = w.todaySets!;
+            const done = sets.total > 0 && sets.done === sets.total;
+            return (
+              <div key={w.plan.id} className="list-item" style={{ cursor: 'default' }}>
+                <span className="grow title">{w.plan.name}</span>
+                {done ? <span className="badge">Done ✓</span>
+                  : <span className="small muted">{w.hasPendingSessionToday ? `Not started · ${sets.total} sets` : `${sets.done} of ${sets.total} sets`}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {open === 'week' && (
+        <div id="training-week" className="ring-detail">
+          {weeks.map((w) => (
+            <section key={w.plan.id} aria-label={`${w.plan.name}, this week`}>
+              <div className="row between">
+                <span className="title">{w.plan.name}</span>
+                <span className="small muted">{w.completedCount} of {w.days.length} sessions</span>
+              </div>
+              <div className="week" style={{ marginTop: 8 }}>
+                {w.days.map((d) => (
+                  <Link key={d.date} to={`/day/${d.date}`} className={`day ${d.isCompleted ? 'done' : ''} ${d.isToday ? 'today' : ''}`}
+                    aria-label={`${w.plan.name}, ${dateTitle(d.date)}${d.isCompleted ? ', completed' : ''}`}>
+                    {shortDayName(weekdayOf(d.date))}{d.isCompleted ? ' ✓' : ''}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
 
 export const Today = () => {
   const date = today();
@@ -42,22 +110,7 @@ export const Today = () => {
 
       <h2>Training</h2>
       {weeks.length > 0 ? (
-        weeks.map((week) => (
-          <section key={week.plan.id} className="card" aria-label={`${week.plan.name}, this week`}>
-            <div className="row between">
-              <span className="title">{week.plan.name}</span>
-              <span className="small muted">{week.completedCount} of {week.days.length} sessions completed</span>
-            </div>
-            <div className="week" style={{ marginTop: 8 }}>
-              {week.days.map((d) => (
-                <Link key={d.date} to={`/day/${d.date}`} className={`day ${d.isCompleted ? 'done' : ''} ${d.isToday ? 'today' : ''}`}
-                  aria-label={`${week.plan.name}, ${dateTitle(d.date)}${d.isCompleted ? ', completed' : ''}`}>
-                  {shortDayName(weekdayOf(d.date))}{d.isCompleted ? ' ✓' : ''}
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))
+        <TrainingProgress weeks={weeks} />
       ) : (
         <section className="card">
           <p className="muted">No active workout. Pick one to see it here every day.</p>

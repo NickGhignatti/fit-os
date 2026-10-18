@@ -138,6 +138,23 @@ export const ProgressBar = ({ value, max, label, color }: { value: number; max: 
   </div>
 );
 
+/** A round meter with the percentage in its middle; a dash when there is nothing to count. */
+export const ProgressRing = ({ value, max }: { value: number; max: number }) => {
+  const r = 28;
+  const length = 2 * Math.PI * r;
+  const ratio = max > 0 ? Math.min(value / max, 1) : 0;
+  return (
+    <svg className="ring" viewBox="0 0 72 72" aria-hidden="true">
+      <circle className="ring-track" cx="36" cy="36" r={r} />
+      {ratio > 0 && (
+        <circle className="ring-fill" cx="36" cy="36" r={r} transform="rotate(-90 36 36)"
+          strokeDasharray={length} strokeDashoffset={length * (1 - ratio)} />
+      )}
+      <text x="36" y="36" textAnchor="middle" dominantBaseline="central">{max > 0 ? `${Math.round(ratio * 100)}%` : '–'}</text>
+    </svg>
+  );
+};
+
 export const Loading = () => <p className="muted" role="status">Loading…</p>;
 
 export const Empty = ({ children }: { children: ReactNode }) => <div className="empty">{children}</div>;

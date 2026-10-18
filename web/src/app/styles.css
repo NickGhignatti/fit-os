@@ -214,6 +214,19 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 }
 .check.on { background: var(--accent); border-color: var(--accent); }
 
+.rings { display: flex; gap: 12px; }
+.ring-btn {
+  flex: 1; appearance: none; border: 0; background: var(--surface-muted); border-radius: var(--radius-sm);
+  padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: inherit;
+}
+.ring-btn[aria-expanded='true'] { box-shadow: inset 0 0 0 2px var(--ink); }
+.ring { width: 76px; height: 76px; margin-bottom: 4px; }
+.ring-track { fill: none; stroke: var(--border); stroke-width: 8; }
+.ring-fill { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.3s; }
+.ring text { font-size: 16px; font-weight: 700; fill: var(--ink); }
+.ring-detail { margin-top: 12px; }
+.ring-detail section + section { margin-top: 12px; }
+
 .week { display: flex; gap: 6px; }
 .week .day {
   flex: 1; text-align: center; padding: 8px 0; border-radius: var(--radius-sm); background: var(--track);

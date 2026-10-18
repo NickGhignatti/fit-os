@@ -129,6 +129,11 @@ export interface TrainingWeek {
   /** Today has a session in the plan that has not been started yet. */
   readonly hasPendingSessionToday: boolean;
   readonly completedCount: number;
+  /**
+   * Today's sets in this plan: done, and in all. Before the session is started every set counts as
+   * planned and not done. Null when the plan has no session today.
+   */
+  readonly todaySets: { readonly done: number; readonly total: number } | null;
 }
 
 /**
@@ -156,11 +161,16 @@ export const observeTrainingWeeks = (
         const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
           .filter((d) => sessionOn(plan, d).length > 0)
           .map((date): TrainingWeekDay => ({ date, isCompleted: completed.has(date), isToday: date === today }));
+        const session = sessionOn(plan, today);
+        const started = own.filter((w) => w.date === today);
         return {
           plan,
           days,
           hasPendingSessionToday: pendingSessionOn(plan, today, week.filter((w) => w.date === today)) !== null,
           completedCount: days.filter((d) => d.isCompleted).length,
+          todaySets: session.length === 0 ? null : started.length === 0
+            ? { done: 0, total: session.reduce((n, e) => n + e.sets.length, 0) }
+            : { done: started.reduce((n, w) => n + doneSetsOf(w), 0), total: started.reduce((n, w) => n + totalSetsOf(w), 0) },
         };
       }),
   );

@@ -102,19 +102,10 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, crea
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
   if (!plans) return <Loading />;
-  const actives = plans.filter((p) => p.isActive);
 
   return (
     <>
       {header}
-      {actives.map((active) => (
-        <section key={active.id} className="card" aria-label={`Active ${texts.noun}: ${active.name}`}>
-          <div className="small muted">Active</div>
-          <div className="title">{active.name}</div>
-          <div className="small muted">{summary(active)}</div>
-          <Link className="btn" style={{ display: 'inline-block', marginTop: 8, textDecoration: 'none' }} to={href(active)}>Open</Link>
-        </section>
-      ))}
       {plans.length === 0 ? (
         <Empty>{texts.empty.split('\n').map((line, i) => <div key={i}>{line}</div>)}</Empty>
       ) : (

@@ -483,6 +483,8 @@ describe('following several workouts at once', () => {
 
     const lifting = await screen.findByRole('region', { name: 'Lifting, from your plan' });
     const volley = await screen.findByRole('region', { name: 'Volleyball, from your plan' });
+    expect(screen.queryByRole('region', { name: 'Lifting, this week' })).not.toBeInTheDocument(); // folded until asked
+    await user.click(screen.getByRole('button', { name: /^This week:/ }));
     expect(screen.getByRole('region', { name: 'Lifting, this week' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Volleyball, this week' })).toBeInTheDocument();
 
@@ -496,6 +498,25 @@ describe('following several workouts at once', () => {
     expect(await screen.findByRole('link', { name: /^Volleyball, .*, completed$/ })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^Lifting, .*, completed$/ })).not.toBeInTheDocument();
     expect(within(lifting).queryByText(/Start workout/)).toBeInTheDocument();
+  });
+
+  it('sums today and the week of every plan in two rings that open to show what is left', async () => {
+    const user = userEvent.setup();
+    const device = await twoPlans();
+    for (const plan of await device.db.trainingPlans.toArray()) await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    renderApp('/', device);
+
+    expect(await screen.findByRole('button', { name: 'Today: 0%, 0 of 2 sets' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: 'This week: 0%, 0 of 14 sessions' })).toBeInTheDocument();
+
+    await user.click(within(screen.getByRole('region', { name: 'Volleyball, from your plan' })).getByRole('button', { name: 'Start workout' }));
+    await user.click(await screen.findByRole('button', { name: 'Set 1 not done' }));
+    await user.click(await screen.findByRole('button', { name: 'Today: 50%, 1 of 2 sets' }));
+
+    const detail = screen.getByRole('region', { name: 'Training progress' });
+    expect(within(detail).getByText('Done ✓')).toBeInTheDocument(); // Volleyball
+    expect(within(detail).getByText('Not started · 1 sets')).toBeInTheDocument(); // Lifting
+    expect(screen.getByRole('button', { name: 'This week: 7%, 1 of 14 sessions' })).toBeInTheDocument();
   });
 
   it('can start both on the same day', async () => {
