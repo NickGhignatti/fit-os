@@ -75,12 +75,14 @@ export interface MenuAction {
   readonly danger?: boolean;
 }
 
-/** The ⋮ button: opens a list of actions. */
-export const ActionMenu = ({ actions, label = 'More options' }: { actions: readonly MenuAction[]; label?: string }) => {
+/** The ⋮ button, or any [icon] in its place: opens a list of actions. */
+export const ActionMenu = ({ actions, label = 'More options', icon = '⋮', className = 'icon-btn' }: {
+  actions: readonly MenuAction[]; label?: string; icon?: string; className?: string;
+}) => {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="icon-btn" aria-label={label} onClick={() => setOpen(true)}>⋮</button>
+      <button className={className} aria-label={label} onClick={() => setOpen(true)}>{icon}</button>
       {open && (
         <Modal title={label} onClose={() => setOpen(false)}>
           <div className="stack">

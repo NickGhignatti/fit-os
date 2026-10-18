@@ -41,6 +41,24 @@ describe('navigation', () => {
   });
 });
 
+describe('the + on Today', () => {
+  it('logs a weight, or goes to the food tracker', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    renderApp('/', device);
+
+    await user.click(await screen.findByRole('button', { name: 'Log food or weight' }));
+    await user.click(within(await dialog('Log food or weight')).getByRole('button', { name: 'Weight' }));
+    await user.type(await screen.findByLabelText('Weight (kg)'), '80');
+    await user.click(within(await dialog('Weight')).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Logged 80 kg')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Log food or weight' }));
+    await user.click(within(await dialog('Log food or weight')).getByRole('button', { name: 'Food' }));
+    expect(await screen.findByRole('heading', { name: 'Tracker' })).toBeInTheDocument();
+  });
+});
+
 describe('a workout plan, from creation to a logged session', () => {
   it('builds a plan with a catalogue exercise, activates it, and ticks off sets on Today', async () => {
     const user = userEvent.setup();

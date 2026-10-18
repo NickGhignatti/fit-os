@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { newWorkout } from '../domain/edit';
 import { weekdayOf } from '../domain/plan';
 import { logPlannedMeal, observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, type TrainingWeek } from '../domain/useCases';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
-import { Loading, MacroChips, PageHeader, ProgressBar, ProgressRing, PromptDialog } from './kit';
+import { ActionMenu, Loading, MacroChips, PageHeader, ProgressBar, ProgressRing, PromptDialog } from './kit';
 import { PendingSessionCard, WorkoutCard } from './WorkoutCard';
 
 interface Count { readonly done: number; readonly total: number }
@@ -81,6 +81,7 @@ export const Today = () => {
   const date = today();
   const { repos } = useContainer();
   const toast = useToast();
+  const navigate = useNavigate();
   const agenda = useStream((c) => observeDayAgenda(c.repos, date), [date]);
   const weeks = useStream((c) => observeTrainingWeeks(c.repos, date), [date]);
   const calories = useStream((c) => observeCalorieDay(c.repos, date, DEFAULT_MEALS), [date]);
@@ -150,11 +151,11 @@ export const Today = () => {
         </section>
       )}
 
-      <h2>Quick actions</h2>
-      <div className="row">
-        <Link className="btn grow" to="/tracker" style={{ textAlign: 'center', textDecoration: 'none' }}>+ Food</Link>
-        <button className="btn grow" onClick={() => setWeighing(true)}>+ Weight</button>
-      </div>
+      <div className="fab-space" />
+      <ActionMenu label="Log food or weight" icon="+" className="fab" actions={[
+        { label: 'Food', onSelect: () => navigate('/tracker') },
+        { label: 'Weight', onSelect: () => setWeighing(true) },
+      ]} />
       {weighing && (
         <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" confirmLabel="Save" onClose={() => setWeighing(false)}
           validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}

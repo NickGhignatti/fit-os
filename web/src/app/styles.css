@@ -157,6 +157,18 @@ h2 { font-size: 18px; margin: 24px 0 8px; }
 }
 .icon-btn:active { background: var(--track); }
 
+/* The round + of a screen, above the tab bar and inside the app column on wide screens. */
+.fab {
+  position: fixed; z-index: 40;
+  right: max(var(--gutter), calc((100vw - 640px) / 2 + var(--gutter)));
+  bottom: calc(var(--tabbar-height) + var(--gutter) + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--ink); color: var(--ink-inverse); font-size: 30px; line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.fab:active { background: var(--ink-pressed); }
+.fab-space { height: 72px; }
+
 .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .danger-text { color: var(--danger); }
