@@ -51,7 +51,7 @@ export const Calendar = () => {
     <section className="card" aria-label="Calendar">
       <div className="row between">
         <button className="icon-btn" aria-label="Previous month" onClick={() => shift(-1)}>‹</button>
-        <button className="link" onClick={() => setCursor({ year: year0, month: month0 - 1 })}>{title}</button>
+        <button className="link month" onClick={() => setCursor({ year: year0, month: month0 - 1 })}>{title}</button>
         <button className="icon-btn" aria-label="Next month" onClick={() => shift(1)}>›</button>
       </div>
       <div className="calendar">
@@ -70,8 +70,8 @@ export const Calendar = () => {
           );
         })}
       </div>
-      <div className="row small muted" style={{ marginTop: 8 }}>
-        <span className="chip">○ Planned</span><span className="chip done">● Completed</span>
+      <div className="legend small muted">
+        <span><i className="planned" />Planned</span><span><i className="completed" />Completed</span>
       </div>
     </section>
   );

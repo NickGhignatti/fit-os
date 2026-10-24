@@ -7,15 +7,15 @@ import { addDays } from '../domain/plan';
 import { logPlannedMeal, observeCalorieDay, observeDailyTargets } from '../domain/useCases';
 import { DEFAULT_MEALS, formatGrams, formatKcal, parseNumber, relativeDay, today } from './format';
 import { useToast } from './hooks';
-import { Loading, MacroChips, Modal, PageHeader, ProgressBar } from './kit';
+import { EnergyCard, Loading, Modal, PageHeader } from './kit';
 import { SendButton } from './Transfer';
 import { TargetsDialog } from './TargetsDialog';
 
-const MACROS = [
-  { key: 'protein', label: 'Protein', color: 'var(--protein)' },
-  { key: 'carbs', label: 'Carbs', color: 'var(--carbs)' },
-  { key: 'fat', label: 'Fat', color: 'var(--fat)' },
-] as const;
+const EditIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 const EntryDialog = ({ entry, onSave, onDelete, onClose }: {
   entry: FoodLogEntry; onSave: (grams: number) => void; onDelete: () => void; onClose: () => void;
@@ -54,7 +54,6 @@ export const Tracker = () => {
 
   const goal = targets?.nutrients.kcal ?? day.planned?.kcal;
   const goalLabel = targets ? 'goal' : 'planned';
-  const diff = goal === undefined ? null : Math.round(goal - day.eaten.kcal);
   const firstFree = day.meals.find((m) => m.entries.length === 0) ?? day.meals[0];
   const pickLink = (meal: string, extra = '') => `/food/pick?date=${date}&meal=${encodeURIComponent(meal)}${extra}`;
 
@@ -67,35 +66,10 @@ export const Tracker = () => {
         </>
       } />
 
-      <section className="card" aria-label="Daily energy balance">
-        <div className="row between">
-          <span className="small muted">Daily energy balance</span>
-          <button className="icon-btn" style={{ minHeight: 32, minWidth: 32, fontSize: 18 }} aria-label="Edit daily targets"
-            onClick={() => setEditingTargets(true)}>✎</button>
-        </div>
-        <div className="row between" style={{ alignItems: 'baseline' }}>
-          <span><span className="big-number">{Math.round(day.eaten.kcal)}</span> <span className="muted">kcal eaten</span></span>
-          {goal !== undefined && <span className="muted">of {Math.round(goal)} {goalLabel}</span>}
-        </div>
-        {goal !== undefined && <ProgressBar value={day.eaten.kcal} max={goal} label="Energy consumed" />}
-        {diff !== null && <p className={diff < 0 ? 'danger-text' : 'muted'}>{diff >= 0 ? `${diff} kcal left` : `${-diff} kcal over the ${goalLabel === 'goal' ? 'goal' : 'plan'}`}</p>}
-        {goal === undefined && <p className="small muted"><Link to="/profile">Set up your profile</Link> to get a daily goal, <button className="link" onClick={() => setEditingTargets(true)}>set your own targets</button>, or plan your diet with foods from the database.</p>}
-        {targets ? (
-          <div className="stack" style={{ marginTop: 12 }}>
-            {MACROS.map((m) => (
-              <div key={m.key}>
-                <div className="row between small">
-                  <span>{m.label}</span>
-                  <span className="muted">{Math.round(day.eaten[m.key])} / {Math.round(targets.nutrients[m.key])} g</span>
-                </div>
-                <ProgressBar value={day.eaten[m.key]} max={targets.nutrients[m.key]} label={`${m.label} eaten`} color={m.color} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <MacroChips n={day.eaten} />
-        )}
-      </section>
+      <EnergyCard label="Daily energy balance" eaten={day.eaten} goal={goal} goalLabel={goalLabel} macroGoals={targets?.nutrients}
+        action={<button className="icon-btn" aria-label="Edit daily targets" onClick={() => setEditingTargets(true)}><EditIcon /></button>}>
+        <span><Link to="/profile">Set up your profile</Link> to get a daily goal, <button className="link" onClick={() => setEditingTargets(true)}>set your own targets</button>, or plan your diet with foods from the database.</span>
+      </EnergyCard>
 
       {firstFree && (
         <div className="row">
@@ -104,8 +78,10 @@ export const Tracker = () => {
         </div>
       )}
 
-      <h2>Logged meals</h2>
-      <div className="small muted">{day.meals.filter((m) => m.entries.length > 0).length} of {day.meals.length} logged</div>
+      <div className="section-head">
+        <h2>Logged meals</h2>
+        <span className="small muted">{day.meals.filter((m) => m.entries.length > 0).length} of {day.meals.length} logged</span>
+      </div>
       {day.meals.map((meal) => (
         <section key={meal.name} className="card" aria-label={meal.name}>
           <div className="row between">

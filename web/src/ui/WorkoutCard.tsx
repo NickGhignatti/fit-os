@@ -8,9 +8,9 @@ import { addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedS
 import { newId } from '../domain/id';
 import { beatsBest, exerciseKey, type PersonalRecord } from '../domain/records';
 import { markedDone, doneSets, doneSetsOf, deviatesFromPlan, totalSetsOf, type Exercise, type ExerciseSet, type Workout } from '../domain/workout';
-import { dateTitle, formatKg, parseNumber, relativeDay, setSummary, today } from './format';
+import { formatKg, parseNumber, relativeDay, setSummary, today } from './format';
 import { useToast } from './hooks';
-import { ActionMenu, ConfirmDialog, Modal, ProgressBar, PromptDialog } from './kit';
+import { ActionMenu, ConfirmDialog, Modal, PlayIcon, ProgressBar, PromptDialog } from './kit';
 import { PrPrompt } from './Records';
 import { SendButton } from './Transfer';
 
@@ -220,15 +220,19 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
 export const PendingSessionCard = ({ session, date }: { session: PendingSession; date: LocalDate }) => {
   const { repos } = useContainer();
   return (
-    <section className="card" aria-label={`${session.title}, from your plan`}>
-      <div className="small muted">From your plan · {dateTitle(date)}</div>
-      <div className="title">{session.title}</div>
-      <ul style={{ paddingLeft: 18, margin: '8px 0' }}>
-        {session.exercises.map((e, i) => (
-          <li key={i}>{e.name} <span className="muted">{setSummary(e.sets)}</span></li>
-        ))}
-      </ul>
-      <button className="btn" onClick={() => void startPlannedSession(repos, date, session.planId)}>Start workout</button>
+    <section className="session" aria-label={`${session.title}, from your plan`}>
+      <div className="grow">
+        <div className="eyebrow">From your plan</div>
+        <div className="session-title">{session.title}</div>
+        <ul className="session-list">
+          {session.exercises.map((e, i) => (
+            <li key={i}>{e.name} <span>{setSummary(e.sets)}</span></li>
+          ))}
+        </ul>
+      </div>
+      <button className="play" aria-label="Start workout" onClick={() => void startPlannedSession(repos, date, session.planId)}>
+        <PlayIcon />
+      </button>
     </section>
   );
 };

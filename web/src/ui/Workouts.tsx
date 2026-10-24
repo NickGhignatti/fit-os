@@ -5,7 +5,7 @@ import { sessionOnDay, trainingDays, type TrainingPlan } from '../domain/trainin
 import { observeTrainingWeeks, startPlannedSession } from '../domain/useCases';
 import { ExerciseBrowser } from './Exercises';
 import { shortDayName, today } from './format';
-import { PageHeader, Segmented } from './kit';
+import { PageHeader, PlayIcon, Segmented } from './kit';
 import { PlanList, TRAINING_TEXTS } from './Plans';
 import { RecordsTab } from './Records';
 import { ReceiveButton } from './Transfer';
@@ -54,14 +54,17 @@ export const Workouts = () => {
           create={(name, recurrence) => newTrainingPlan(name, recurrence)}
           href={(p) => `/workouts/plan/${p.id}`}
           header={weeks && weeks.length > 0 ? weeks.map((week) => (
-            <section key={week.plan.id} className="card" aria-label={`Active program: ${week.plan.name}`}>
-              <div className="small muted">Active program</div>
-              <div className="title">{week.plan.name}</div>
-              <div className="small muted">{week.completedCount} of {week.days.length} sessions completed</div>
+            <section key={week.plan.id} className="session" aria-label={`Active program: ${week.plan.name}`}>
+              <div className="grow">
+                <div className="eyebrow">Active program</div>
+                <div className="session-title">{week.plan.name}</div>
+                <div className="session-meta">{week.completedCount} of {week.days.length} sessions completed</div>
+                <div className="session-bar"><span style={{ width: `${week.days.length > 0 ? (week.completedCount / week.days.length) * 100 : 0}%` }} /></div>
+              </div>
               {week.hasPendingSessionToday && (
-                <button className="btn" style={{ marginTop: 8 }}
+                <button className="play" aria-label={`Start today's session of ${week.plan.name}`}
                   onClick={() => void startPlannedSession(repos, date, week.plan.id).then(() => navigate('/'))}>
-                  Start today's session
+                  <PlayIcon />
                 </button>
               )}
             </section>

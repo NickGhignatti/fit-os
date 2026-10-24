@@ -2,30 +2,16 @@ import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { mealNutrients } from '../domain/diet';
-import type { Nutrients } from '../domain/nutrition';
 import { weekdayOf } from '../domain/plan';
 import { observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, startPlannedSession, type TrainingWeek } from '../domain/useCases';
 import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
-import { ActionMenu, Loading, ProgressBar, ProgressRing, PromptDialog } from './kit';
+import { ActionMenu, EnergyCard, Loading, PageHeader, PlayIcon, ProgressRing, PromptDialog } from './kit';
 
 interface Count { readonly done: number; readonly total: number }
 
 const percentOf = (c: Count): number => (c.total > 0 ? Math.round(Math.min(c.done / c.total, 1) * 100) : 0);
-
-/** "1,490": calories read better with a thousands separator. */
-const kcal = (n: number): string => Math.round(n).toLocaleString('en');
-
-const MACROS = [
-  { key: 'protein', label: 'Protein', color: 'var(--protein)' },
-  { key: 'carbs', label: 'Carbs', color: 'var(--carbs)' },
-  { key: 'fat', label: 'Fat', color: 'var(--fat)' },
-] as const;
-
-const PlayIcon = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" /></svg>
-);
 
 const Chevron = () => (
   <svg className="chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -38,55 +24,6 @@ const CheckIcon = () => (
     <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
-
-/**
- * The day's energy as one big ring: what is left of the goal in the middle, the macros beside it.
- * Without a goal the ring stays empty and the middle shows what was eaten.
- */
-const EnergyCard = ({ eaten, goal }: { eaten: Nutrients; goal: Nutrients | undefined }) => {
-  const r = 54;
-  const length = 2 * Math.PI * r;
-  const ratio = goal && goal.kcal > 0 ? Math.min(eaten.kcal / goal.kcal, 1) : 0;
-  const left = goal ? goal.kcal - eaten.kcal : 0;
-  const over = goal !== undefined && left < 0;
-  return (
-    <section className="card today-energy" aria-label="Energy consumed">
-      <div className="energy-body">
-        <div className="energy-ring" role="progressbar" aria-label="Energy consumed"
-          aria-valuenow={Math.round(eaten.kcal)} aria-valuemax={goal ? Math.round(goal.kcal) : undefined}>
-          <svg viewBox="0 0 128 128" aria-hidden="true">
-            <circle className="energy-track" cx="64" cy="64" r={r} />
-            {ratio > 0 && (
-              <circle className={`energy-fill ${over ? 'over' : ''}`} cx="64" cy="64" r={r} transform="rotate(-90 64 64)"
-                strokeDasharray={length} strokeDashoffset={length * (1 - ratio)} />
-            )}
-          </svg>
-          <div className="energy-center">
-            <span className="energy-number">{kcal(goal ? Math.abs(left) : eaten.kcal)}</span>
-            <span className="energy-unit">{goal ? (over ? 'kcal over' : 'kcal left') : 'kcal eaten'}</span>
-          </div>
-        </div>
-        <div className="energy-macros">
-          {MACROS.map((m) => (
-            <div key={m.key} className="macro">
-              <div className="row between">
-                <span className="macro-label"><i style={{ background: m.color }} />{m.label}</span>
-                <span className="macro-value">
-                  {Math.round(eaten[m.key])}{goal && <span className="muted"> / {Math.round(goal[m.key])}</span>} g
-                </span>
-              </div>
-              {goal && <ProgressBar value={eaten[m.key]} max={goal[m.key]} label={`${m.label} eaten`} color={m.color} />}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="energy-foot small muted">
-        {goal ? <><span>{kcal(eaten.kcal)} eaten</span><span>{kcal(goal.kcal)} goal</span></>
-          : <span><Link to="/profile">Set up your profile</Link> to get a daily goal.</span>}
-      </div>
-    </section>
-  );
-};
 
 /**
  * Two rings for every active plan together: today's sets, and this week's sessions. Tapping a ring
@@ -183,12 +120,11 @@ export const Today = () => {
 
   return (
     <div className="today">
-      <header className="today-head">
-        <p className="eyebrow">{dateTitle(date)}</p>
-        <h1>Today</h1>
-      </header>
+      <PageHeader title="Today" subtitle={dateTitle(date)} />
 
-      <EnergyCard eaten={calories.eaten} goal={targets?.nutrients} />
+      <EnergyCard label="Energy consumed" eaten={calories.eaten} goal={targets?.nutrients.kcal} macroGoals={targets?.nutrients}>
+        <span><Link to="/profile">Set up your profile</Link> to get a daily goal.</span>
+      </EnergyCard>
 
       {trainsToday && <h2>Training</h2>}
       {!trainsToday ? null : nothingToDo ? (

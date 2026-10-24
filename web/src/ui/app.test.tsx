@@ -297,14 +297,14 @@ describe('custom daily targets', () => {
 
     await user.type(within(form).getByLabelText('Protein (g)'), '200');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText(/0 \/ 200 g/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Daily energy balance' })).toHaveTextContent('0 / 200 g'));
 
     await user.click(screen.getByRole('button', { name: 'Edit daily targets' }));
     const again = await dialog('Daily targets');
     expect(within(again).getByLabelText('Protein (g)')).toHaveValue('200');
     expect(within(again).getByLabelText('Calories (kcal)')).toHaveValue(''); // still automatic
     await user.click(within(again).getByRole('button', { name: 'Reset to automatic' }));
-    expect(await screen.findByText(/0 \/ 144 g/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Daily energy balance' })).toHaveTextContent('0 / 144 g'));
   });
 
   it('refuses out-of-range numbers and explains what the macros add up to', async () => {

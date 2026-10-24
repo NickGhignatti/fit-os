@@ -98,18 +98,40 @@ export const ActionMenu = ({ actions, label = 'More options', icon = '⋮', clas
   );
 };
 
+export const PlayIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" /></svg>
+);
+
+const BackIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/**
+ * A large title with an optional small line above it. Detail screens get a bar on top with the
+ * back button on the left and their [actions] on the right; top-level screens put [actions]
+ * beside the title.
+ */
 export const PageHeader = ({
   title, subtitle, back = false, actions,
 }: { title: string; subtitle?: string; back?: boolean; actions?: ReactNode }) => {
   const navigate = useNavigate();
   return (
     <header className="page-header">
-      {back && <button className="icon-btn" aria-label="Back" onClick={() => navigate(-1)}>←</button>}
-      <div className="grow">
-        <h1>{title}</h1>
-        {subtitle && <p className="muted small">{subtitle}</p>}
+      {back && (
+        <div className="page-nav">
+          <button className="icon-btn nav-btn" aria-label="Back" onClick={() => navigate(-1)}><BackIcon /></button>
+          {actions && <div className="page-actions">{actions}</div>}
+        </div>
+      )}
+      <div className="page-title">
+        <div className="grow">
+          {subtitle && <p className="eyebrow">{subtitle}</p>}
+          <h1>{title}</h1>
+        </div>
+        {!back && actions && <div className="page-actions">{actions}</div>}
       </div>
-      {actions}
     </header>
   );
 };
@@ -154,6 +176,65 @@ export const ProgressRing = ({ value, max }: { value: number; max: number }) => 
       )}
       <text x="36" y="36" textAnchor="middle" dominantBaseline="central">{max > 0 ? `${Math.round(ratio * 100)}%` : '–'}</text>
     </svg>
+  );
+};
+
+const ENERGY_MACROS = [
+  { key: 'protein', label: 'Protein', color: 'var(--protein)' },
+  { key: 'carbs', label: 'Carbs', color: 'var(--carbs)' },
+  { key: 'fat', label: 'Fat', color: 'var(--fat)' },
+] as const;
+
+/**
+ * A day's energy as one big ring: what is left of [goal] in the middle and the macros beside it,
+ * each against [macroGoals] when there are some. Without a goal the ring stays empty and the
+ * middle shows what was eaten; [children] then goes in the footer, to say how to get one.
+ */
+export const EnergyCard = ({ label, eaten, goal, goalLabel = 'goal', macroGoals, action, children }: {
+  label: string; eaten: Nutrients; goal: number | undefined; goalLabel?: string; macroGoals?: Nutrients;
+  action?: ReactNode; children?: ReactNode;
+}) => {
+  const r = 54;
+  const length = 2 * Math.PI * r;
+  const ratio = goal !== undefined && goal > 0 ? Math.min(eaten.kcal / goal, 1) : 0;
+  const left = goal !== undefined ? Math.round(goal - eaten.kcal) : 0;
+  const over = goal !== undefined && left < 0;
+  return (
+    <section className="card energy" aria-label={label}>
+      <div className="energy-body">
+        <div className="energy-ring" role="progressbar" aria-label="Energy consumed"
+          aria-valuenow={Math.round(eaten.kcal)} aria-valuemax={goal !== undefined ? Math.round(goal) : undefined}>
+          <svg viewBox="0 0 128 128" aria-hidden="true">
+            <circle className="energy-track" cx="64" cy="64" r={r} />
+            {ratio > 0 && (
+              <circle className={`energy-fill ${over ? 'over' : ''}`} cx="64" cy="64" r={r} transform="rotate(-90 64 64)"
+                strokeDasharray={length} strokeDashoffset={length * (1 - ratio)} />
+            )}
+          </svg>
+          <div className="energy-center">
+            <span className="energy-number">{goal !== undefined ? Math.abs(left) : Math.round(eaten.kcal)}</span>{' '}
+            <span className="energy-unit">{goal !== undefined ? (over ? 'kcal over' : 'kcal left') : 'kcal eaten'}</span>
+          </div>
+        </div>
+        <div className="energy-macros">
+          {ENERGY_MACROS.map((m) => (
+            <div key={m.key} className="macro">
+              <div className="row between">
+                <span className="macro-label"><i style={{ background: m.color }} />{m.label}</span>
+                <span className="macro-value">
+                  {Math.round(eaten[m.key])}{macroGoals && <span className="muted"> / {Math.round(macroGoals[m.key])}</span>} g
+                </span>
+              </div>
+              {macroGoals && <ProgressBar value={eaten[m.key]} max={macroGoals[m.key]} label={`${m.label} eaten`} color={m.color} />}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="energy-foot small muted">
+        {goal !== undefined ? <><span>{Math.round(eaten.kcal)} eaten</span><span className="grow">of {Math.round(goal)} {goalLabel}</span></> : <span className="grow">{children}</span>}
+        {action}
+      </div>
+    </section>
   );
 };
 
