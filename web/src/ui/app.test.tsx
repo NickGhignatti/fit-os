@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { addMeal, newDietPlan, newTrainingPlan } from '../domain/edit';
 import { InMemoryTransferGateway } from '../transfer/gateway';
 import { envelopeFile } from '../transfer/transfer';
+import { today } from './format';
 import { makeDevice, renderApp } from './testing';
 
 // jsdom lacks WebCrypto and Blob streams, which the transfer encryption needs; Node has both.
@@ -55,6 +56,26 @@ describe('the + on Today', () => {
 
     await chooseFromMenu(user, 'Log food or weight', 'Search food');
     expect(await screen.findByLabelText('Search foods')).toBeInTheDocument();
+  });
+});
+
+describe('choosing the meal for food from the +', () => {
+  it('lets you move the food to another meal before picking it', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    renderApp('/', device);
+
+    await chooseFromMenu(user, 'Log food or weight', 'Search food');
+    const meals = await screen.findByRole('radiogroup', { name: 'Meal' });
+    expect(within(meals).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Breakfast', 'Lunch', 'Snack', 'Dinner']);
+    await user.click(within(meals).getByRole('radio', { name: 'Dinner' }));
+    expect(within(meals).getByRole('radio', { name: 'Dinner' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('heading', { name: 'Add to Dinner' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Search foods'), 'mela');
+    await user.click(await firstFoodResult());
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Add' }));
+    await waitFor(async () => expect((await device.repos.foodLog.getDay(today())).entries.map((e) => e.meal)).toEqual(['Dinner']));
   });
 });
 

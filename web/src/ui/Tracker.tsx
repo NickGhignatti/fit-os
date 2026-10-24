@@ -6,6 +6,7 @@ import { mealNutrients } from '../domain/diet';
 import { portionNutrients, type Nutrients } from '../domain/nutrition';
 import { addDays } from '../domain/plan';
 import { logPlannedMeal, observeCalorieDay, observeDailyTargets } from '../domain/useCases';
+import { clockNow, mealAt } from '../domain/mealTime';
 import { MAX_MEALS, type Profile } from '../domain/profile';
 import { DEFAULT_MEALS, formatGrams, formatKcal, parseNumber, relativeDay, today } from './format';
 import { useToast } from './hooks';
@@ -125,9 +126,9 @@ export const Tracker = () => {
 
   const goal = targets?.nutrients.kcal ?? day.planned?.kcal;
   const goalLabel = targets ? 'goal' : 'planned';
-  // The carousel opens on the first meal with nothing logged yet; the + adds to the meal in view.
-  const next = day.meals.findIndex((m) => m.entries.length === 0);
-  const active = Math.min(slide ?? Math.max(next, 0), day.meals.length - 1);
+  // The carousel opens on the meal for the time of day; the + adds to the meal in view.
+  const next = mealAt(day.meals.map((m) => ({ name: m.name, time: m.planned?.time })), clockNow());
+  const active = Math.min(slide ?? next, day.meals.length - 1);
   const meal = day.meals[active];
   const pickLink = (name: string, extra = '') => `/food/pick?date=${date}&meal=${encodeURIComponent(name)}${extra}`;
 
@@ -156,7 +157,7 @@ export const Tracker = () => {
         {day.meals.map((m, i) => {
           const logged = m.entries.length > 0;
           const planned = m.planned ? mealNutrients(m.planned) : null;
-          const status = logged ? 'Logged' : i === next ? 'Up next' : 'Pending';
+          const status = logged ? 'Logged' : i === next ? 'Now' : 'Pending';
           return (
             <section key={m.name} className="card meal-card" aria-label={m.name}>
               <div className="meal-head">

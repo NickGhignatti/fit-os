@@ -6,10 +6,12 @@ import { addFood } from '../domain/edit';
 import { withEntry } from '../domain/foodLog';
 import { newId } from '../domain/id';
 import { portionNutrients, portionOf, type FoodItem, type Portion } from '../domain/nutrition';
-import { formatGrams, formatKcal, formatMacros, parseNumber } from './format';
+import { observeCalorieDay } from '../domain/useCases';
+import { DEFAULT_MEALS, formatGrams, formatKcal, formatMacros, parseNumber } from './format';
 import { useAsync } from './hooks';
 import { Empty, Loading, Modal, PageHeader, useDebounced } from './kit';
 import { ScannerDialog } from './Scanner';
+import { mealNamesOf } from './Tracker';
 
 const SOURCE_LABEL = { crea: 'CREA', off: 'Open Food Facts', custom: 'Your food' } as const;
 const sourceOf = (food: FoodItem) => SOURCE_LABEL[food.id.split(':')[0] as keyof typeof SOURCE_LABEL];
@@ -115,7 +117,7 @@ type Dialog =
  * Picks a food. `?date=…&meal=…` logs it as eaten; `?plan=ID&meal=MEALID` adds it to a diet plan's meal.
  */
 export const FoodPicker = () => {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { repos } = useContainer();
   const date = params.get('date');
@@ -127,6 +129,11 @@ export const FoodPicker = () => {
   const debounced = useDebounced(query.trim());
   const [dialog, setDialog] = useState<Dialog | null>(params.get('scan') === '1' ? { kind: 'scan' } : null);
   const [notFound, setNotFound] = useState<string | null>(null);
+  // When logging, the meals of that day, to move the food to another one before picking it.
+  const profile = useStream((c) => c.repos.profile.observeProfile());
+  const names = profile ? mealNamesOf(profile) : DEFAULT_MEALS;
+  const day = useStream((c) => observeCalorieDay(c.repos, date ?? '1970-01-01', names), [date, names.join('\n')]);
+  const meals = day ? [...day.meals.map((m) => m.name), ...(day.meals.some((m) => m.name === meal) || !meal ? [] : [meal])] : [];
   const favorites = useStream((c) => c.repos.favorites.observeFavorites());
   const recent = useStream((c) => c.repos.foodLog.observeRecentFoods(10));
   const offline = useAsync(() => (debounced ? searchFoods(repos, debounced) : Promise.resolve([])), [debounced]);
@@ -181,6 +188,16 @@ export const FoodPicker = () => {
   return (
     <>
       <PageHeader back title={`Add to ${meal || 'meal'}`} />
+      {date && !forPlan && meals.length > 1 && (
+        <div className="pills" role="radiogroup" aria-label="Meal">
+          {meals.map((name) => (
+            <button key={name} role="radio" aria-checked={name === meal} className={`pill ${name === meal ? 'on' : ''}`}
+              onClick={() => setParams({ date, meal: name }, { replace: true })}>
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="row">
         <input className="field grow" type="search" value={query} placeholder="Search, e.g. pasta, mela, or type a barcode"
           aria-label="Search foods" onChange={(e) => { setQuery(e.target.value); setNotFound(null); }} />

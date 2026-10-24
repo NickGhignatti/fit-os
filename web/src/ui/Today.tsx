@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { mealNutrients } from '../domain/diet';
+import { clockNow, mealAt } from '../domain/mealTime';
 import { weekdayOf } from '../domain/plan';
 import { observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, startPlannedSession, type TrainingWeek } from '../domain/useCases';
 import { doneSetsOf, totalSetsOf } from '../domain/workout';
@@ -120,10 +121,9 @@ export const Today = () => {
   const trainsToday = weeks.some((w) => w.todaySets !== null) || agenda.workouts.length > 0;
   const eatsByPlan = calories.hasDietPlan && calories.meals.length > 0;
   const loggedMeals = calories.meals.filter((m) => m.entries.length > 0).length;
-  const nextMeal = calories.meals.find((m) => m.entries.length === 0);
-  // Food from the + goes into the next meal to log, or the first one once all are logged.
-  const foodMeal = nextMeal ?? calories.meals[0];
-  const foodLink = (extra = '') => (foodMeal ? `/food/pick?date=${date}&meal=${encodeURIComponent(foodMeal.name)}${extra}` : '/tracker');
+  // The meal for the time of day: marked in the list, and where food from the + goes (the picker can change it).
+  const nextMeal = calories.meals[mealAt(calories.meals.map((m) => ({ name: m.name, time: m.planned?.time })), clockNow())];
+  const foodLink = (extra = '') => (nextMeal ? `/food/pick?date=${date}&meal=${encodeURIComponent(nextMeal.name)}${extra}` : '/tracker');
 
   return (
     <div className="today">
