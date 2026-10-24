@@ -219,7 +219,7 @@ export const RecordsTab = () => {
           ))}
         </section>
       )}
-      <Fab label="Add" actions={[{ label: 'Add record', icon: Icons.record, onSelect: () => setAdding(true) }]} />
+      <Fab label="Add a record" actions={[{ label: 'Add record', icon: Icons.record, onSelect: () => setAdding(true) }]} />
       {adding && <AddRecordDialog onClose={() => setAdding(false)} />}
     </>
   );
@@ -240,7 +240,7 @@ export const RecordsScreen = () => {
       <PageHeader back title={latest.exerciseName} subtitle="Personal records" />
       {latest.catalogId && <p><Link to={`/exercises/${encodeURIComponent(latest.catalogId)}`}>How to do this exercise</Link></p>}
       <MetricSections records={records} />
-      <Fab label="Add" actions={[{ label: 'Add record', icon: Icons.record, onSelect: () => setAdding(true) }]} />
+      <Fab label="Add a record" actions={[{ label: 'Add record', icon: Icons.record, onSelect: () => setAdding(true) }]} />
       {adding && <AddRecordDialog draft={{ name: latest.exerciseName, catalogId: latest.catalogId }} onClose={() => setAdding(false)} />}
     </>
   );

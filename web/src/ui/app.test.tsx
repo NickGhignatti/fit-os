@@ -111,7 +111,7 @@ describe('a workout plan, from creation to a logged session', () => {
     expect(await screen.findByRole('heading', { name: 'Push day' })).toBeInTheDocument();
     expect(screen.getByText(/No exercises yet/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await chooseFromMenu(user, 'Add to this workout', 'Add exercise');
     await user.type(await screen.findByLabelText('Search exercises'), 'bench press');
     const results = await screen.findAllByRole('button', { name: /bench/i });
     await user.click(results[0]!);
@@ -172,7 +172,7 @@ describe('a diet, from creation to a logged meal', () => {
     await user.click(within(create).getByRole('button', { name: 'Create' }));
     expect(await screen.findByRole('heading', { name: 'Cut' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Add meal' }));
+    await chooseFromMenu(user, 'Add to this day', 'Add meal');
     const meal = await dialog('Add meal');
     await user.type(within(meal).getByLabelText('Meal'), 'Lunch');
     await user.click(within(meal).getByRole('button', { name: 'Save' }));
@@ -216,7 +216,7 @@ describe('a diet, from creation to a logged meal', () => {
     await user.click(within(create).getByRole('button', { name: 'Create' }));
     await screen.findByRole('tablist', { name: 'Day of the week' });
 
-    await user.click(screen.getByRole('button', { name: 'Add meal' }));
+    await chooseFromMenu(user, 'Add to this day', 'Add meal');
     const meal = await dialog('Add meal');
     await user.type(within(meal).getByLabelText('Meal'), 'Dinner');
     await user.click(within(meal).getByRole('button', { name: 'Save' }));
@@ -448,7 +448,7 @@ describe('staying on the same day of a weekly plan', () => {
     await user.click(await screen.findByRole('tab', { name: /Wed/ }));
     expect(screen.getByRole('tab', { name: /Wed/ })).toHaveAttribute('aria-selected', 'true');
 
-    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await chooseFromMenu(user, 'Add to this workout', 'Add exercise');
     await user.type(await screen.findByLabelText('Search exercises'), 'squat');
     await user.click((await screen.findAllByRole('button', { name: /squat/i }))[0]!);
     await user.click(within(await dialog('Add exercise')).getByRole('button', { name: 'Add' }));
@@ -642,7 +642,7 @@ describe('the + while training', () => {
 
     const card = await screen.findByRole('region', { name: 'Legs' });
     expect(within(card).queryByRole('button', { name: /Add exercise|Send/ })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await chooseFromMenu(user, 'Add to this day', 'Add exercise');
     await addSquat(user);
     expect(await within(await screen.findByRole('region', { name: 'Legs' })).findByText(/3 × 10/)).toBeInTheDocument();
   });
@@ -652,12 +652,12 @@ describe('the + while training', () => {
     const device = makeDevice();
     renderApp(`/day/${today()}`, device);
 
-    await user.click(await screen.findByRole('button', { name: 'Add exercise' }));
+    await chooseFromMenu(user, 'Add to this day', 'Add exercise');
     await user.click(await screen.findByRole('button', { name: 'Back' })); // changed their mind: nothing is left behind
     expect(await screen.findByText(/Nothing planned for this day/)).toBeInTheDocument();
     expect(await device.db.workouts.count()).toBe(0);
 
-    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await chooseFromMenu(user, 'Add to this day', 'Add exercise');
     await addSquat(user);
     expect(await screen.findByRole('region', { name: 'Workout' })).toHaveTextContent(/3 × 10/);
   });

@@ -189,6 +189,7 @@ describe('records for your own exercises', () => {
     await device.repos.customExercises.save(sandbag);
     renderApp('/workouts?tab=records', device);
 
+    await user.click(await screen.findByRole('button', { name: 'Add a record' }));
     await user.click(await screen.findByRole('button', { name: 'Add record' }));
     const form = await dialog('Add personal record');
     await user.type(within(form).getByLabelText('Exercise'), 'sandbag');

@@ -19,7 +19,7 @@ export const Day = () => {
   const addExercise: FabAction[] = !agenda || agenda.workouts.length === 0
     ? [{ label: 'Add exercise', icon: Icons.workout, onSelect: () => navigate(`/exercises/pick?date=${date}`) }]
     : agenda.workouts.map((w) => ({
-      label: agenda.workouts.length > 1 ? `Add exercise to ${w.title}` : 'Add exercise', short: w.title, icon: Icons.workout,
+      ...(agenda.workouts.length > 1 ? { label: `Add exercise to ${w.title}`, short: w.title } : { label: 'Add exercise' }), icon: Icons.workout,
       onSelect: () => navigate(`/exercises/pick?workout=${w.id}`),
     }));
 
@@ -39,7 +39,7 @@ export const Day = () => {
       {agenda.pendingSessions.length === 0 && agenda.workouts.length === 0 && (
         <Empty>Nothing planned for this day.<br />Tap + to add an exercise.</Empty>
       )}
-      <Fab label="Add an exercise" actions={addExercise} />
+      <Fab label="Add to this day" actions={addExercise} />
     </>
   );
 };

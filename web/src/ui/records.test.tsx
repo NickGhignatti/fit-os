@@ -18,6 +18,7 @@ type User = ReturnType<typeof userEvent.setup>;
 
 /** Records tab -> Add record -> fill the dialog -> Save. */
 const addFromTab = async (user: User, fill: (form: HTMLElement) => Promise<void>) => {
+  await user.click(await screen.findByRole('button', { name: 'Add a record' }));
   await user.click(await screen.findByRole('button', { name: 'Add record' }));
   const form = await dialog('Add personal record');
   await fill(form);
@@ -66,7 +67,8 @@ describe('the Records tab', () => {
     expect(await screen.findByText('PR')).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: /trend/ })).not.toBeInTheDocument(); // one point is not a trend
 
-    await user.click(screen.getByRole('button', { name: 'Add record' }));
+    await user.click(screen.getByRole('button', { name: 'Add a record' }));
+    await user.click(await screen.findByRole('button', { name: 'Add record' }));
     const form = await dialog('Add personal record');
     expect(within(form).getByLabelText('Exercise')).toHaveAttribute('readonly'); // adding to this exercise
     await user.type(within(form).getByLabelText('Weight (kg)'), '110');
@@ -117,6 +119,7 @@ describe('the Records tab', () => {
   it('will not save a time that is not a time, or a lift without a weight', async () => {
     const user = userEvent.setup();
     renderApp('/workouts?tab=records');
+    await user.click(await screen.findByRole('button', { name: 'Add a record' }));
     await user.click(await screen.findByRole('button', { name: 'Add record' }));
     const form = await dialog('Add personal record');
     const save = within(form).getByRole('button', { name: 'Save' });

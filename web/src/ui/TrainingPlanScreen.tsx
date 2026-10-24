@@ -106,7 +106,7 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
         </section>
       ))}
 
-      <Fab label="Add" actions={[{ label: 'Add exercise', icon: Icons.workout, onSelect: () => navigate(`/exercises/pick?plan=${plan.id}&day=${day}`) }]} />
+      <Fab label="Add to this workout" actions={[{ label: 'Add exercise', icon: Icons.workout, onSelect: () => navigate(`/exercises/pick?plan=${plan.id}&day=${day}`) }]} />
 
       {dialog?.kind === 'edit' && (
         <ExerciseDialog exercise={dialog.exercise} onClose={() => setDialog(null)}

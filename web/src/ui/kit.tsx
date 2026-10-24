@@ -137,8 +137,9 @@ export interface FabAction {
 }
 
 /**
- * The round + in the bottom-right corner of a screen. One action runs straight away; more fan out
- * around it on a quarter circle, from straight up to straight left, over a frosted backdrop.
+ * The round + in the bottom-right corner of a screen. Its actions always fan out around it on a
+ * quarter circle, from straight up to straight left, over a frosted backdrop; a lone action sits
+ * halfway, up and to the left.
  */
 export const Fab = ({ label, actions }: { label: string; actions: readonly FabAction[] }) => {
   const [open, setOpen] = useState(false);
@@ -148,7 +149,6 @@ export const Fab = ({ label, actions }: { label: string; actions: readonly FabAc
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
-  const only = actions.length === 1 ? actions[0]! : null;
   // Wide enough that neighbours on the arc sit 100px apart, so icons and captions never touch.
   const step = Math.PI / 2 / Math.max(actions.length - 1, 1);
   const radius = Math.max(110, Math.round(100 / (2 * Math.sin(step / 2))));
@@ -160,7 +160,7 @@ export const Fab = ({ label, actions }: { label: string; actions: readonly FabAc
         {open && (
           <div role="group" aria-label={label}>
             {actions.map((a, i) => {
-              const angle = 1.5 * Math.PI - i * step;
+              const angle = actions.length === 1 ? 1.25 * Math.PI : 1.5 * Math.PI - i * step;
               const at = { '--x': `${Math.round(radius * Math.cos(angle))}px`, '--y': `${Math.round(radius * Math.sin(angle))}px`, '--i': i };
               return (
                 <button key={a.label} className="fab-item" aria-label={a.label} disabled={a.disabled} style={at as CSSProperties}
@@ -172,8 +172,7 @@ export const Fab = ({ label, actions }: { label: string; actions: readonly FabAc
             })}
           </div>
         )}
-        <button className="fab" aria-label={only ? only.label : label} aria-expanded={only ? undefined : open} disabled={only?.disabled}
-          onClick={() => (only ? only.onSelect() : setOpen(!open))}>
+        <button className="fab" aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)}>
           {Icons.plus}
         </button>
       </div>
