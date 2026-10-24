@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import 'fake-indexeddb/auto';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Blob as NodeBlob } from 'node:buffer';
@@ -12,6 +11,7 @@ import { InMemoryTransferGateway } from '../transfer/gateway';
 import { envelopeFile } from '../transfer/transfer';
 import { WEEKDAYS, today } from './format';
 import { makeDevice, renderApp } from './testing';
+import { Tables } from '../data/schema';
 
 // jsdom lacks WebCrypto and Blob streams, which the transfer encryption needs; Node has both.
 Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
@@ -295,7 +295,7 @@ describe('custom daily targets', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     const card = await screen.findByRole('region', { name: 'Daily energy balance' });
-    expect(card).toHaveTextContent('of 2200 goal');
+    await waitFor(() => expect(card).toHaveTextContent('of 2200 goal'));
     expect(card).toHaveTextContent('2200 kcal left');
     expect(card).toHaveTextContent('0 / 160 g'); // protein, as typed
     expect(card).toHaveTextContent('0 / 70 g'); // fat, as typed
@@ -553,7 +553,7 @@ describe('following several workouts at once', () => {
   it('lists each plan to do on Today, and finishing one does not tick the other', async () => {
     const user = userEvent.setup();
     const device = await twoPlans();
-    for (const plan of (await device.db.trainingPlans.toArray())) await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    for (const plan of (await device.store.direct.list(Tables.trainingPlans))) await device.repos.trainingPlans.setPlanActive(plan.id, true);
     renderApp('/', device);
 
     const todo = await screen.findByRole('region', { name: 'Training to do' });
@@ -583,7 +583,7 @@ describe('following several workouts at once', () => {
   it('sums today and the week of every plan in two rings that open to show what is left', async () => {
     const user = userEvent.setup();
     const device = await twoPlans();
-    for (const plan of await device.db.trainingPlans.toArray()) await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    for (const plan of await device.store.direct.list(Tables.trainingPlans)) await device.repos.trainingPlans.setPlanActive(plan.id, true);
     renderApp('/', device);
 
     expect(await screen.findByRole('button', { name: 'Today: 0%, 0 of 2 sets' })).toHaveAttribute('aria-expanded', 'false');
@@ -604,7 +604,7 @@ describe('following several workouts at once', () => {
   it('can start both on the same day, and goes back to an unfinished one', async () => {
     const user = userEvent.setup();
     const device = await twoPlans();
-    for (const plan of await device.db.trainingPlans.toArray()) await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    for (const plan of await device.store.direct.list(Tables.trainingPlans)) await device.repos.trainingPlans.setPlanActive(plan.id, true);
     renderApp('/', device);
 
     await user.click(await screen.findByRole('button', { name: 'Start Lifting' }));
@@ -614,7 +614,7 @@ describe('following several workouts at once', () => {
 
     expect(await screen.findByRole('region', { name: 'Lifting' })).toBeInTheDocument();
     expect(await screen.findByRole('region', { name: 'Volleyball' })).toBeInTheDocument();
-    expect(await device.db.workouts.count()).toBe(2);
+    expect(await device.store.direct.count('workouts')).toBe(2);
 
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(await screen.findByRole('link', { name: 'Continue Lifting' })).toHaveAttribute('href', expect.stringMatching(/^\/day\//));
@@ -674,7 +674,7 @@ describe('the + while training', () => {
     await chooseFromMenu(user, 'Add to this day', 'Add exercise');
     await user.click(await screen.findByRole('button', { name: 'Back' })); // changed their mind: nothing is left behind
     expect(await screen.findByText(/Nothing planned for this day/)).toBeInTheDocument();
-    expect(await device.db.workouts.count()).toBe(0);
+    expect(await device.store.direct.count('workouts')).toBe(0);
 
     await chooseFromMenu(user, 'Add to this day', 'Add exercise');
     await addSquat(user);
@@ -697,7 +697,7 @@ describe('resting between sets', () => {
 
     expect(await screen.findByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Workout time0:0\d/);
     await user.click(screen.getByRole('button', { name: 'Stop stopwatch' }));
-    expect(await screen.findByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Stopped/);
+    await waitFor(() => expect(screen.getByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Stopped/));
     await user.click(screen.getByRole('button', { name: 'Reset stopwatch' }));
     await waitFor(() => expect(screen.getByRole('timer', { name: 'Workout time' })).toHaveTextContent('Workout time0:00'));
     await user.click(screen.getByRole('button', { name: 'Start stopwatch' }));
@@ -760,7 +760,7 @@ describe('widgets', () => {
 
     expect(within(board).queryByRole('region', { name: /Energy consumed/ })).not.toBeInTheDocument();
     expect(within(board).getByRole('region', { name: 'Weight' })).toHaveTextContent('80 kg');
-    await waitFor(async () => expect((await device.db.profile.get('me'))?.layout?.today?.at(-1)).toEqual({ id: 'weight', size: 'half' }));
+    await waitFor(async () => expect((await device.store.direct.get(Tables.profile, 'me'))?.layout?.today?.at(-1)).toEqual({ id: 'weight', size: 'half' }));
   });
 
   it('charts each body measure on Diet, chosen like any widget', async () => {
@@ -794,7 +794,7 @@ describe('sharing a plan as a file', () => {
     const file = jsonFile(envelopeFile('training_plan', { ...plan, isActive: true }), 'strength.fitos.json');
     await user.upload(await screen.findByLabelText('Item file'), file);
     expect(await screen.findByText(/Imported workout plan “Strength”/)).toBeInTheDocument();
-    const saved = await device.db.trainingPlans.toArray();
+    const saved = await device.store.direct.list(Tables.trainingPlans);
     expect(saved).toHaveLength(1);
     expect(saved[0]!.isActive).toBe(false);
     expect(saved[0]!.id).not.toBe(plan.id);
@@ -833,7 +833,7 @@ describe('meals per day', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await waitFor(async () => expect(await tabs()).toEqual(['Breakfast', 'Morning snack', 'Lunch', 'Afternoon snack', 'Late dinner']));
-    expect((await device.db.profile.get('me'))!.mealNames).toHaveLength(5);
+    expect((await device.store.direct.get(Tables.profile, 'me'))!.mealNames).toHaveLength(5);
   });
 
   it('refuses two meals with the same name', async () => {

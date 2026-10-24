@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { configure, render } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,17 +7,19 @@ import { readConfig } from '../app/config';
 import { createContainer, type Container } from '../app/container';
 import { ContainerProvider } from '../app/hooks';
 import { ExerciseLibrary, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
-import { TrackerDb } from '../data/db';
+import { testStore } from '../data/testStore';
 import type { TransferGateway } from '../transfer/gateway';
+
+// Each device opens a real SQLite database; the first screen of a test waits for it to start,
+// which takes longer than testing-library's one-second default when many tests run at once.
+configure({ asyncUtilTimeout: 5000 });
 
 // Tests run from web/. (jsdom's URL class is not accepted by Node's file reader, so no `new URL` here.)
 const catalog = (name: string) => async () => readFileSync(join(process.cwd(), 'public', 'catalog', name), 'utf8');
 
-let databases = 0;
-
-/** A "device": its own empty database, the real catalogue files, no internet, and an optional transfer server. */
+/** A "device": its own empty SQLite database, the real catalogue files, no internet, and an optional transfer server. */
 export const makeDevice = (transfer: TransferGateway | null = null): Container => {
-  const base = createContainer(readConfig('', ''), new TrackerDb(`ui-test-${databases++}`));
+  const base = createContainer(readConfig('', ''), testStore());
   const offline = async () => { throw new TypeError('offline'); };
   return {
     ...base,

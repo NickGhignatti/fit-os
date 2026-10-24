@@ -1,8 +1,11 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { exportBackup, parseBackup, restoreBackup } from '../data/backup';
-import { TrackerDb } from '../data/db';
-import { DexiePersonalRecords } from '../data/repositories';
+import { Tables } from '../data/schema';
+import type { Store } from '../data/store';
+import { copyLegacyData } from '../data/legacy';
+import { testStore } from '../data/testStore';
+import { SqlPersonalRecords } from '../data/repositories';
 import { formatDistance, formatDuration, parseDuration, describeRecord, impliedOneRepMax } from '../ui/format';
 import {
   beatsBest, bestOf, exerciseKey, groupByExercise, isBetter, newestFirst, oneRepMax, type PersonalRecord,
@@ -122,8 +125,8 @@ describe('validation', () => {
 
 describe('storage', () => {
   it('keeps records per exercise, newest first, and observes changes', async () => {
-    const db = new TrackerDb('records-store');
-    const repo = new DexiePersonalRecords(db);
+    const db = testStore();
+    const repo = new SqlPersonalRecords(db);
     await repo.save(rec({ id: 'a', exerciseKey: 'squat', date: '2026-01-01' }));
     await repo.save(rec({ id: 'b', exerciseKey: 'squat', date: '2026-03-01' }));
     await repo.save(rec({ id: 'c', exerciseKey: 'bench', date: '2026-02-01' }));
@@ -137,15 +140,15 @@ describe('storage', () => {
   });
 
   it('go through a backup, and a backup written before records existed still loads', async () => {
-    const source = new TrackerDb('records-source');
-    await new DexiePersonalRecords(source).save(rec({ id: 'keep', value: 120, reps: 3 }));
+    const source = testStore();
+    await new SqlPersonalRecords(source).save(rec({ id: 'keep', value: 120, reps: 3 }));
     const file = JSON.stringify(await exportBackup(source));
     const parsed = parseBackup(file);
     if (!parsed.ok) throw new Error(parsed.error);
 
-    const target = new TrackerDb('records-target');
+    const target = testStore();
     await restoreBackup(target, parsed.backup);
-    expect((await target.records.toArray()).map((r) => r.id)).toEqual(['keep']);
+    expect((await target.direct.list(Tables.records)).map((r) => r.id)).toEqual(['keep']);
 
     const legacy = JSON.parse(file) as { data: Record<string, unknown> };
     delete legacy.data.records;
@@ -153,7 +156,7 @@ describe('storage', () => {
     expect(old.ok && old.backup.data.records).toEqual([]);
   });
 
-  it('upgrade an existing device without losing what it holds', async () => {
+  it('move from the old IndexedDB of an existing device without losing what it holds', async () => {
     const name = 'records-upgrade';
     const v2 = new (await import('dexie')).default(name);
     v2.version(1).stores({ workouts: 'id, date', trainingPlans: 'id, name', dietPlans: 'id, name', foodLogDays: 'date', customFoods: 'id', favoriteFoods: 'id, addedAt', weightEntries: 'id, &date', profile: 'key' });
@@ -161,9 +164,10 @@ describe('storage', () => {
     await v2.table('weightEntries').put({ id: 'w1', date: '2026-10-01', kg: 80 });
     v2.close();
 
-    const upgraded = new TrackerDb(name);
-    expect(await upgraded.weightEntries.count()).toBe(1);
-    await upgraded.records.put(rec({ id: 'new' }));
-    expect(await upgraded.records.count()).toBe(1);
+    const upgraded = testStore();
+    await copyLegacyData(upgraded, name); // what the app does on its first start with SQLite
+    expect(await upgraded.direct.count('weight_entries')).toBe(1);
+    await upgraded.docs.put(Tables.records, rec({ id: 'new' }));
+    expect(await upgraded.direct.count('records')).toBe(1);
   });
 });

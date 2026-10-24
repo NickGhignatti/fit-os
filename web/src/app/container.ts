@@ -1,62 +1,62 @@
-import { DexieSavedProducts, ExerciseLibrary, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
-import { TrackerDb } from '../data/db';
+import { ExerciseLibrary, SqlSavedProducts, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
 import {
-  DexieCustomExercises,
-  DexieCustomFoodRepository,
-  DexieFavoriteFoodRepository,
-  DexieFoodLogRepository,
-  DexiePersonalRecords,
-  DexieProfileRepository,
-  DexieTransactionRunner,
-  DexieWorkoutRepository,
-  dexieDietPlans,
-  dexieTrainingPlans,
+  SqlCustomExercises,
+  SqlCustomFoodRepository,
+  SqlFavoriteFoodRepository,
+  SqlFoodLogRepository,
+  SqlPersonalRecords,
+  SqlProfileRepository,
+  SqlTransactionRunner,
+  SqlWorkoutRepository,
+  sqlDietPlans,
+  sqlTrainingPlans,
 } from '../data/repositories';
+import type { Store } from '../data/store';
 import { SupabaseTransferGateway, type TransferGateway } from '../transfer/gateway';
 import type { AppConfig } from './config';
 
 /** Everything the screens depend on, built once at start-up. Screens get it through context. */
 export interface Container {
-  readonly db: TrackerDb;
+  readonly store: Store;
   readonly repos: {
-    readonly workouts: DexieWorkoutRepository;
-    readonly trainingPlans: ReturnType<typeof dexieTrainingPlans>;
-    readonly dietPlans: ReturnType<typeof dexieDietPlans>;
-    readonly foodLog: DexieFoodLogRepository;
-    readonly customFoods: DexieCustomFoodRepository;
-    readonly favorites: DexieFavoriteFoodRepository;
-    readonly profile: DexieProfileRepository;
-    readonly records: DexiePersonalRecords;
-    readonly transaction: DexieTransactionRunner;
+    readonly workouts: SqlWorkoutRepository;
+    readonly trainingPlans: ReturnType<typeof sqlTrainingPlans>;
+    readonly dietPlans: ReturnType<typeof sqlDietPlans>;
+    readonly foodLog: SqlFoodLogRepository;
+    readonly customFoods: SqlCustomFoodRepository;
+    readonly favorites: SqlFavoriteFoodRepository;
+    readonly profile: SqlProfileRepository;
+    readonly records: SqlPersonalRecords;
+    readonly transaction: SqlTransactionRunner;
     readonly exercises: ExerciseLibrary;
-    readonly customExercises: DexieCustomExercises;
+    readonly customExercises: SqlCustomExercises;
     readonly basicFoods: StaticBasicFoods;
     readonly products: OpenFoodFactsRepository;
-    readonly savedProducts: DexieSavedProducts;
+    readonly savedProducts: SqlSavedProducts;
   };
   /** Null when no Supabase is configured: sending and receiving are then unavailable. */
   readonly transfer: TransferGateway | null;
 }
 
-export const createContainer = (config: AppConfig, db: TrackerDb = new TrackerDb()): Container => {
-  const customExercises = new DexieCustomExercises(db);
+export const createContainer = (config: AppConfig, store: Store): Container => {
+  const customExercises = new SqlCustomExercises(store);
   return {
-  db,
+  store,
   repos: {
-    workouts: new DexieWorkoutRepository(db),
-    trainingPlans: dexieTrainingPlans(db),
-    dietPlans: dexieDietPlans(db),
-    foodLog: new DexieFoodLogRepository(db),
-    customFoods: new DexieCustomFoodRepository(db),
-    favorites: new DexieFavoriteFoodRepository(db),
-    profile: new DexieProfileRepository(db),
-    records: new DexiePersonalRecords(db),
-    transaction: new DexieTransactionRunner(db),
+    workouts: new SqlWorkoutRepository(store),
+    trainingPlans: sqlTrainingPlans(store),
+    dietPlans: sqlDietPlans(store),
+    foodLog: new SqlFoodLogRepository(store),
+    customFoods: new SqlCustomFoodRepository(store),
+    favorites: new SqlFavoriteFoodRepository(store),
+    profile: new SqlProfileRepository(store),
+    records: new SqlPersonalRecords(store),
+    transaction: new SqlTransactionRunner(store),
     exercises: new ExerciseLibrary(new StaticExerciseCatalog(), customExercises),
     customExercises,
     basicFoods: new StaticBasicFoods(),
     products: new OpenFoodFactsRepository(),
-    savedProducts: new DexieSavedProducts(db),
+    savedProducts: new SqlSavedProducts(store),
   },
   transfer: config.transferEnabled ? new SupabaseTransferGateway(config.supabaseUrl, config.supabaseKey) : null,
 };

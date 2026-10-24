@@ -24,7 +24,11 @@ export default defineConfig(({ mode }) => {
         manifest,
         workbox: {
           // The exercise and food catalogues are large; cache them on first use, not at install.
-          globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+          // The SQLite WebAssembly is needed offline, and is bigger than Workbox's 2 MiB default.
+          globPatterns: ['**/*.{js,css,html,svg,png,woff2,wasm}'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          // The "mc-" SQLite builds are only for encrypted databases, which the app does not use.
+          globIgnores: ['**/mc-wa-sqlite*'],
           runtimeCaching: [
             {
               urlPattern: ({ url }) => url.pathname.startsWith('/catalog/'),
@@ -35,6 +39,9 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
+    // PowerSync ships web workers and WebAssembly that Vite's dependency pre-bundling breaks.
+    optimizeDeps: { exclude: ['@powersync/web'] },
+    worker: { format: 'es' },
     // The screen tests drive a real IndexedDB; build servers are slower than a laptop, so allow for it.
     test: { environment: 'node', testTimeout: 30_000, hookTimeout: 30_000 },
   };

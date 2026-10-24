@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import 'fake-indexeddb/auto';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { newTrainingPlan } from '../domain/edit';
 import { exerciseKey, type PersonalRecord } from '../domain/records';
 import { makeDevice, renderApp } from './testing';
+import { Tables } from '../data/schema';
 
 afterEach(cleanup);
 
@@ -86,7 +86,7 @@ describe('the Records tab', () => {
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     await user.click(within(await dialog('Delete record?')).getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(screen.getByRole('region', { name: 'Weight' })).toHaveTextContent('100 kg × 5'));
-    expect(await device.db.records.count()).toBe(1);
+    expect(await device.store.direct.count('records')).toBe(1);
   });
 
   it('records a time, a distance and a rep count for other exercises', async () => {
@@ -143,8 +143,8 @@ describe('the Records tab', () => {
       await user.click((await within(form).findAllByRole('button', { name: /bench press/i }))[0]!);
       await user.type(within(form).getByLabelText('Weight (kg)'), '80');
     });
-    await waitFor(async () => expect(await device.db.records.count()).toBe(1));
-    const [saved] = await device.db.records.toArray();
+    await waitFor(async () => expect(await device.store.direct.count('records')).toBe(1));
+    const [saved] = await device.store.direct.list(Tables.records);
     expect(saved!.catalogId).not.toBeNull();
     expect(saved!.exerciseKey).toBe(saved!.catalogId);
 
@@ -164,8 +164,9 @@ describe('the Records tab', () => {
     await user.clear(weight);
     await user.type(weight, '102.5');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
-    expect(await screen.findByRole('region', { name: 'Weight' })).toHaveTextContent('102.5 kg × 5');
-    expect(await device.db.records.count()).toBe(1);
+    const region = await screen.findByRole('region', { name: 'Weight' });
+    await waitFor(() => expect(region).toHaveTextContent('102.5 kg × 5'));
+    expect(await device.store.direct.count('records')).toBe(1);
   });
 });
 
@@ -186,7 +187,7 @@ describe('on an exercise page', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(screen.getByRole('region', { name: 'Personal records' })).toHaveTextContent('90 kg × 3'));
-    expect((await device.db.records.toArray())[0]).toMatchObject({ catalogId: target!.id, exerciseKey: target!.id });
+    expect((await device.store.direct.list(Tables.records))[0]).toMatchObject({ catalogId: target!.id, exerciseKey: target!.id });
   });
 });
 
@@ -212,12 +213,12 @@ describe('during a workout', () => {
     const prompt = await screen.findByText('New personal best!');
     expect(prompt.parentElement).toHaveTextContent('Squat: 105 kg × 5');
     expect(prompt.parentElement).toHaveTextContent('≈ 122.5 kg 1RM');
-    expect(await device.db.records.count()).toBe(1); // not saved until asked
+    expect(await device.store.direct.count('records')).toBe(1); // not saved until asked
 
     await user.click(screen.getByRole('button', { name: 'Save as PR' }));
     expect(await screen.findByText('Personal record saved')).toBeInTheDocument();
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument();
-    const saved = await device.db.records.toArray();
+    const saved = await device.store.direct.list(Tables.records);
     expect(saved).toHaveLength(2);
     expect(saved.find((r) => r.id !== 'old')).toMatchObject({ value: 105, reps: 5, exerciseKey: exerciseKey('Squat', null) });
   });
@@ -252,7 +253,7 @@ describe('during a workout', () => {
     await startAndTick(user);
     await user.click(await screen.findByRole('button', { name: 'Not now' }));
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument();
-    expect(await device.db.records.count()).toBe(1);
+    expect(await device.store.direct.count('records')).toBe(1);
 
     await user.click(screen.getByRole('button', { name: /Completed exercises/ })); // the finished exercise moved there
     await user.click(within(await screen.findByRole('dialog', { name: 'Completed exercises' })).getByRole('button', { name: 'Set 1 done' })); // un-tick

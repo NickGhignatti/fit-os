@@ -9,24 +9,26 @@ import type { Workout } from '../domain/workout';
 import { receiveTransfer, sendTransfer } from '../transfer/transfer';
 import { InMemoryTransferGateway } from '../transfer/gateway';
 import { exportBackup, parseBackup, restoreBackup } from './backup';
-import { TrackerDb } from './db';
+import { Tables } from './schema';
+import type { Store } from './store';
+import { testStore } from './testStore';
 import { importEnvelope } from './importItem';
 import {
-  DexieCustomFoodRepository,
-  DexieFavoriteFoodRepository,
-  DexieFoodLogRepository,
-  DexieProfileRepository,
-  DexieTransactionRunner,
-  DexieWorkoutRepository,
-  dexieDietPlans,
-  dexieTrainingPlans,
+  SqlCustomFoodRepository,
+  SqlFavoriteFoodRepository,
+  SqlFoodLogRepository,
+  SqlProfileRepository,
+  SqlTransactionRunner,
+  SqlWorkoutRepository,
+  sqlDietPlans,
+  sqlTrainingPlans,
 } from './repositories';
 
-let db: TrackerDb;
+let db: Store;
 let counter = 0;
 
 beforeEach(() => {
-  db = new TrackerDb(`test-${counter++}`);
+  db = testStore();
 });
 
 /** The next value a stream emits that satisfies [accept]. */
@@ -89,7 +91,7 @@ describe('ids', () => {
 
 describe('workouts', () => {
   it('saves, reads back in creation order, and deletes', async () => {
-    const repo = new DexieWorkoutRepository(db);
+    const repo = new SqlWorkoutRepository(db);
     const first = workout({ title: 'First' });
     const second = workout({ title: 'Second' });
     await repo.save(second);
@@ -103,7 +105,7 @@ describe('workouts', () => {
   });
 
   it('summarises completion per day and updates live', async () => {
-    const repo = new DexieWorkoutRepository(db);
+    const repo = new SqlWorkoutRepository(db);
     await repo.save(workout());
     const summaries = await nextWhere(repo.observeDaySummaries('2026-10-12', '2026-10-18'), (s) => s.length === 1);
     expect(summaries).toEqual([{ date: '2026-10-14', totalSets: 1, doneSets: 1 }]);
@@ -116,13 +118,13 @@ describe('workouts', () => {
 
 describe('plans', () => {
   it('lists by name ignoring case', async () => {
-    const repo = dexieTrainingPlans(db);
+    const repo = sqlTrainingPlans(db);
     for (const name of ['beta', 'Alpha', 'charlie']) await repo.save(plan({ name }));
     expect((await nextWhere(repo.observePlans(), (p) => p.length === 3)).map((p) => p.name)).toEqual(['Alpha', 'beta', 'charlie']);
   });
 
   it('lets several workout plans be active at once', async () => {
-    const repo = dexieTrainingPlans(db);
+    const repo = sqlTrainingPlans(db);
     const lifting = plan({ name: 'Lifting' });
     const volley = plan({ name: 'Volleyball' });
     const rest = plan({ name: 'Mobility' });
@@ -147,7 +149,7 @@ describe('plans', () => {
   });
 
   it('keeps at most one diet active', async () => {
-    const repo = dexieDietPlans(db);
+    const repo = sqlDietPlans(db);
     const a = newDietPlan('A', 'daily');
     const b = newDietPlan('B', 'daily');
     await repo.save(a);
@@ -168,19 +170,19 @@ describe('plans', () => {
   });
 
   it('emits null for a deleted plan; diet and training plans are separate', async () => {
-    const repo = dexieTrainingPlans(db);
+    const repo = sqlTrainingPlans(db);
     const p = plan();
     await repo.save(p);
     const gone = nextWhere(repo.observePlan(p.id), (v) => v === null);
     await repo.delete(p.id);
     expect(await gone).toBeNull();
-    expect(await dexieDietPlans(db).getPlan(p.id)).toBeUndefined();
+    expect(await sqlDietPlans(db).getPlan(p.id)).toBeUndefined();
   });
 });
 
 describe('food log', () => {
   it('returns an empty day, stores entries in order, and drops an emptied day', async () => {
-    const repo = new DexieFoodLogRepository(db);
+    const repo = new SqlFoodLogRepository(db);
     expect(await repo.getDay('2026-10-14')).toEqual({ date: '2026-10-14', entries: [] });
 
     const entry = (id: string, grams: number) => ({ id, meal: 'Lunch', portion: portionOf(chicken, grams) });
@@ -188,11 +190,11 @@ describe('food log', () => {
     expect((await repo.getDay('2026-10-14')).entries.map((e) => e.id)).toEqual(['a', 'b']);
 
     await repo.saveDay({ date: '2026-10-14', entries: [] });
-    expect(await db.foodLogDays.count()).toBe(0);
+    expect(await db.direct.count('food_log_days')).toBe(0);
   });
 
   it('lists recent foods, most recent first, without repeats', async () => {
-    const repo = new DexieFoodLogRepository(db);
+    const repo = new SqlFoodLogRepository(db);
     const apple: FoodItem = { ...chicken, id: 'crea:2', name: 'Mela' };
     const log = (date: string, foods: FoodItem[]) =>
       repo.saveDay({ date, entries: foods.map((f) => ({ id: newId(), meal: 'Snack', portion: portionOf(f, 100) })) });
@@ -206,7 +208,7 @@ describe('food log', () => {
 
 describe('foods and profile', () => {
   it('creates custom foods and finds them with the Italian-aware search', async () => {
-    const repo = new DexieCustomFoodRepository(db);
+    const repo = new SqlCustomFoodRepository(db);
     const food = await repo.create('Torta della nonna', { kcal: 300, protein: 5, carbs: 40, fat: 12 }, null, 80);
     expect(food.id).toMatch(/^custom:/);
     expect((await repo.search('torta nonna')).map((f) => f.id)).toEqual([food.id]);
@@ -214,7 +216,7 @@ describe('foods and profile', () => {
   });
 
   it('toggles favourites, newest first', async () => {
-    const repo = new DexieFavoriteFoodRepository(db);
+    const repo = new SqlFavoriteFoodRepository(db);
     await repo.setFavorite(chicken, true);
     await new Promise((r) => setTimeout(r, 2));
     await repo.setFavorite({ ...chicken, id: 'crea:2', name: 'Mela' }, true);
@@ -224,7 +226,7 @@ describe('foods and profile', () => {
   });
 
   it('defaults the profile, and keeps one weigh-in per day', async () => {
-    const repo = new DexieProfileRepository(db);
+    const repo = new SqlProfileRepository(db);
     expect((await nextWhere(repo.observeProfile(), () => true)).activity).toBe('moderate');
     await repo.saveProfile({ sex: 'male', birthDate: '1996-10-17', heightCm: 180, activity: 'active', pace: 'lose', customKcal: null, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
     expect((await nextWhere(repo.observeProfile(), (p) => p.sex === 'male')).heightCm).toBe(180);
@@ -246,15 +248,15 @@ describe('foods and profile', () => {
 
 describe('transactions', () => {
   it('roll everything back when the block fails', async () => {
-    const runner = new DexieTransactionRunner(db);
-    const workouts = new DexieWorkoutRepository(db);
+    const runner = new SqlTransactionRunner(db);
+    const workouts = new SqlWorkoutRepository(db);
     await expect(
       runner.run(async () => {
         await workouts.save(workout());
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');
-    expect(await db.workouts.count()).toBe(0);
+    expect(await db.direct.count('workouts')).toBe(0);
   });
 });
 
@@ -267,7 +269,7 @@ describe('importing a received item', () => {
     if (received.status !== 'ok') throw new Error(received.status);
 
     expect(await importEnvelope(db, received.envelope)).toEqual({ status: 'imported', kind: 'training_plan', title: 'Strength' });
-    const [copy] = await db.trainingPlans.toArray();
+    const [copy] = await db.direct.list(Tables.trainingPlans);
     expect(copy?.isActive).toBe(false);
     expect(copy?.id).not.toBe(original.id);
     expect(copy?.sessions[1]?.[0]?.id).not.toBe(original.sessions[1]?.[0]?.id);
@@ -277,20 +279,20 @@ describe('importing a received item', () => {
   it('keeps catalogue food ids but detaches a workout from its plan', async () => {
     const w = workout({ planId: newId() });
     await importEnvelope(db, { v: 1, kind: 'workout', data: w, sentAt: 'x' });
-    expect((await db.workouts.toArray())[0]).toMatchObject({ planId: null, title: 'Push' });
+    expect((await db.direct.list(Tables.workouts))[0]).toMatchObject({ planId: null, title: 'Push' });
 
     const dietData = {
       id: newId(), name: 'Cut', recurrence: 'daily', isActive: true,
       meals: { 0: [{ id: newId(), name: 'Lunch', time: '', foods: [{ id: newId(), name: 'Pollo', quantity: '', portion: portionOf(chicken, 150) }] }] },
     };
     await importEnvelope(db, { v: 1, kind: 'diet_plan', data: dietData, sentAt: 'x' });
-    const [diet] = await db.dietPlans.toArray();
+    const [diet] = await db.direct.list(Tables.dietPlans);
     expect(diet?.isActive).toBe(false);
     expect(diet?.meals[0]?.[0]?.foods[0]?.portion?.food.id).toBe('crea:1');
   });
 
   it('adds a received food-log day to the existing one', async () => {
-    const repo = new DexieFoodLogRepository(db);
+    const repo = new SqlFoodLogRepository(db);
     const entry = (id: string) => ({ id, meal: 'Lunch', portion: portionOf(chicken, 100) });
     await repo.saveDay({ date: '2026-10-14', entries: [entry('mine')] });
     await importEnvelope(db, { v: 1, kind: 'food_log_day', data: { date: '2026-10-14', entries: [entry('theirs')] }, sentAt: 'x' });
@@ -311,36 +313,36 @@ describe('importing a received item', () => {
     for (const { kind, data } of bad) {
       expect(await importEnvelope(db, { v: 1, kind, data, sentAt: 'x' })).toEqual({ status: 'invalid' });
     }
-    expect(await db.trainingPlans.count() + (await db.workouts.count()) + (await db.dietPlans.count())).toBe(0);
+    expect(await db.direct.count('training_plans') + (await db.direct.count('workouts')) + (await db.direct.count('diet_plans'))).toBe(0);
   });
 });
 
 describe('backup', () => {
   it('round-trips the whole device through a file', async () => {
-    const source = new TrackerDb('source');
-    await source.trainingPlans.put(plan({ isActive: true }));
-    await source.workouts.put(workout());
-    await source.customFoods.put({ ...chicken, id: 'custom:1' });
-    await new DexieFavoriteFoodRepository(source).setFavorite(chicken, true);
-    await new DexieProfileRepository(source).setWeight('2026-10-14', 80);
-    await new DexieProfileRepository(source).saveProfile({ sex: 'female', birthDate: null, heightCm: 170, activity: 'light', pace: 'maintain', customKcal: 2000, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
+    const source = testStore();
+    await source.docs.put(Tables.trainingPlans, plan({ isActive: true }));
+    await source.docs.put(Tables.workouts, workout());
+    await source.docs.put(Tables.customFoods, { ...chicken, id: 'custom:1' });
+    await new SqlFavoriteFoodRepository(source).setFavorite(chicken, true);
+    await new SqlProfileRepository(source).setWeight('2026-10-14', 80);
+    await new SqlProfileRepository(source).saveProfile({ sex: 'female', birthDate: null, heightCm: 170, activity: 'light', pace: 'maintain', customKcal: 2000, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
 
     const text = JSON.stringify(await exportBackup(source, () => new Date('2026-10-17T10:00:00Z')));
     const parsed = parseBackup(text);
     if (!parsed.ok) throw new Error(parsed.error);
 
     await restoreBackup(db, parsed.backup);
-    expect(await db.trainingPlans.toArray()).toEqual(await source.trainingPlans.toArray());
-    expect(await db.workouts.toArray()).toEqual(await source.workouts.toArray());
-    expect(await db.customFoods.count()).toBe(1);
-    expect(await db.favoriteFoods.count()).toBe(1);
-    expect(await db.weightEntries.toArray()).toEqual(await source.weightEntries.toArray());
-    expect((await db.profile.get('me'))?.customKcal).toBe(2000);
+    expect(await db.direct.list(Tables.trainingPlans)).toEqual(await source.direct.list(Tables.trainingPlans));
+    expect(await db.direct.list(Tables.workouts)).toEqual(await source.direct.list(Tables.workouts));
+    expect(await db.direct.count('custom_foods')).toBe(1);
+    expect(await db.direct.count('favorite_foods')).toBe(1);
+    expect(await db.direct.list(Tables.weightEntries)).toEqual(await source.direct.list(Tables.weightEntries));
+    expect((await db.direct.get(Tables.profile, 'me'))?.customKcal).toBe(2000);
   });
 
   it('restoring an active plan replaces the active one, and merges by id', async () => {
     const current = plan({ name: 'Current', isActive: true });
-    await db.trainingPlans.put(current);
+    await db.docs.put(Tables.trainingPlans, current);
     const incoming = plan({ name: 'Incoming', isActive: true });
     const edited = { ...current, name: 'Current (edited)', isActive: false };
     const text = JSON.stringify({
@@ -351,7 +353,7 @@ describe('backup', () => {
     if (!parsed.ok) throw new Error(parsed.error);
     await restoreBackup(db, parsed.backup);
 
-    const plans = await db.trainingPlans.toArray();
+    const plans = await db.direct.list(Tables.trainingPlans);
     expect(plans).toHaveLength(2);
     expect(plans.filter((p) => p.isActive).map((p) => p.name)).toEqual(['Incoming']);
     expect(plans.find((p) => p.id === current.id)?.name).toBe('Current (edited)');
@@ -366,26 +368,26 @@ describe('backup', () => {
 
 describe('restoring workout plans from a backup', () => {
   it('keeps every plan that was active, next to the ones already on the device', async () => {
-    const source = new TrackerDb('restore-multi-source');
+    const source = testStore();
     const a = { ...plan({ name: 'Lifting' }), isActive: true };
     const b = { ...plan({ name: 'Volleyball' }), isActive: true };
-    await source.trainingPlans.bulkPut([a, b]);
+    for (const p of [a, b]) await source.docs.put(Tables.trainingPlans, p);
     const parsed = parseBackup(JSON.stringify(await exportBackup(source)));
     if (!parsed.ok) throw new Error(parsed.error);
 
     const mine = { ...plan({ name: 'Already here' }), isActive: true };
-    await db.trainingPlans.put(mine);
+    await db.docs.put(Tables.trainingPlans, mine);
     await restoreBackup(db, parsed.backup);
-    expect((await db.trainingPlans.toArray()).filter((p) => p.isActive).map((p) => p.name).sort()).toEqual(['Already here', 'Lifting', 'Volleyball']);
+    expect((await db.direct.list(Tables.trainingPlans)).filter((p) => p.isActive).map((p) => p.name).sort()).toEqual(['Already here', 'Lifting', 'Volleyball']);
   });
 
   it('still keeps only one diet active', async () => {
-    const source = new TrackerDb('restore-diet-source');
-    await source.dietPlans.bulkPut([{ ...newDietPlan('One', 'daily'), isActive: true }, { ...newDietPlan('Two', 'daily'), isActive: true }]);
+    const source = testStore();
+    for (const name of ['One', 'Two']) await source.docs.put(Tables.dietPlans, { ...newDietPlan(name, 'daily'), isActive: true });
     const parsed = parseBackup(JSON.stringify(await exportBackup(source)));
     if (!parsed.ok) throw new Error(parsed.error);
-    await db.dietPlans.put({ ...newDietPlan('Existing', 'daily'), isActive: true });
+    await db.docs.put(Tables.dietPlans, { ...newDietPlan('Existing', 'daily'), isActive: true });
     await restoreBackup(db, parsed.backup);
-    expect((await db.dietPlans.toArray()).filter((p) => p.isActive)).toHaveLength(1);
+    expect((await db.direct.list(Tables.dietPlans)).filter((p) => p.isActive)).toHaveLength(1);
   });
 });

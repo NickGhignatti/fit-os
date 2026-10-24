@@ -1,8 +1,10 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { TrackerDb } from '../data/db';
+import { Tables } from '../data/schema';
+import type { Store } from '../data/store';
+import { testStore } from '../data/testStore';
 import { parseBackup } from '../data/backup';
-import { DexieProfileRepository } from '../data/repositories';
+import { SqlProfileRepository } from '../data/repositories';
 import { targetsForProfile } from './nutritionTargets';
 import { defaultProfile, type Profile } from './profile';
 import { profileSchema } from './schemas';
@@ -88,10 +90,10 @@ describe('profiles written before custom macros existed', () => {
   });
 
   it('read back from the device with the new targets empty', async () => {
-    const db = new TrackerDb('legacy-profile');
-    await db.profile.put({ key: 'me', ...legacy } as never); // the row exactly as an older version stored it
+    const db = testStore();
+    await db.docs.put(Tables.profile, { key: 'me', ...legacy } as never); // the row exactly as an older version stored it
     const profile = await new Promise<Profile>((resolve) => {
-      new DexieProfileRepository(db).observeProfile().subscribe(resolve);
+      new SqlProfileRepository(db).observeProfile().subscribe(resolve);
     });
     expect(profile.customKcal).toBe(2100);
     expect(profile.customProtein).toBeNull();

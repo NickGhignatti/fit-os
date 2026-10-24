@@ -18,29 +18,31 @@ import {
   startPlannedSession,
   toggleSetDone,
 } from '../domain/useCases';
-import { TrackerDb } from './db';
+import { Tables } from './schema';
+import type { Store } from './store';
+import { testStore } from './testStore';
 import {
-  DexieFoodLogRepository,
-  DexieProfileRepository,
-  DexieTransactionRunner,
-  DexieWorkoutRepository,
-  dexieDietPlans,
-  dexieTrainingPlans,
+  SqlFoodLogRepository,
+  SqlProfileRepository,
+  SqlTransactionRunner,
+  SqlWorkoutRepository,
+  sqlDietPlans,
+  sqlTrainingPlans,
 } from './repositories';
 
-let db: TrackerDb;
+let db: Store;
 let n = 0;
 const repos = () => ({
-  workouts: new DexieWorkoutRepository(db),
-  trainingPlans: dexieTrainingPlans(db),
-  dietPlans: dexieDietPlans(db),
-  foodLog: new DexieFoodLogRepository(db),
-  profile: new DexieProfileRepository(db),
-  transaction: new DexieTransactionRunner(db),
+  workouts: new SqlWorkoutRepository(db),
+  trainingPlans: sqlTrainingPlans(db),
+  dietPlans: sqlDietPlans(db),
+  foodLog: new SqlFoodLogRepository(db),
+  profile: new SqlProfileRepository(db),
+  transaction: new SqlTransactionRunner(db),
 });
 
 beforeEach(() => {
-  db = new TrackerDb(`uc-${n++}`);
+  db = testStore();
 });
 
 const nextWhere = <T>(stream: Stream<T>, accept: (value: T) => boolean): Promise<T> =>

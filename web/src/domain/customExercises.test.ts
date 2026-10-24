@@ -4,9 +4,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { exportBackup, parseBackup, restoreBackup } from '../data/backup';
 import { ExerciseLibrary, StaticExerciseCatalog } from '../data/catalog';
-import { TrackerDb } from '../data/db';
+import { Tables } from '../data/schema';
+import type { Store } from '../data/store';
+import { copyLegacyData } from '../data/legacy';
+import { testStore } from '../data/testStore';
 import { importEnvelope } from '../data/importItem';
-import { DexieCustomExercises } from '../data/repositories';
+import { SqlCustomExercises } from '../data/repositories';
 import { customExerciseId, customToInfo, isCustomId, noFilter, type CustomExercise } from './catalog';
 import { copyTrainingPlan, copyWorkout } from './copy';
 import { newTrainingPlan, newWorkout } from './edit';
@@ -19,9 +22,9 @@ const mine = (over: Partial<CustomExercise> = {}): CustomExercise => ({
   id: customExerciseId(`ex-${++counter}`), name: 'Sandbag carry', muscle: 'forearms', equipment: 'other', notes: 'Hug it, walk 20 m', ...over,
 });
 
-const library = (name: string) => {
-  const db = new TrackerDb(name);
-  const custom = new DexieCustomExercises(db);
+const library = (_name: string) => {
+  const db = testStore();
+  const custom = new SqlCustomExercises(db);
   return { db, custom, library: new ExerciseLibrary(new StaticExerciseCatalog(async () => catalogText()), custom) };
 };
 
@@ -77,10 +80,12 @@ describe('custom exercises in the library', () => {
     await custom.save({ ...e, name: 'New name' });
     expect((await custom.getAll()).map((x) => x.name)).toEqual(['New name']);
 
-    const reopened = new DexieCustomExercises(new TrackerDb('lib-edit')); // a new session on the same device
+    await db.close();
+    const again = testStore(db.dir); // a new session on the same device
+    const reopened = new SqlCustomExercises(again);
     expect((await reopened.getAll()).map((x) => x.name)).toEqual(['New name']);
-    await custom.delete(e.id);
-    expect(await db.customExercises.count()).toBe(0);
+    await reopened.delete(e.id);
+    expect(await again.direct.count('custom_exercises')).toBe(0);
   });
 });
 
@@ -99,26 +104,26 @@ describe('plans leaving the device', () => {
   });
 
   it('arrive on another device as plain exercises, still named', async () => {
-    const other = new TrackerDb('arrive-elsewhere');
+    const other = testStore();
     const plan = newTrainingPlan('Strongman', 'daily', { 0: [exercises(mine().id)] });
     expect(await importEnvelope(other, { v: 1, kind: 'training_plan', data: plan, sentAt: 'x' })).toMatchObject({ status: 'imported' });
-    const [stored] = await other.trainingPlans.toArray();
+    const [stored] = await other.direct.list(Tables.trainingPlans);
     expect(stored!.sessions[0]![0]).toMatchObject({ name: 'Sandbag carry', catalogId: null });
   });
 });
 
 describe('backups', () => {
   it('carry the exercises, and a backup from before they existed still loads', async () => {
-    const source = new TrackerDb('exercises-backup-source');
+    const source = testStore();
     const e = mine({ name: 'Backed up' });
-    await new DexieCustomExercises(source).save(e);
+    await new SqlCustomExercises(source).save(e);
     const file = JSON.stringify(await exportBackup(source));
     const parsed = parseBackup(file);
     if (!parsed.ok) throw new Error(parsed.error);
 
-    const target = new TrackerDb('exercises-backup-target');
+    const target = testStore();
     await restoreBackup(target, parsed.backup);
-    expect(await target.customExercises.toArray()).toEqual([e]);
+    expect(await target.direct.list(Tables.customExercises)).toEqual([e]);
 
     const legacy = JSON.parse(file) as { data: Record<string, unknown> };
     delete legacy.data.customExercises;
@@ -136,7 +141,7 @@ describe('backups', () => {
 });
 
 describe('upgrading a device', () => {
-  it('keeps what an earlier version stored, and adds the new table', async () => {
+  it('keeps what the old IndexedDB held when it moves to SQLite, and adds the new table', async () => {
     const name = 'exercises-upgrade';
     const old = new (await import('dexie')).default(name);
     old.version(1).stores({ workouts: 'id, date', trainingPlans: 'id, name', dietPlans: 'id, name', foodLogDays: 'date', customFoods: 'id', favoriteFoods: 'id, addedAt', weightEntries: 'id, &date', profile: 'key' });
@@ -145,9 +150,12 @@ describe('upgrading a device', () => {
     await old.table('records').put({ id: 'r1', exerciseKey: 'k', exerciseName: 'Squat', catalogId: null, metric: 'weight', value: 100, reps: 5, date: '2026-10-01', note: '' });
     old.close();
 
-    const upgraded = new TrackerDb(name);
-    expect(await upgraded.records.count()).toBe(1);
-    await upgraded.customExercises.put(mine());
-    expect(await upgraded.customExercises.count()).toBe(1);
+    const upgraded = testStore();
+    await copyLegacyData(upgraded, name); // what the app does on its first start with SQLite
+    expect(await upgraded.direct.count('records')).toBe(1);
+    await copyLegacyData(upgraded, name); // only ever once
+    expect(await upgraded.direct.count('records')).toBe(1);
+    await upgraded.docs.put(Tables.customExercises, mine());
+    expect(await upgraded.direct.count('custom_exercises')).toBe(1);
   });
 });

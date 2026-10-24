@@ -107,7 +107,7 @@ const MESSAGES = {
 } as const;
 
 const ReceiveDialog = ({ onClose }: { onClose: () => void }) => {
-  const { transfer, db } = useContainer();
+  const { transfer, store } = useContainer();
   const toast = useToast();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -121,7 +121,7 @@ const ReceiveDialog = ({ onClose }: { onClose: () => void }) => {
     try {
       const result = await receiveTransfer(transfer, input);
       if (result.status !== 'ok') return setProblem(MESSAGES[result.status]);
-      const imported = await importEnvelope(db, result.envelope);
+      const imported = await importEnvelope(store, result.envelope);
       if (imported.status === 'invalid') return setProblem(MESSAGES.invalid);
       toast(`Imported ${KIND_LABEL[imported.kind]} “${imported.title}”`);
       onClose();
@@ -241,13 +241,13 @@ export const ShareButton = ({ kind, data, title }: { kind: TransferKind; data: u
 
 /** The "Import a file" action of a +: reads a .fitos.json file and stores its item as a copy. */
 export const useImportFileAction = (): [FabAction, ReactNode] => {
-  const { db } = useContainer();
+  const { store } = useContainer();
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     const envelope = parseEnvelope(await file.text());
-    const imported = envelope ? await importEnvelope(db, envelope) : { status: 'invalid' as const };
+    const imported = envelope ? await importEnvelope(store, envelope) : { status: 'invalid' as const };
     toast(imported.status === 'imported' ? `Imported ${KIND_LABEL[imported.kind]} “${imported.title}”` : "That file can't be imported.");
     if (input.current) input.current.value = '';
   };

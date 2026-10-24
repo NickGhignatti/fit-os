@@ -1,11 +1,10 @@
-import Dexie, { liveQuery, type EntityTable } from 'dexie';
+import Dexie, { type EntityTable } from 'dexie';
 import type { CustomExercise } from '../domain/catalog';
 import type { DietPlan } from '../domain/diet';
 import type { FoodLogDay } from '../domain/foodLog';
 import type { FoodItem } from '../domain/nutrition';
 import type { Profile, WeightEntry } from '../domain/profile';
 import type { PersonalRecord } from '../domain/records';
-import type { Stream } from '../domain/repositories';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { Workout } from '../domain/workout';
 
@@ -22,10 +21,8 @@ export interface ProfileRow extends Profile {
 }
 
 /**
- * The on-device database. Everything the user owns lives here and nothing leaves it unless they
- * send an item or export a backup. Aggregates are stored whole; ids are time-ordered, so
- * primary-key order is creation order. Booleans cannot be indexed, so the active plan is found
- * by filtering (a user has a handful of plans).
+ * The IndexedDB database the app used before SQLite. It is only read now, once, to copy what it
+ * holds into SQLite (see [copyLegacyData]); nothing writes to it any more.
  */
 export class TrackerDb extends Dexie {
   workouts!: EntityTable<Workout, 'id'>;
@@ -60,11 +57,3 @@ export class TrackerDb extends Dexie {
     this.version(4).stores({ customExercises: 'id, name' });
   }
 }
-
-/** A Stream that re-runs [query] whenever the tables it reads change. */
-export const live = <T>(query: () => Promise<T> | T): Stream<T> => ({
-  subscribe(next, error) {
-    const subscription = liveQuery(query).subscribe({ next, error });
-    return () => subscription.unsubscribe();
-  },
-});

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { DietPlan } from '../domain/diet';
-import type { TrainingPlan } from '../domain/trainingPlan';
 import {
   customExerciseSchema,
   dietPlanSchema,
@@ -12,8 +11,9 @@ import {
   weightEntrySchema,
   workoutSchema,
 } from '../domain/schemas';
-import { defaultProfile } from '../domain/profile';
-import type { TrackerDb } from './db';
+import { readProfile } from './repositories';
+import { Tables, type DocTable } from './schema';
+import type { Store } from './store';
 
 /**
  * The whole device as one file: the backup for a browser that clears its storage, and the way
@@ -43,30 +43,25 @@ const backupSchema = z.object({
 
 export type Backup = z.infer<typeof backupSchema>;
 
-export const exportBackup = (db: TrackerDb, now: () => Date = () => new Date()): Promise<Backup> =>
-  db.transaction('r', db.tables, async () => ({
+export const exportBackup = async (store: Store, now: () => Date = () => new Date()): Promise<Backup> => {
+  const docs = store.direct;
+  return {
     app: FORMAT,
     v: VERSION,
     exportedAt: now().toISOString(),
     data: {
-      trainingPlans: await db.trainingPlans.toArray(),
-      dietPlans: await db.dietPlans.toArray(),
-      workouts: await db.workouts.toArray(),
-      foodLogDays: await db.foodLogDays.toArray(),
-      customFoods: await db.customFoods.toArray(),
-      favorites: (await db.favoriteFoods.toArray()).map(({ food, addedAt }) => ({ food, addedAt })),
-      weights: await db.weightEntries.toArray(),
-      profile: await readProfile(db),
-      records: await db.records.toArray(),
-      customExercises: await db.customExercises.toArray(),
+      trainingPlans: await docs.list(Tables.trainingPlans),
+      dietPlans: await docs.list(Tables.dietPlans),
+      workouts: await docs.list(Tables.workouts),
+      foodLogDays: await docs.list(Tables.foodLogDays),
+      customFoods: await docs.list(Tables.customFoods),
+      favorites: await docs.list(Tables.favoriteFoods),
+      weights: await docs.list(Tables.weightEntries),
+      profile: (await readProfile(docs)) ?? null,
+      records: await docs.list(Tables.records),
+      customExercises: await docs.list(Tables.customExercises),
     },
-  }));
-
-const readProfile = async (db: TrackerDb) => {
-  const row = await db.profile.get('me');
-  if (!row) return null;
-  const { key: _key, ...profile } = row;
-  return { ...defaultProfile, ...profile };
+  };
 };
 
 export type ParsedBackup = { readonly ok: true; readonly backup: Backup } | { readonly ok: false; readonly error: string };
@@ -96,39 +91,35 @@ const keepOneActive = <P extends { id: string; isActive: boolean }>(plans: P[]):
  * If the backup has an active diet it becomes the active one, replacing the current choice; restored
  * workout plans keep whatever active state they had, alongside those already on the device.
  */
-export const restoreBackup = (db: TrackerDb, { data }: Backup): Promise<void> =>
-  db.transaction('rw', db.tables, async () => {
-    await restorePlans(db, 'trainingPlans', data.trainingPlans, false); // any number can be active
-    await restorePlans(db, 'dietPlans', data.dietPlans, true); // only one diet can be
-    await db.workouts.bulkPut(data.workouts);
-    await db.foodLogDays.bulkPut(data.foodLogDays);
-    await db.customFoods.bulkPut(data.customFoods);
-    await db.favoriteFoods.bulkPut(data.favorites.map(({ food, addedAt }) => ({ id: food.id, food, addedAt })));
-    await restoreWeights(db, data.weights);
-    if (data.profile) await db.profile.put({ key: 'me', ...data.profile });
-    await db.records.bulkPut(data.records);
-    await db.customExercises.bulkPut(data.customExercises);
+export const restoreBackup = (store: Store, { data }: Backup): Promise<void> =>
+  store.transaction(async () => {
+    const docs = store.docs;
+    const putAll = async <T>(table: DocTable<T>, values: readonly T[]) => { for (const v of values) await docs.put(table, v); };
+    await putAll(Tables.trainingPlans, data.trainingPlans); // any number can be active
+    await restoreDiets(store, data.dietPlans); // only one diet can be
+    await putAll(Tables.workouts, data.workouts);
+    await putAll(Tables.foodLogDays, data.foodLogDays);
+    await putAll(Tables.customFoods, data.customFoods);
+    await putAll(Tables.favoriteFoods, data.favorites);
+    await restoreWeights(store, data.weights);
+    if (data.profile) await docs.put(Tables.profile, data.profile);
+    await putAll(Tables.records, data.records);
+    await putAll(Tables.customExercises, data.customExercises);
   });
 
-const restorePlans = async (
-  db: TrackerDb,
-  table: 'trainingPlans' | 'dietPlans',
-  plans: (TrainingPlan | DietPlan)[],
-  exclusive: boolean,
-) => {
-  const store = db.table<TrainingPlan | DietPlan, string>(table);
-  if (!exclusive) return void (await store.bulkPut(plans));
+const restoreDiets = async (store: Store, plans: DietPlan[]) => {
   const incoming = keepOneActive(plans);
-  const active = incoming.find((p) => p.isActive);
-  if (active) await store.filter((p) => p.isActive).modify((p) => void ((p as { isActive: boolean }).isActive = false));
-  await store.bulkPut(incoming);
+  if (incoming.some((p) => p.isActive)) {
+    for (const p of await store.docs.list(Tables.dietPlans, 'is_active = 1')) await store.docs.put(Tables.dietPlans, { ...p, isActive: false });
+  }
+  for (const p of incoming) await store.docs.put(Tables.dietPlans, p);
 };
 
 /** One weigh-in per day: a restored weight replaces the one already on that date. */
-const restoreWeights = async (db: TrackerDb, weights: Backup['data']['weights']) => {
+const restoreWeights = async (store: Store, weights: Backup['data']['weights']) => {
   for (const w of weights) {
-    const sameDay = await db.weightEntries.where('date').equals(w.date).first();
-    if (sameDay && sameDay.id !== w.id) await db.weightEntries.delete(sameDay.id);
-    await db.weightEntries.put(w);
+    const sameDay = await store.docs.first(Tables.weightEntries, 'date = ?', [w.date]);
+    if (sameDay && sameDay.id !== w.id) await store.docs.delete(Tables.weightEntries, sameDay.id);
+    await store.docs.put(Tables.weightEntries, w);
   }
 };

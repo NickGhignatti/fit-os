@@ -23,12 +23,17 @@ const HOLD_MS = 500;
 export const WidgetBoard = ({ label, kinds, slots, onChange }: {
   label: string; kinds: readonly WidgetKind[]; slots: readonly WidgetSlot[]; onChange: (slots: WidgetSlot[]) => void;
 }) => {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditingState] = useState(false);
   const [adding, setAdding] = useState(false);
+  // While editing, the board follows its own copy, so quick taps build on each other instead of
+  // on a layout that is still being saved.
+  const [draft, setDraft] = useState<WidgetSlot[] | null>(null);
+  const setEditing = (on: boolean) => { setEditingState(on); if (!on) setDraft(null); };
+  const change = (next: WidgetSlot[]) => { setDraft(next); onChange(next); };
   const press = useRef<{ timer: number; x: number; y: number } | null>(null);
   const held = useRef(false); // the hold that started editing must not also count as a tap
   const byId = new Map(kinds.map((k) => [k.id, k]));
-  const shown = slots.filter((s) => byId.has(s.id));
+  const shown = (draft ?? slots).filter((s) => byId.has(s.id));
   const missing = kinds.filter((k) => !shown.some((s) => s.id === k.id));
 
   useEffect(() => {
@@ -55,7 +60,7 @@ export const WidgetBoard = ({ label, kinds, slots, onChange }: {
   const move = (e: PointerEvent) => {
     if (press.current && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > 10) cancel();
   };
-  const resize = (slot: WidgetSlot, size: WidgetSize) => onChange(shown.map((s) => (s.id === slot.id ? { ...s, size } : s)));
+  const resize = (slot: WidgetSlot, size: WidgetSize) => change(shown.map((s) => (s.id === slot.id ? { ...s, size } : s)));
 
   return (
     <section className={`board ${editing ? 'editing' : ''}`} aria-label={label}>
@@ -80,7 +85,7 @@ export const WidgetBoard = ({ label, kinds, slots, onChange }: {
               </div>
               {editing && (
                 <>
-                  <button className="widget-remove" aria-label={`Remove ${kind.title}`} onClick={() => onChange(shown.filter((s) => s.id !== slot.id))}>
+                  <button className="widget-remove" aria-label={`Remove ${kind.title}`} onClick={() => change(shown.filter((s) => s.id !== slot.id))}>
                     <span aria-hidden="true">−</span>
                   </button>
                   {other && (
@@ -105,7 +110,7 @@ export const WidgetBoard = ({ label, kinds, slots, onChange }: {
           <div className="stack">
             {missing.map((k) => (
               <button key={k.id} className="menu-item" aria-label={`Add ${k.title}`}
-                onClick={() => { onChange([...shown, { id: k.id, size: k.sizes[0]! }]); setAdding(false); }}>
+                onClick={() => { change([...shown, { id: k.id, size: k.sizes[0]! }]); setAdding(false); }}>
                 <span className="title">{k.title}</span><br /><span className="small muted">{k.description}</span>
               </button>
             ))}

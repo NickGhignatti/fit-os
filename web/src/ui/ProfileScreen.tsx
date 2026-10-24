@@ -58,14 +58,14 @@ const summarize = (b: Backup): string => {
 };
 
 const DataSection = () => {
-  const { db } = useContainer();
+  const { store } = useContainer();
   const toast = useToast();
   const file = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<Backup | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [receive, receiving] = useReceiveAction();
   const tools: FabAction[] = [
-    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(db).then((b) => download(`tracker-backup-${today()}.json`, JSON.stringify(b))) },
+    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(store).then((b) => download(`tracker-backup-${today()}.json`, JSON.stringify(b))) },
     { label: 'Import backup', icon: Icons.upload, onSelect: () => file.current?.click() },
     receive,
   ];
@@ -96,7 +96,7 @@ const DataSection = () => {
       {pending && (
         <ConfirmDialog title="Import this backup?" confirmLabel="Import" danger={false} onClose={() => setPending(null)}
           message={`It contains ${summarize(pending)}. Items with the same id are replaced; everything else on this device is kept.`}
-          onConfirm={() => void restoreBackup(db, pending).then(() => toast('Backup imported'))} />
+          onConfirm={() => void restoreBackup(store, pending).then(() => toast('Backup imported'))} />
       )}
     </>
   );

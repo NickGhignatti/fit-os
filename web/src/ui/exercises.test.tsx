@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import 'fake-indexeddb/auto';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { customExerciseId } from '../domain/catalog';
 import { newTrainingPlan } from '../domain/edit';
 import { makeDevice, renderApp } from './testing';
+import { Tables } from '../data/schema';
 
 afterEach(cleanup);
 
@@ -39,8 +39,8 @@ describe('making up an exercise', () => {
     expect(within(add).getByLabelText('Exercise')).toHaveValue('Sandbag carry');
     await user.click(within(add).getByRole('button', { name: 'Add' }));
 
-    await waitFor(async () => expect(await device.db.customExercises.count()).toBe(1));
-    const [saved] = await device.db.customExercises.toArray();
+    await waitFor(async () => expect(await device.store.direct.count('custom_exercises')).toBe(1));
+    const [saved] = await device.store.direct.list(Tables.customExercises);
     expect(saved).toMatchObject({ name: 'Sandbag carry', muscle: 'forearms', equipment: null, notes: 'Hug it, walk 20 m' });
     expect(saved!.id).toMatch(/^custom:/);
 
@@ -67,7 +67,7 @@ describe('making up an exercise', () => {
 
     await waitFor(async () => expect((await device.repos.trainingPlans.getPlan(plan.id))!.sessions[0]).toHaveLength(1));
     expect((await device.repos.trainingPlans.getPlan(plan.id))!.sessions[0]![0]!.catalogId).toBe(sandbag.id);
-    expect(await device.db.customExercises.count()).toBe(1); // still just the one
+    expect(await device.store.direct.count('custom_exercises')).toBe(1); // still just the one
   });
 
   it('needs a name', async () => {
@@ -111,7 +111,7 @@ describe('the exercise library', () => {
     expect(screen.getByRole('button', { name: 'Remove filter Chest' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(await screen.findByRole('link', { name: /Zzz Sled push/ })).toBeInTheDocument();
-    expect(await device.db.customExercises.count()).toBe(1);
+    expect(await device.store.direct.count('custom_exercises')).toBe(1);
   });
 
   it('survives closing and reopening the app', async () => {
@@ -174,7 +174,7 @@ describe("an exercise's own page", () => {
     expect(confirm).toHaveTextContent(/keep its name, and its records stay/);
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
-    await waitFor(async () => expect(await device.db.customExercises.count()).toBe(0));
+    await waitFor(async () => expect(await device.store.direct.count('custom_exercises')).toBe(0));
     expect(await screen.findByRole('button', { name: 'Add your own exercise' })).toBeInTheDocument(); // back in the library
     expect((await device.repos.trainingPlans.getPlan(plan.id))!.sessions[0]![0]).toMatchObject({ name: 'Sandbag carry' });
   });
@@ -205,8 +205,8 @@ describe('records for your own exercises', () => {
     await user.type(within(form).getByLabelText('Weight (kg)'), '40');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
-    await waitFor(async () => expect(await device.db.records.count()).toBe(1));
-    const [record] = await device.db.records.toArray();
+    await waitFor(async () => expect(await device.store.direct.count('records')).toBe(1));
+    const [record] = await device.store.direct.list(Tables.records);
     expect(record).toMatchObject({ catalogId: sandbag.id, exerciseKey: sandbag.id, value: 40 });
   });
 });

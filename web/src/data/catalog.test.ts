@@ -2,16 +2,18 @@ import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { lookUpBarcode, noFilter, searchFoods } from '../domain/catalog';
-import { TrackerDb } from './db';
+import { Tables } from './schema';
+import type { Store } from './store';
+import { testStore } from './testStore';
 import {
-  DexieSavedProducts,
+  SqlSavedProducts,
   OpenFoodFactsRepository,
   StaticBasicFoods,
   StaticExerciseCatalog,
   parseCreaCsv,
   parseCsvLine,
 } from './catalog';
-import { DexieCustomFoodRepository } from './repositories';
+import { SqlCustomFoodRepository } from './repositories';
 
 const read = (name: string) => readFileSync(new URL(`../../public/catalog/${name}`, import.meta.url), 'utf8');
 
@@ -123,9 +125,9 @@ describe('Open Food Facts', () => {
 
 describe('searching and scanning', () => {
   it('ranks the user\'s foods, saved products and basic foods together, brand included', async () => {
-    const db = new TrackerDb('catalog-search');
-    const custom = new DexieCustomFoodRepository(db);
-    const saved = new DexieSavedProducts(db);
+    const db = testStore();
+    const custom = new SqlCustomFoodRepository(db);
+    const saved = new SqlSavedProducts(db);
     await custom.create('Yogurt della nonna', { kcal: 60, protein: 3, carbs: 8, fat: 2 }, null, null);
     await saved.save({ id: 'off:1', name: 'Yogurt bianco', brand: 'Conad', per100g: { kcal: 55, protein: 4, carbs: 5, fat: 2 }, servingGrams: 125 });
     const basicFoods = new StaticBasicFoods(async () => read('crea_foods.csv'));
@@ -137,8 +139,8 @@ describe('searching and scanning', () => {
   });
 
   it('saves what it finds, and falls back to the saved copy when offline', async () => {
-    const db = new TrackerDb('catalog-scan');
-    const saved = new DexieSavedProducts(db);
+    const db = testStore();
+    const saved = new SqlSavedProducts(db);
     const item = { id: 'off:99', name: 'Biscotti', brand: null, per100g: { kcal: 450, protein: 6, carbs: 70, fat: 15 }, servingGrams: null } as const;
     const online = { findByBarcode: async () => ({ status: 'found', product: item }) as const, search: async () => ({ status: 'unavailable' }) as const };
     const offline = { ...online, findByBarcode: async () => ({ status: 'unavailable' }) as const };

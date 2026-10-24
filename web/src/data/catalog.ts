@@ -20,7 +20,8 @@ import {
 } from '../domain/catalog';
 import type { FoodItem } from '../domain/nutrition';
 import { rank } from '../domain/textSearch';
-import type { TrackerDb } from './db';
+import { Tables } from './schema';
+import type { Store } from './store';
 
 // ---- Exercises: free-exercise-db (public domain) ----------------------------
 
@@ -290,18 +291,18 @@ export class OpenFoodFactsRepository implements ProductRepository {
   }
 }
 
-export class DexieSavedProducts implements SavedProductRepository {
-  constructor(private readonly db: TrackerDb) {}
+export class SqlSavedProducts implements SavedProductRepository {
+  constructor(private readonly store: Store) {}
 
-  async save(product: FoodItem): Promise<void> {
-    await this.db.savedProducts.put(product);
+  save(product: FoodItem): Promise<void> {
+    return this.store.docs.put(Tables.savedProducts, product);
   }
 
   find(barcode: string): Promise<FoodItem | undefined> {
-    return this.db.savedProducts.get(`off:${barcode}`);
+    return this.store.docs.get(Tables.savedProducts, `off:${barcode}`);
   }
 
   async search(query: string): Promise<FoodItem[]> {
-    return rank(query, await this.db.savedProducts.toArray(), searchableName);
+    return rank(query, await this.store.docs.list(Tables.savedProducts), searchableName);
   }
 }
