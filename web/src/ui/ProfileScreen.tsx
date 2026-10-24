@@ -7,7 +7,7 @@ import { AccountSection } from './Account';
 import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKcal, formatKg, parseNumber, today } from './format';
 import { useToast } from './hooks';
-import { ConfirmDialog, Loading, MacroChips, Modal, PageHeader, PromptDialog } from './kit';
+import { ConfirmDialog, Fab, Icons, Loading, MacroChips, Modal, PageHeader, PromptDialog } from './kit';
 import { TargetsDialog } from './TargetsDialog';
 import { LegalLinks } from './Legal';
 import { ReceiveButton } from './Transfer';
@@ -196,7 +196,6 @@ export const ProfileScreen = () => {
         ) : (
           <p className="muted">No weigh-ins yet. Log your weight to see its trend and get a daily goal.</p>
         )}
-        <button className="btn" style={{ marginTop: 8 }} onClick={() => setDialog('weight')}>Log weight</button>
       </section>
 
       <h2>Calendar</h2>
@@ -209,6 +208,7 @@ export const ProfileScreen = () => {
         Basic foods: CREA, Tabelle di composizione degli alimenti. Packaged products: Open Food Facts (ODbL). Exercises and photos: free-exercise-db (public domain).
       </p>
 
+      <Fab label="Add" actions={[{ label: 'Log weight', icon: Icons.weight, onSelect: () => setDialog('weight') }]} />
       {dialog === 'profile' && <ProfileDialog profile={profile} onClose={() => setDialog(null)} onSave={(p) => void repos.profile.saveProfile(p)} />}
       {dialog === 'targets' && <TargetsDialog onClose={() => setDialog(null)} />}
       {dialog === 'weight' && (

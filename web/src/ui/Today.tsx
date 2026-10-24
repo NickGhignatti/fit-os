@@ -7,7 +7,7 @@ import { observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTraini
 import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
-import { ActionMenu, EnergyCard, Loading, PageHeader, PlayIcon, ProgressRing, PromptDialog } from './kit';
+import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing, PromptDialog } from './kit';
 
 interface Count { readonly done: number; readonly total: number }
 
@@ -117,6 +117,9 @@ export const Today = () => {
   const eatsByPlan = calories.hasDietPlan && calories.meals.length > 0;
   const loggedMeals = calories.meals.filter((m) => m.entries.length > 0).length;
   const nextMeal = calories.meals.find((m) => m.entries.length === 0);
+  // Food from the + goes into the next meal to log, or the first one once all are logged.
+  const foodMeal = nextMeal ?? calories.meals[0];
+  const foodLink = (extra = '') => (foodMeal ? `/food/pick?date=${date}&meal=${encodeURIComponent(foodMeal.name)}${extra}` : '/tracker');
 
   return (
     <div className="today">
@@ -194,10 +197,10 @@ export const Today = () => {
         </section>
       )}
 
-      <div className="fab-space" />
-      <ActionMenu label="Log food or weight" icon="+" className="fab" actions={[
-        { label: 'Food', onSelect: () => navigate('/tracker') },
-        { label: 'Weight', onSelect: () => setWeighing(true) },
+      <Fab label="Log food or weight" actions={[
+        { label: 'Search food', short: 'Food', icon: Icons.search, onSelect: () => navigate(foodLink()) },
+        { label: 'Scan a barcode', short: 'Scan', icon: Icons.scan, onSelect: () => navigate(foodLink('&scan=1')) },
+        { label: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
       ]} />
       {weighing && (
         <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" confirmLabel="Save" onClose={() => setWeighing(false)}

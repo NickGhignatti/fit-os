@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { withGrams, withoutEntry, type FoodLogEntry } from '../domain/foodLog';
-import { portionNutrients } from '../domain/nutrition';
+import { mealNutrients } from '../domain/diet';
+import { portionNutrients, type Nutrients } from '../domain/nutrition';
 import { addDays } from '../domain/plan';
 import { logPlannedMeal, observeCalorieDay, observeDailyTargets } from '../domain/useCases';
 import { DEFAULT_MEALS, formatGrams, formatKcal, parseNumber, relativeDay, today } from './format';
 import { useToast } from './hooks';
-import { EnergyCard, Loading, Modal, PageHeader } from './kit';
+import { Carousel, EnergyCard, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { SendButton } from './Transfer';
 import { TargetsDialog } from './TargetsDialog';
 
@@ -15,6 +16,18 @@ const EditIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
     <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
+);
+
+const MACRO_DOTS = [
+  { key: 'protein', label: 'P', color: 'var(--protein)' },
+  { key: 'carbs', label: 'C', color: 'var(--carbs)' },
+  { key: 'fat', label: 'F', color: 'var(--fat)' },
+] as const;
+
+export const MacroLine = ({ n }: { n: Nutrients }) => (
+  <div className="meal-macros small muted">
+    {MACRO_DOTS.map((m) => <span key={m.key}><i style={{ background: m.color }} />{m.label} {Math.round(n[m.key])} g</span>)}
+  </div>
 );
 
 const EntryDialog = ({ entry, onSave, onDelete, onClose }: {
@@ -45,17 +58,22 @@ export const Tracker = () => {
   const toast = useToast();
   const [editing, setEditing] = useState<FoodLogEntry | null>(null);
   const [editingTargets, setEditingTargets] = useState(false);
+  const [slide, setSlide] = useState<number | null>(null);
+  const navigate = useNavigate();
   const day = useStream((c) => observeCalorieDay(c.repos, date, DEFAULT_MEALS), [date]);
   const logDay = useStream((c) => c.repos.foodLog.observeDay(date), [date]);
   const targets = useStream((c) => observeDailyTargets(c.repos.profile, date), [date]);
-  const go = (d: string) => setParams(d === now ? {} : { date: d }, { replace: true });
+  const go = (d: string) => { setSlide(null); setParams(d === now ? {} : { date: d }, { replace: true }); };
 
   if (!day || !logDay || targets === undefined) return <Loading />;
 
   const goal = targets?.nutrients.kcal ?? day.planned?.kcal;
   const goalLabel = targets ? 'goal' : 'planned';
-  const firstFree = day.meals.find((m) => m.entries.length === 0) ?? day.meals[0];
-  const pickLink = (meal: string, extra = '') => `/food/pick?date=${date}&meal=${encodeURIComponent(meal)}${extra}`;
+  // The carousel opens on the first meal with nothing logged yet; the + adds to the meal in view.
+  const next = day.meals.findIndex((m) => m.entries.length === 0);
+  const active = Math.min(slide ?? Math.max(next, 0), day.meals.length - 1);
+  const meal = day.meals[active];
+  const pickLink = (name: string, extra = '') => `/food/pick?date=${date}&meal=${encodeURIComponent(name)}${extra}`;
 
   return (
     <>
@@ -71,49 +89,64 @@ export const Tracker = () => {
         <span><Link to="/profile">Set up your profile</Link> to get a daily goal, <button className="link" onClick={() => setEditingTargets(true)}>set your own targets</button>, or plan your diet with foods from the database.</span>
       </EnergyCard>
 
-      {firstFree && (
-        <div className="row">
-          <Link className="btn grow" style={{ textAlign: 'center', textDecoration: 'none' }} to={pickLink(firstFree.name, '&scan=1')}>Scan</Link>
-          <Link className="btn secondary grow" style={{ textAlign: 'center', textDecoration: 'none' }} to={pickLink(firstFree.name)}>Search food</Link>
-        </div>
-      )}
-
       <div className="section-head">
-        <h2>Logged meals</h2>
+        <h2>Meals</h2>
         <span className="small muted">{day.meals.filter((m) => m.entries.length > 0).length} of {day.meals.length} logged</span>
       </div>
-      {day.meals.map((meal) => (
-        <section key={meal.name} className="card" aria-label={meal.name}>
-          <div className="row between">
-            <div className="grow">
-              <div className="title">{meal.name}</div>
-              <div className="small muted">
-                {meal.entries.length > 0 ? formatKcal(meal.eaten.kcal) : 'Pending'}
-                {meal.planned && ' · planned'}
+      <Carousel key={date} label="Meals" titles={day.meals.map((m) => m.name)} index={active} onIndex={setSlide}>
+        {day.meals.map((m, i) => {
+          const logged = m.entries.length > 0;
+          const planned = m.planned ? mealNutrients(m.planned) : null;
+          const status = logged ? 'Logged' : i === next ? 'Up next' : 'Pending';
+          return (
+            <section key={m.name} className="card meal-card" aria-label={m.name}>
+              <div className="meal-head">
+                <div className="grow">
+                  <div className={`eyebrow ${i === next ? 'next' : ''}`}>{[status, m.planned?.time].filter(Boolean).join(' · ')}</div>
+                  <div className="meal-name">{m.name}</div>
+                </div>
+                <div className="meal-kcal">
+                  <b>{Math.round(logged ? m.eaten.kcal : planned?.kcal ?? 0)}</b>
+                  <span className="small muted">{logged || !planned ? 'kcal' : 'kcal planned'}</span>
+                </div>
               </div>
-            </div>
-            {meal.canLogAsPlanned && meal.planned && (
-              <button className="btn secondary" onClick={() => void logPlannedMeal(repos, date, meal.planned!).then((n) => toast(`Logged ${n} ${n === 1 ? 'food' : 'foods'} as ${meal.name}`))}>
-                Log as planned
-              </button>
-            )}
-          </div>
-          {meal.entries.map((entry) => (
-            <button key={entry.id} className="list-item" onClick={() => setEditing(entry)}>
-              <span className="grow">
-                <span className="title">{entry.portion.food.name}</span>
-                <br />
-                <span className="small muted">{formatGrams(entry.portion.grams)} · {formatKcal(portionNutrients(entry.portion).kcal)}</span>
-              </span>
-              <span className="muted">›</span>
-            </button>
-          ))}
-          <Link className="btn secondary" style={{ display: 'inline-block', marginTop: 8, textDecoration: 'none' }} to={pickLink(meal.name)}>Add food</Link>
-        </section>
-      ))}
+              {logged && <MacroLine n={m.eaten} />}
+              {m.entries.map((entry) => (
+                <button key={entry.id} className="list-item" onClick={() => setEditing(entry)}>
+                  <span className="grow">
+                    <span className="title">{entry.portion.food.name}</span>
+                    <br />
+                    <span className="small muted">{formatGrams(entry.portion.grams)} · {formatKcal(portionNutrients(entry.portion).kcal)}</span>
+                  </span>
+                  <span className="muted">›</span>
+                </button>
+              ))}
+              {!logged && m.planned && m.planned.foods.length > 0 && (
+                <ul className="meal-planned small" aria-label={`${m.name} plan`}>
+                  {m.planned.foods.map((f) => <li key={f.id}><span>{f.name}</span><span>{f.portion ? formatGrams(f.portion.grams) : f.quantity}</span></li>)}
+                </ul>
+              )}
+              {!logged && !m.planned && <p className="meal-empty small muted">Nothing logged yet.</p>}
+              {m.canLogAsPlanned && m.planned && (
+                <button className="btn secondary" onClick={() => { setSlide(i); void logPlannedMeal(repos, date, m.planned!).then((n) => toast(`Logged ${n} ${n === 1 ? 'food' : 'foods'} as ${m.name}`)); }}>
+                  Log as planned
+                </button>
+              )}
+              <div className="spacer" />
+              <Link className="add-row" to={pickLink(m.name)}>{Icons.plus}Add food</Link>
+            </section>
+          );
+        })}
+      </Carousel>
 
       {logDay.entries.length > 0 && <SendButton kind="food_log_day" data={logDay} label="Send this day's food log to another device" />}
 
+      {meal && (
+        <Fab label="Log food" actions={[
+          { label: `Search food for ${meal.name}`, short: 'Search', icon: Icons.search, onSelect: () => navigate(pickLink(meal.name)) },
+          { label: `Scan a barcode for ${meal.name}`, short: 'Scan', icon: Icons.scan, onSelect: () => navigate(pickLink(meal.name, '&scan=1')) },
+        ]} />
+      )}
       {editingTargets && <TargetsDialog onClose={() => setEditingTargets(false)} />}
       {editing && (
         <EntryDialog entry={editing} onClose={() => setEditing(null)}

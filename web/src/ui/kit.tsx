@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Children, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Nutrients } from '../domain/nutrition';
 
@@ -95,6 +95,133 @@ export const ActionMenu = ({ actions, label = 'More options', icon = '⋮', clas
         </Modal>
       )}
     </>
+  );
+};
+
+const Glyph = ({ d }: { d: string }) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Line icons for the actions of the +. */
+export const Icons = {
+  plus: <Glyph d="M12 5v14M5 12h14" />,
+  search: <Glyph d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4" />,
+  scan: <Glyph d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 8v8M12 8v8M16 8v8" />,
+  weight: <Glyph d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 10a4 4 0 0 1 8 0zM12 10l1.5-2.5" />,
+  receive: <Glyph d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
+  community: <Glyph d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6" />,
+  copy: <Glyph d="M9 9h11v11H9zM5 15H4V4h11v1" />,
+  meal: <Glyph d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" />,
+  workout: <Glyph d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />,
+  record: <Glyph d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />,
+};
+
+export interface FabAction {
+  /** The accessible name; also the caption under the icon unless [short] is given. */
+  readonly label: string;
+  readonly short?: string;
+  readonly icon: ReactNode;
+  readonly onSelect: () => void;
+  readonly disabled?: boolean;
+}
+
+/**
+ * The round + in the bottom-right corner of a screen. One action runs straight away; more fan out
+ * around it on a quarter circle, from straight up to straight left, over a frosted backdrop.
+ */
+export const Fab = ({ label, actions }: { label: string; actions: readonly FabAction[] }) => {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+  const only = actions.length === 1 ? actions[0]! : null;
+  const radius = 80 + 10 * actions.length; // more actions, wider arc, so captions don't touch
+  return (
+    <>
+      <div className="fab-space" />
+      {open && <div className="fab-scrim" onClick={() => setOpen(false)} />}
+      <div className={`fab-dial ${open ? 'open' : ''}`}>
+        {open && (
+          <div role="group" aria-label={label}>
+            {actions.map((a, i) => {
+              const angle = Math.PI * (1.5 - i / Math.max(actions.length - 1, 1) / 2);
+              const at = { '--x': `${Math.round(radius * Math.cos(angle))}px`, '--y': `${Math.round(radius * Math.sin(angle))}px`, '--i': i };
+              return (
+                <button key={a.label} className="fab-item" aria-label={a.label} disabled={a.disabled} style={at as CSSProperties}
+                  onClick={() => { setOpen(false); a.onSelect(); }}>
+                  {a.icon}
+                  <span className="fab-caption" aria-hidden="true">{a.short ?? a.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <button className="fab" aria-label={only ? only.label : label} aria-expanded={only ? undefined : open} disabled={only?.disabled}
+          onClick={() => (only ? only.onSelect() : setOpen(!open))}>
+          {Icons.plus}
+        </button>
+      </div>
+    </>
+  );
+};
+
+/**
+ * Cards side by side, swiped through one at a time, with their [titles] as tabs above. [index] is
+ * the card in view: a swipe reports it through [onIndex], and a new [index] from outside (a tap on
+ * a tab, a card just added) scrolls there.
+ */
+export const Carousel = ({ label, titles, index, onIndex, children }: {
+  label: string; titles: readonly string[]; index: number; onIndex: (index: number) => void; children: ReactNode;
+}) => {
+  const track = useRef<HTMLDivElement>(null);
+  const shown = useRef(index); // the card the track is on
+  const heading = useRef<number | null>(null); // the card a slide is going to; cards passed on the way don't count
+  const offsetOf = (i: number) => (track.current?.children[i] as HTMLElement | undefined)?.offsetLeft ?? 0;
+  const left = (i: number) => offsetOf(i) - offsetOf(0);
+
+  // Open on the card in view without sliding there; later changes slide.
+  useLayoutEffect(() => {
+    if (track.current) track.current.scrollLeft = left(index);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (index === shown.current) return;
+    shown.current = index;
+    heading.current = index;
+    track.current?.scrollTo?.({ left: left(index), behavior: 'smooth' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
+  const onScroll = () => {
+    const t = track.current;
+    const step = left(1);
+    if (!t || step <= 0) return;
+    const i = Math.min(Math.max(Math.round(t.scrollLeft / step), 0), titles.length - 1);
+    if (heading.current !== null) {
+      if (i === heading.current) heading.current = null;
+      return;
+    }
+    if (i === shown.current) return;
+    shown.current = i;
+    onIndex(i);
+  };
+
+  return (
+    <div className="carousel">
+      <div className="carousel-tabs" role="tablist" aria-label={label}>
+        {titles.map((t, i) => (
+          <button key={`${t}-${i}`} role="tab" aria-selected={i === index} className={i === index ? 'on' : ''} onClick={() => onIndex(i)}>{t}</button>
+        ))}
+      </div>
+      <div className="carousel-track" ref={track} onScroll={onScroll}>
+        {Children.map(children, (child) => <div className="carousel-slide">{child}</div>)}
+      </div>
+    </div>
   );
 };
 

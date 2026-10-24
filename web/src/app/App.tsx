@@ -64,7 +64,7 @@ export const App = () => {
   const showTabs = TABS.some((t) => t.path === pathname);
   return (
     <ToastProvider>
-      <div className="app">
+      <div className={`app ${showTabs ? '' : 'no-tabs'}`}>
         <main className="screen">
           <ErrorBoundary>
             <Routes>

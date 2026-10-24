@@ -18,9 +18,9 @@ afterEach(cleanup);
 
 const dialog = (name: string | RegExp) => screen.findByRole('dialog', { name });
 
-/** Opens a ⋮ menu and picks an entry, like a user would. */
-const chooseFromMenu = async (user: ReturnType<typeof userEvent.setup>, menu: string, entry: string) => {
-  await user.click(screen.getByRole('button', { name: menu }));
+/** Opens a ⋮ menu or a + and picks an entry, like a user would. */
+const chooseFromMenu = async (user: ReturnType<typeof userEvent.setup>, menu: string, entry: string | RegExp) => {
+  await user.click(await screen.findByRole('button', { name: menu }));
   await user.click(await screen.findByRole('button', { name: entry }));
 };
 
@@ -42,20 +42,18 @@ describe('navigation', () => {
 });
 
 describe('the + on Today', () => {
-  it('logs a weight, or goes to the food tracker', async () => {
+  it('logs a weight, or goes to the food search', async () => {
     const user = userEvent.setup();
     const device = makeDevice();
     renderApp('/', device);
 
-    await user.click(await screen.findByRole('button', { name: 'Log food or weight' }));
-    await user.click(within(await dialog('Log food or weight')).getByRole('button', { name: 'Weight' }));
+    await chooseFromMenu(user, 'Log food or weight', 'Weight');
     await user.type(await screen.findByLabelText('Weight (kg)'), '80');
     await user.click(within(await dialog('Weight')).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Logged 80 kg')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Log food or weight' }));
-    await user.click(within(await dialog('Log food or weight')).getByRole('button', { name: 'Food' }));
-    expect(await screen.findByRole('heading', { name: 'Tracker' })).toBeInTheDocument();
+    await chooseFromMenu(user, 'Log food or weight', 'Search food');
+    expect(await screen.findByLabelText('Search foods')).toBeInTheDocument();
   });
 });
 
@@ -81,7 +79,7 @@ describe('a workout plan, from creation to a logged session', () => {
     const user = userEvent.setup();
     renderApp('/workouts');
 
-    await user.click(await screen.findByRole('button', { name: 'New workout' }));
+    await chooseFromMenu(user, 'Add a workout', 'New workout');
     const create = await dialog('New workout');
     await user.clear(within(create).getByLabelText('Name'));
     await user.type(within(create).getByLabelText('Name'), 'Push day');
@@ -143,7 +141,7 @@ describe('a diet, from creation to a logged meal', () => {
     const user = userEvent.setup();
     renderApp('/food');
 
-    await user.click(await screen.findByRole('button', { name: 'New diet' }));
+    await chooseFromMenu(user, 'Add a diet', 'New diet');
     const create = await dialog('New diet');
     await user.clear(within(create).getByLabelText('Name'));
     await user.type(within(create).getByLabelText('Name'), 'Cut');
@@ -188,7 +186,7 @@ describe('a diet, from creation to a logged meal', () => {
   it('copies a weekly diet day onto other days', async () => {
     const user = userEvent.setup();
     renderApp('/food');
-    await user.click(await screen.findByRole('button', { name: 'New diet' }));
+    await chooseFromMenu(user, 'Add a diet', 'New diet');
     const create = await dialog('New diet');
     await user.click(within(create).getByRole('radio', { name: 'Weekly' }));
     await user.click(within(create).getByRole('button', { name: 'Create' }));
@@ -200,7 +198,7 @@ describe('a diet, from creation to a logged meal', () => {
     await user.click(within(meal).getByRole('button', { name: 'Save' }));
     await screen.findByRole('region', { name: 'Dinner' });
 
-    await user.click(screen.getByRole('button', { name: /Copy Monday to other days/ }));
+    await chooseFromMenu(user, 'Add to this day', /Copy Monday to other days/);
     const copy = await dialog(/Copy Monday to/);
     await user.click(within(copy).getByLabelText('Tuesday'));
     await user.click(within(copy).getByRole('button', { name: 'Copy' }));
@@ -215,7 +213,7 @@ describe('the calorie tracker', () => {
   it('logs a food, changes its grams, and removes it', async () => {
     const user = userEvent.setup();
     renderApp('/tracker');
-    await user.click(await screen.findByRole('link', { name: 'Search food' }));
+    await chooseFromMenu(user, 'Log food', /Search food/);
     await user.type(await screen.findByLabelText('Search foods'), 'mela');
     await user.click(await firstFoodResult());
     const amount = await screen.findByRole('dialog');
@@ -390,7 +388,7 @@ describe('moving a plan to another device', () => {
 
     const laptop = makeDevice(server);
     renderApp('/workouts', laptop);
-    await user.click(await screen.findByRole('button', { name: 'Receive from another device' }));
+    await chooseFromMenu(user, 'Add a workout', 'Receive from another device');
     const receive = await dialog('Receive from another device');
     await user.type(within(receive).getByLabelText('Transfer code'), code.toLowerCase());
     await user.click(within(receive).getByRole('button', { name: 'Receive' }));
@@ -403,7 +401,7 @@ describe('moving a plan to another device', () => {
   it('explains a wrong or already used code', async () => {
     const user = userEvent.setup();
     renderApp('/workouts', makeDevice(new InMemoryTransferGateway()));
-    await user.click(await screen.findByRole('button', { name: 'Receive from another device' }));
+    await chooseFromMenu(user, 'Add a workout', 'Receive from another device');
     const receive = await dialog('Receive from another device');
     await user.type(within(receive).getByLabelText('Transfer code'), 'K7QM2-X9RTA');
     await user.click(within(receive).getByRole('button', { name: 'Receive' }));
@@ -418,8 +416,9 @@ describe('moving a plan to another device', () => {
   it('turns sending off when the build has no Supabase', async () => {
     const user = userEvent.setup();
     renderApp('/workouts', makeDevice(null));
-    expect(await screen.findByRole('button', { name: 'Receive from another device' })).toBeDisabled();
-    expect(screen.getByText(/isn't set up in this build/)).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Add a workout' }));
+    expect(screen.getByRole('button', { name: 'Receive from another device' })).toBeDisabled();
+    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('link', { name: 'Food' }));
   });
 });

@@ -5,7 +5,7 @@ import { newWorkout } from '../domain/edit';
 import { addDays } from '../domain/plan';
 import { observeDayAgenda } from '../domain/useCases';
 import { dateTitle, relativeDay, today } from './format';
-import { Empty, Loading, PageHeader, PromptDialog } from './kit';
+import { Empty, Fab, Icons, Loading, PageHeader, PromptDialog } from './kit';
 import { PendingSessionCard, WorkoutCard } from './WorkoutCard';
 
 const VALID_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -32,9 +32,9 @@ export const Day = () => {
       {agenda.pendingSessions.map((session) => <PendingSessionCard key={session.planId} session={session} date={date} />)}
       {agenda.workouts.map((w) => <WorkoutCard key={w.id} workout={w} />)}
       {agenda.pendingSessions.length === 0 && agenda.workouts.length === 0 && (
-        <Empty>Nothing planned for this day.<br />Tap “Add workout” to log one.</Empty>
+        <Empty>Nothing planned for this day.<br />Tap + to log one.</Empty>
       )}
-      <button className="btn" onClick={() => setAdding(true)}>Add workout</button>
+      <Fab label="Add" actions={[{ label: 'Add workout', icon: Icons.workout, onSelect: () => setAdding(true) }]} />
       {adding && (
         <PromptDialog title="Add workout" label="Name" initial="Workout" confirmLabel="Add" onClose={() => setAdding(false)}
           onSubmit={(title) => void repos.workouts.save(newWorkout(date, title))} />

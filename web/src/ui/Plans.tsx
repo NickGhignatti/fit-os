@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { PlanDay, Recurrence } from '../domain/plan';
 import type { PlanRepository } from '../domain/repositories';
-import { Empty, Loading, Modal, ActionMenu, ConfirmDialog, PromptDialog, Segmented, type MenuAction } from './kit';
+import { Empty, Fab, Loading, Modal, ActionMenu, ConfirmDialog, PromptDialog, Segmented, type FabAction, type MenuAction } from './kit';
 
 export interface PlanLike {
   readonly id: string;
@@ -26,7 +26,7 @@ export const TRAINING_TEXTS: PlanTexts = {
   noun: 'workout',
   newLabel: 'New workout',
   defaultName: 'Workout',
-  empty: 'No workouts yet.\nTap “New workout” to create a daily or weekly one.',
+  empty: 'No workouts yet.\nTap + to create a daily or weekly one.',
   daily: 'The same workout every day',
   weekly: 'Its own workout on each day of the week',
   deleteMessage: 'Its exercises will be removed. Workouts you already logged from it are kept.',
@@ -36,7 +36,7 @@ export const DIET_TEXTS: PlanTexts = {
   noun: 'diet',
   newLabel: 'New diet',
   defaultName: 'Diet',
-  empty: 'No diets yet.\nTap “New diet” to create a daily or weekly one.',
+  empty: 'No diets yet.\nTap + to create a daily or weekly one.',
   daily: 'The same meals every day',
   weekly: 'Its own meals on each day of the week',
   deleteMessage: 'Its meals and foods will be removed.',
@@ -90,7 +90,7 @@ export const PlanMenu = <P extends PlanLike>({ plan, repo, texts, extra = [], af
   );
 };
 
-export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, create, href, header }: {
+export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, create, href, header, icon, more = [] }: {
   plans: readonly P[] | undefined;
   repo: PlanRepository<P>;
   texts: PlanTexts;
@@ -98,6 +98,9 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, crea
   create: (name: string, recurrence: Recurrence) => P;
   href: (plan: P) => string;
   header?: ReactNode;
+  icon: ReactNode;
+  /** Other ways to add a plan, beside creating one, on the same +. */
+  more?: readonly FabAction[];
 }) => {
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
@@ -125,7 +128,7 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, crea
           ))}
         </section>
       )}
-      <button className="btn" onClick={() => setCreating(true)}>{texts.newLabel}</button>
+      <Fab label={`Add a ${texts.noun}`} actions={[{ label: texts.newLabel, short: 'New', icon, onSelect: () => setCreating(true) }, ...more]} />
       {creating && (
         <NewPlanDialog texts={texts} onClose={() => setCreating(false)} onCreate={(name, recurrence) => {
           const plan = create(name, recurrence);

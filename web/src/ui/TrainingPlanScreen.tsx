@@ -6,7 +6,7 @@ import { daysOf } from '../domain/plan';
 import { sessionOnDay, type PlannedExercise, type PlannedSet, type TrainingPlan } from '../domain/trainingPlan';
 import { addPlannedSetLikeLast } from '../domain/useCases';
 import { dayName, formatKg, parseNumber, shortDayName, setSummary } from './format';
-import { ActionMenu, ConfirmDialog, Empty, Loading, Modal, PageHeader } from './kit';
+import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { PlanMenu, TRAINING_TEXTS, usePlanDay } from './Plans';
 import { PublishButton } from './Community';
 import { SendButton } from './Transfer';
@@ -73,8 +73,8 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
       {session.length === 0 && (
         <Empty>
           {plan.recurrence === 'daily'
-            ? <>No exercises yet.<br />Tap “Add exercise” to build this workout.</>
-            : <>Rest day.<br />Tap “Add exercise” to train on {dayName(day)}.</>}
+            ? <>No exercises yet.<br />Tap + to build this workout.</>
+            : <>Rest day.<br />Tap + to train on {dayName(day)}.</>}
         </Empty>
       )}
 
@@ -103,7 +103,7 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
         </section>
       ))}
 
-      <button className="btn" onClick={() => navigate(`/exercises/pick?plan=${plan.id}&day=${day}`)}>Add exercise</button>
+      <Fab label="Add" actions={[{ label: 'Add exercise', icon: Icons.workout, onSelect: () => navigate(`/exercises/pick?plan=${plan.id}&day=${day}`) }]} />
 
       {dialog?.kind === 'edit' && (
         <ExerciseDialog exercise={dialog.exercise} onClose={() => setDialog(null)}

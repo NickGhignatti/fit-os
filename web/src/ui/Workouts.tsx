@@ -1,14 +1,14 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import { newTrainingPlan } from '../domain/edit';
 import { sessionOnDay, trainingDays, type TrainingPlan } from '../domain/trainingPlan';
 import { observeTrainingWeeks, startPlannedSession } from '../domain/useCases';
 import { ExerciseBrowser } from './Exercises';
 import { shortDayName, today } from './format';
-import { PageHeader, PlayIcon, Segmented } from './kit';
+import { Icons, PageHeader, PlayIcon, Segmented, type FabAction } from './kit';
 import { PlanList, TRAINING_TEXTS } from './Plans';
 import { RecordsTab } from './Records';
-import { ReceiveButton } from './Transfer';
+import { useReceiveAction } from './Transfer';
 
 export const trainingSummary = (plan: TrainingPlan): string => {
   const days = trainingDays(plan);
@@ -31,6 +31,8 @@ export const Workouts = () => {
   const navigate = useNavigate();
   const plans = useStream((c) => c.repos.trainingPlans.observePlans());
   const weeks = useStream((c) => observeTrainingWeeks(c.repos, date), [date]);
+  const [receive, receiving] = useReceiveAction();
+  const browse: FabAction[] = community ? [{ label: 'Browse community workouts', short: 'Community', icon: Icons.community, onSelect: () => navigate('/community') }] : [];
 
   const tabs = (
     <Segmented<Tab> label="Workouts" value={tab} onChange={(t) => setParams(t === 'plans' ? {} : { tab: t }, { replace: true })}
@@ -53,6 +55,8 @@ export const Workouts = () => {
           summary={trainingSummary}
           create={(name, recurrence) => newTrainingPlan(name, recurrence)}
           href={(p) => `/workouts/plan/${p.id}`}
+          icon={Icons.workout}
+          more={[receive, ...browse]}
           header={weeks && weeks.length > 0 ? weeks.map((week) => (
             <section key={week.plan.id} className="session" aria-label={`Active program: ${week.plan.name}`}>
               <div className="grow">
@@ -71,12 +75,7 @@ export const Workouts = () => {
           )) : weeks ? <p className="muted">No active plan. Set one as active to follow it here. You can follow several at once.</p> : undefined}
         />
       )}
-      {tab === 'plans' && (
-        <div className="stack" style={{ marginTop: 12 }}>
-          <ReceiveButton />
-          {community && <Link className="btn secondary" style={{ textAlign: 'center', textDecoration: 'none' }} to="/community">Browse community workouts</Link>}
-        </div>
-      )}
+      {receiving}
     </>
   );
 };

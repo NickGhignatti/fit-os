@@ -1,11 +1,11 @@
 import QRCode from 'qrcode';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useContainer } from '../app/hooks';
 import { importEnvelope } from '../data/importItem';
 import { normalizeCode } from '../transfer/code';
 import { receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
 import { useToast } from './hooks';
-import { Modal } from './kit';
+import { Icons, Modal, type FabAction } from './kit';
 import { ScannerDialog } from './Scanner';
 
 const LIFETIMES = [
@@ -166,6 +166,16 @@ const ReceiveDialog = ({ onClose }: { onClose: () => void }) => {
       </form>
     </Modal>
   );
+};
+
+/** The "Receive from another device" action of a +, and the dialog it opens while open. */
+export const useReceiveAction = (): [FabAction, ReactNode] => {
+  const { transfer } = useContainer();
+  const [open, setOpen] = useState(false);
+  return [
+    { label: 'Receive from another device', short: 'Receive', icon: Icons.receive, disabled: !transfer, onSelect: () => setOpen(true) },
+    open && <ReceiveDialog onClose={() => setOpen(false)} />,
+  ];
 };
 
 export const ReceiveButton = () => {

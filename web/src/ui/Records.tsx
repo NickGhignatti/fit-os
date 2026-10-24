@@ -8,7 +8,7 @@ import {
 } from '../domain/records';
 import { METRIC_LABEL, describeRecord, formatDuration, formatKg, impliedOneRepMax, parseDuration, parseNumber, today } from './format';
 import { useAsync, useToast } from './hooks';
-import { ActionMenu, ConfirmDialog, Empty, Loading, Modal, PageHeader, Segmented, useDebounced } from './kit';
+import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader, Segmented, useDebounced } from './kit';
 
 /** What the dialog starts from: an exercise to add to, or a record to edit. */
 export interface RecordDraft {
@@ -219,7 +219,7 @@ export const RecordsTab = () => {
           ))}
         </section>
       )}
-      <button className="btn" onClick={() => setAdding(true)}>Add record</button>
+      <Fab label="Add" actions={[{ label: 'Add record', icon: Icons.record, onSelect: () => setAdding(true) }]} />
       {adding && <AddRecordDialog onClose={() => setAdding(false)} />}
     </>
   );
@@ -240,7 +240,7 @@ export const RecordsScreen = () => {
       <PageHeader back title={latest.exerciseName} subtitle="Personal records" />
       {latest.catalogId && <p><Link to={`/exercises/${encodeURIComponent(latest.catalogId)}`}>How to do this exercise</Link></p>}
       <MetricSections records={records} />
-      <button className="btn" onClick={() => setAdding(true)}>Add record</button>
+      <Fab label="Add" actions={[{ label: 'Add record', icon: Icons.record, onSelect: () => setAdding(true) }]} />
       {adding && <AddRecordDialog draft={{ name: latest.exerciseName, catalogId: latest.catalogId }} onClose={() => setAdding(false)} />}
     </>
   );
