@@ -182,7 +182,7 @@ describe('a diet, from creation to a logged meal', () => {
     expect(await screen.findByText(/150 g · \d+ kcal/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'Today' }));
-    expect(await screen.findByText('logged')).toBeInTheDocument();
+    expect(await screen.findByText('Logged')).toBeInTheDocument();
   });
 
   it('copies a weekly diet day onto other days', async () => {
