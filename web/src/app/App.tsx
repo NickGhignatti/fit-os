@@ -30,7 +30,7 @@ const Icon = ({ d }: { d: string }) => (
 const TABS: readonly Tab[] = [
   { path: '/', label: 'Today', icon: <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /> },
   { path: '/workouts', label: 'Workouts', icon: <Icon d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11" /> },
-  { path: '/food', label: 'Food', icon: <Icon d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" /> },
+  { path: '/food', label: 'Diet', icon: <Icon d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" /> },
   { path: '/tracker', label: 'Tracker', icon: <Icon d="M4 20V10M10 20V4M16 20v-8M22 20H2" /> },
   { path: '/profile', label: 'Profile', icon: <Icon d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" /> },
 ];

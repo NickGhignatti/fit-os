@@ -434,27 +434,33 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 .photo { width: 100%; border-radius: var(--radius-sm); background: var(--track); aspect-ratio: 4 / 3; object-fit: cover; }
 .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-.calendar .head { font-size: 12px; color: var(--ink-tertiary); padding: 4px 0; }
+/* A month as quiet rounded tiles: a done day is tinted green, a planned one has a dot, today is ink. */
+.calendar-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.calendar-title { flex: 1; min-width: 0; appearance: none; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; }
+.month-name { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.calendar-count { display: block; margin-top: 2px; }
+.icon-btn.round { width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 50%; background: var(--surface-muted); font-size: 18px; }
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.calendar .head { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--ink-tertiary); padding-bottom: 2px; }
 .calendar button {
-  appearance: none; border: 0; background: transparent; aspect-ratio: 1; border-radius: 50%; cursor: pointer;
-  font-size: 14px; color: var(--ink);
+  position: relative; appearance: none; border: 0; background: transparent; height: 40px; border-radius: 12px; cursor: pointer;
+  font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; transition: background 0.15s ease;
 }
-/* A planned day gets a small dot under its number. */
-.calendar button { position: relative; }
-.calendar button.planned::after {
-  content: ''; position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%);
-  width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+.calendar button:active { background: var(--surface-muted); }
+.calendar button.future { color: var(--ink-secondary); }
+.calendar button.planned::after, .calendar button.completed::after {
+  content: ''; position: absolute; left: 50%; bottom: 5px; margin-left: -2px; width: 4px; height: 4px; border-radius: 50%;
 }
-.calendar button.completed { background: var(--accent); color: var(--on-accent); box-shadow: none; font-weight: 600; }
-.calendar button.today { font-weight: 700; box-shadow: inset 0 0 0 2px var(--ink); }
-.calendar button.outside { color: var(--ink-tertiary); }
-.link.month { text-decoration: none; font-weight: 600; }
-.legend { display: flex; justify-content: center; gap: 18px; margin-top: 10px; }
+.calendar button.planned::after { background: var(--ink-tertiary); }
+.calendar button.completed { background: var(--accent-container); color: var(--on-accent-container); font-weight: 600; }
+.calendar button.completed::after { background: var(--accent); }
+.calendar button.today { background: var(--ink); color: var(--ink-inverse); font-weight: 700; }
+.calendar button.today.planned::after { background: rgba(255, 255, 255, 0.6); }
+.legend { display: flex; justify-content: center; gap: 18px; margin-top: 14px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend i { width: 8px; height: 8px; border-radius: 50%; }
-.legend i.planned { width: 5px; height: 5px; background: var(--accent); }
-.legend i.completed { background: var(--accent); width: 10px; height: 10px; }
+.legend i { display: inline-block; }
+.legend i.completed { width: 14px; height: 14px; border-radius: 4px; background: var(--accent-container); }
+.legend i.planned { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-tertiary); }
 
 video.scanner { width: 100%; border-radius: var(--radius-sm); background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
 svg.chart { width: 100%; height: auto; }
@@ -520,3 +526,27 @@ svg.chart { width: 100%; height: auto; }
 .add-row:active { background: var(--surface-muted); }
 /* Pushes the add row to the bottom of the card, leaving at least a little air above it. */
 .meal-card .spacer { flex: 1; min-height: 12px; }
+
+/* ---- Profile ---------------------------------------------------------------------------- */
+/* The person on top: a round avatar with their details beside it; the whole card opens the editor. */
+.profile-hero {
+  display: flex; align-items: center; gap: 16px; width: 100%; border: 0; text-align: left; cursor: pointer;
+  font: inherit; color: inherit; transition: transform 0.12s ease;
+}
+.profile-hero:active { transform: scale(0.99); }
+.avatar {
+  flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%;
+  background: radial-gradient(120% 120% at 20% 0%, #3a3f47 0%, var(--ink) 70%); color: var(--ink-inverse);
+}
+.avatar svg { width: 30px; height: 30px; }
+.hero-title { display: block; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.hero-line { display: block; font-size: 14px; margin-top: 2px; }
+.hero-chevron { font-size: 24px; }
+/* Round icon buttons for the data tools; their names are in the tooltip and for screen readers. */
+.tools { display: flex; gap: 12px; margin-top: 12px; }
+.tool {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--surface-muted); color: var(--ink); transition: transform 0.12s ease, background 0.15s ease;
+}
+.tool:active { transform: scale(0.92); background: var(--track); }
+.tool:disabled { color: var(--ink-tertiary); cursor: default; }

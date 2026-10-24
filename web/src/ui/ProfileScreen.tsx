@@ -7,10 +7,10 @@ import { AccountSection } from './Account';
 import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKcal, formatKg, parseNumber, today } from './format';
 import { useToast } from './hooks';
-import { ConfirmDialog, Fab, Icons, Loading, MacroChips, Modal, PageHeader, PromptDialog } from './kit';
+import { ConfirmDialog, Fab, Icons, Loading, MacroChips, Modal, PageHeader, PromptDialog, type FabAction } from './kit';
 import { TargetsDialog } from './TargetsDialog';
 import { LegalLinks } from './Legal';
-import { ReceiveButton } from './Transfer';
+import { useReceiveAction } from './Transfer';
 
 const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave: (p: Profile) => void; onClose: () => void }) => {
   const [sex, setSex] = useState<Sex | ''>(profile.sex ?? '');
@@ -96,6 +96,12 @@ const DataSection = () => {
   const file = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<Backup | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [receive, receiving] = useReceiveAction();
+  const tools: FabAction[] = [
+    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(db).then((b) => download(`tracker-backup-${today()}.json`, JSON.stringify(b))) },
+    { label: 'Import backup', icon: Icons.upload, onSelect: () => file.current?.click() },
+    receive,
+  ];
 
   const onFile = async (selected: File | undefined) => {
     if (!selected) return;
@@ -111,16 +117,15 @@ const DataSection = () => {
       <h2>Your data</h2>
       <section className="card">
         <p className="muted">Everything is stored on this device only. Save a backup file now and then, in case the browser clears its storage.</p>
-        <div className="stack">
-          <button className="btn secondary" onClick={() => void exportBackup(db).then((b) => download(`tracker-backup-${today()}.json`, JSON.stringify(b)))}>
-            Export backup
-          </button>
-          <button className="btn secondary" onClick={() => file.current?.click()}>Import backup</button>
+        <div className="tools">
+          {tools.map((t) => (
+            <button key={t.label} className="tool" aria-label={t.label} title={t.label} disabled={t.disabled} onClick={t.onSelect}>{t.icon}</button>
+          ))}
           <input ref={file} type="file" accept="application/json,.json" hidden aria-label="Backup file" onChange={(e) => void onFile(e.target.files?.[0])} />
-          <ReceiveButton />
         </div>
         {problem && <p className="danger-text" role="alert">{problem}</p>}
       </section>
+      {receiving}
       {pending && (
         <ConfirmDialog title="Import this backup?" confirmLabel="Import" danger={false} onClose={() => setPending(null)}
           message={`It contains ${summarize(pending)}. Items with the same id are replaced; everything else on this device is kept.`}
@@ -153,17 +158,21 @@ export const ProfileScreen = () => {
     <>
       <PageHeader title="Profile" />
 
-      <AccountSection />
+      <button className="card profile-hero" aria-label={hasDetails ? 'Edit profile' : 'Set up profile'} onClick={() => setDialog('profile')}>
+        <span className="avatar">{Icons.person}</span>
+        <span className="grow">
+          <span className="hero-title">{hasDetails ? 'About you' : 'Set up your profile'}</span>
+          <span className="hero-line">
+            {hasDetails
+              ? [profile.sex && SEX_LABEL[profile.sex], age !== null && `${age} years`, profile.heightCm !== null && `${profile.heightCm} cm`, latest && formatKg(latest.kg)].filter(Boolean).join(' · ')
+              : 'Tell the app a little about you to get a daily calorie goal.'}
+          </span>
+          {hasDetails && <span className="hero-line muted">{ACTIVITY_LABEL[profile.activity].title} · {PACE_LABEL[profile.pace]}</span>}
+        </span>
+        <span className="muted hero-chevron" aria-hidden="true">›</span>
+      </button>
 
-      <h2>About you</h2>
-      <section className="card">
-        {hasDetails ? (
-          <p>{[profile.sex && SEX_LABEL[profile.sex], age !== null && `${age} years`, profile.heightCm !== null && `${profile.heightCm} cm`].filter(Boolean).join(' · ')}</p>
-        ) : (
-          <p className="muted">Tell the app a little about you to get a daily calorie goal.</p>
-        )}
-        <button className="btn secondary" onClick={() => setDialog('profile')}>{hasDetails ? 'Edit profile' : 'Set up profile'}</button>
-      </section>
+      <AccountSection />
 
       <h2>Daily goal</h2>
       <section className="card" aria-label="Daily goal">

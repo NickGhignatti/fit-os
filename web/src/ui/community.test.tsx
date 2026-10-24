@@ -335,10 +335,11 @@ describe('legal pages', () => {
 describe('the order of the profile page', () => {
   const sections = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
 
-  it('puts the account on top, your details in the middle, and your data at the bottom', async () => {
+  it('puts you on top, then the account, your goals in the middle, and your data at the bottom', async () => {
     renderApp('/profile', makeDevice(null, new FakeCommunity()));
     await screen.findByRole('region', { name: 'Account' });
-    expect(sections()).toEqual(['Account', 'About you', 'Daily goal', 'Weight', 'Calendar', 'Your data']);
+    expect(screen.getByRole('button', { name: 'Set up profile' }).compareDocumentPosition(screen.getByRole('region', { name: 'Account' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sections()).toEqual(['Account', 'Daily goal', 'Weight', 'Calendar', 'Your data']);
     // the legal links close the page, after the data section
     const links = screen.getAllByRole('link', { name: 'Privacy Policy' });
     expect(links.at(-1)!.compareDocumentPosition(screen.getByRole('heading', { name: 'Your data' })) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
@@ -346,8 +347,8 @@ describe('the order of the profile page', () => {
 
   it('starts with the details when the build has no accounts, and still shows the legal links', async () => {
     renderApp('/profile', makeDevice());
-    await screen.findByRole('heading', { name: 'About you' });
-    expect(sections()).toEqual(['About you', 'Daily goal', 'Weight', 'Calendar', 'Your data']);
+    await screen.findByRole('button', { name: 'Set up profile' });
+    expect(sections()).toEqual(['Daily goal', 'Weight', 'Calendar', 'Your data']);
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
   });

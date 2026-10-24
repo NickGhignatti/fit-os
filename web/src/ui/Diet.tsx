@@ -32,7 +32,7 @@ export const Food = () => {
   const browse: FabAction[] = community ? [{ label: 'Browse community diets', short: 'Community', icon: Icons.community, onSelect: () => navigate('/community') }] : [];
   return (
     <>
-      <PageHeader title="Food" />
+      <PageHeader title="Diet" />
       <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary} icon={Icons.meal} more={[receive, ...browse]}
         create={(name, recurrence) => newDietPlan(name, recurrence)} href={(p) => `/food/plan/${p.id}`} />
       {receiving}
@@ -233,7 +233,7 @@ export const DietPlanScreen = () => {
 
   if (plan === undefined) return <Loading />;
   if (plan === null) {
-    return <Empty>This diet no longer exists.<br /><button className="link" onClick={() => navigate('/food', { replace: true })}>Back to food</button></Empty>;
+    return <Empty>This diet no longer exists.<br /><button className="link" onClick={() => navigate('/food', { replace: true })}>Back to diets</button></Empty>;
   }
   return (
     <>

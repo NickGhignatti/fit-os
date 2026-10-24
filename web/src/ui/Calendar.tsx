@@ -47,21 +47,29 @@ export const Calendar = () => {
     });
   const title = new Date(Date.UTC(cursor.year, cursor.month, 1)).toLocaleString('en', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
+  const inMonth = (date: LocalDate) => Number(date.slice(5, 7)) - 1 === cursor.month;
+  const done = days.filter((d) => inMonth(d) && info?.completed.has(d)).length;
+  const monthName = new Date(Date.UTC(cursor.year, cursor.month, 1)).toLocaleString('en', { month: 'long', timeZone: 'UTC' });
+
   return (
-    <section className="card" aria-label="Calendar">
-      <div className="row between">
-        <button className="icon-btn" aria-label="Previous month" onClick={() => shift(-1)}>‹</button>
-        <button className="link month" onClick={() => setCursor({ year: year0, month: month0 - 1 })}>{title}</button>
-        <button className="icon-btn" aria-label="Next month" onClick={() => shift(1)}>›</button>
+    <section className="card calendar-card" aria-label="Calendar">
+      <div className="calendar-head">
+        <button className="calendar-title" aria-label={`${title}, back to this month`} onClick={() => setCursor({ year: year0, month: month0 - 1 })}>
+          <span className="month-name">{monthName}</span> <span className="muted">{cursor.year}</span>
+          <span className="small muted calendar-count">{done} {done === 1 ? 'workout' : 'workouts'} done</span>
+        </button>
+        <button className="icon-btn round" aria-label="Previous month" onClick={() => shift(-1)}>‹</button>
+        <button className="icon-btn round" aria-label="Next month" onClick={() => shift(1)}>›</button>
       </div>
       <div className="calendar">
         {HEADS.map((h, i) => <span key={i} className="head">{h}</span>)}
         {days.map((date) => {
+          // Days of the neighbouring months only keep the grid in shape.
+          if (!inMonth(date)) return <span key={date} aria-hidden="true" />;
           const day = Number(date.slice(8));
           const completed = info?.completed.has(date) ?? false;
           const planned = !completed && ((info?.logged.has(date) ?? false) || (info?.planned(date) ?? false));
-          const outside = Number(date.slice(5, 7)) - 1 !== cursor.month;
-          const classes = [completed ? 'completed' : '', planned ? 'planned' : '', date === now ? 'today' : '', outside ? 'outside' : ''].join(' ');
+          const classes = [completed ? 'completed' : '', planned ? 'planned' : '', date === now ? 'today' : '', date > now ? 'future' : ''].join(' ');
           return (
             <button key={date} className={classes} onClick={() => navigate(`/day/${date}`)}
               aria-label={`${day}${completed ? ', workout completed' : planned ? ', workout planned' : ''}`}>
@@ -71,7 +79,7 @@ export const Calendar = () => {
         })}
       </div>
       <div className="legend small muted">
-        <span><i className="planned" />Planned</span><span><i className="completed" />Completed</span>
+        <span><i className="completed" />Done</span><span><i className="planned" />Planned</span>
       </div>
     </section>
   );

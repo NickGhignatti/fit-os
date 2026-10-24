@@ -178,14 +178,3 @@ export const useReceiveAction = (): [FabAction, ReactNode] => {
   ];
 };
 
-export const ReceiveButton = () => {
-  const { transfer } = useContainer();
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button className="btn secondary" disabled={!transfer} onClick={() => setOpen(true)}>Receive from another device</button>
-      {!transfer && <p className="small muted">Sending between devices isn't set up in this build.</p>}
-      {open && <ReceiveDialog onClose={() => setOpen(false)} />}
-    </>
-  );
-};
