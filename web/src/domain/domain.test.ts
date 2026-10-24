@@ -14,6 +14,7 @@ import {
   setPlan,
   summarize,
   toggledDone,
+  withClock,
   type ExerciseSet,
   type Workout,
 } from './workout';
@@ -78,7 +79,22 @@ const workout = (planId: string | null, sets: ExerciseSet[]): Workout => ({
   date: '2026-10-14',
   title: 'Push',
   planId,
+  startedAt: null,
+  finishedAt: null,
   exercises: [{ id: 'e', name: 'Bench', notes: '', catalogId: null, restSeconds: null, sets }],
+});
+
+describe('the session clock', () => {
+  it('starts with the first set, stops with the last, and runs again when one is un-ticked', () => {
+    const fresh = workout(null, [set(), set()]);
+    expect(withClock(fresh, 1_000)).toMatchObject({ startedAt: null, finishedAt: null });
+    const half = withClock(workout(null, [markedDone(set()), set()]), 1_000);
+    expect(half).toMatchObject({ startedAt: 1_000, finishedAt: null });
+    const all = withClock({ ...half, exercises: workout(null, [markedDone(set()), markedDone(set())]).exercises }, 61_000);
+    expect(all).toMatchObject({ startedAt: 1_000, finishedAt: 61_000 });
+    expect(withClock(all, 99_000).finishedAt).toBe(61_000); // an edit to a finished session keeps its end
+    expect(withClock({ ...all, exercises: half.exercises }, 70_000)).toMatchObject({ startedAt: 1_000, finishedAt: null });
+  });
 });
 
 describe('day summaries', () => {

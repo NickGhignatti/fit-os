@@ -39,6 +39,10 @@ export interface Workout {
   readonly exercises: readonly Exercise[];
   /** The training plan this workout was started from, if any. */
   readonly planId: string | null;
+  /** When the session began (epoch ms): Start was pressed, or the first set was ticked. */
+  readonly startedAt: number | null;
+  /** When its last set was ticked; null while any set is still to do. */
+  readonly finishedAt: number | null;
 }
 
 /** True when the set was completed with different numbers than planned. */
@@ -58,6 +62,21 @@ export const markedDone = (s: ExerciseSet): ExerciseSet => ({
 
 /** Un-marking keeps any logged values, so re-marking restores them. */
 export const toggledDone = (s: ExerciseSet): ExerciseSet => (s.done ? { ...s, done: false } : markedDone(s));
+
+/**
+ * Keeps the session clock in step with the sets: the first ticked set starts it (unless Start
+ * already did), ticking the last one stops it, and un-ticking one sets it running again.
+ * Workouts saved before the clock existed have neither time stored.
+ */
+export const withClock = (w: Workout, now: number): Workout => {
+  const done = doneSetsOf(w);
+  const total = totalSetsOf(w);
+  return {
+    ...w,
+    startedAt: w.startedAt ?? (done > 0 ? now : null),
+    finishedAt: total > 0 && done === total ? (w.finishedAt ?? now) : null,
+  };
+};
 
 export const doneSets = (e: Exercise): number => e.sets.filter((s) => s.done).length;
 export const totalSetsOf = (w: Workout): number => w.exercises.reduce((n, e) => n + e.sets.length, 0);

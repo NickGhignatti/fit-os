@@ -36,7 +36,7 @@ export const newWorkout = (
   title: string,
   exercises: readonly ExercisePlan[] = [],
   planId: string | null = null,
-): Workout => ({ id: newId(), date, title, planId, exercises: exercises.map(exerciseFromPlan) });
+): Workout => ({ id: newId(), date, title, planId, exercises: exercises.map(exerciseFromPlan), startedAt: null, finishedAt: null });
 
 export const renameWorkout = (w: Workout, title: string): Workout => ({ ...w, title });
 

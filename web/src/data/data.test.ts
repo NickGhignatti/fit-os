@@ -54,6 +54,8 @@ const workout = (over: Partial<Workout> = {}): Workout => ({
   date: '2026-10-14',
   title: 'Push',
   planId: null,
+  startedAt: null,
+  finishedAt: null,
   exercises: [
     {
       id: newId(),

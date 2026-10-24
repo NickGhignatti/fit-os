@@ -637,16 +637,18 @@ describe('resting between sets', () => {
     renderApp(`/day/${today()}`, device);
     await user.click(await screen.findByRole('button', { name: 'Start workout' }));
 
+    expect(await screen.findByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Workout time0:0\d/);
     await user.click(await screen.findByRole('button', { name: 'Set 1 not done' }));
     const timer = await screen.findByRole('timer', { name: 'Rest' });
     expect(timer).toHaveTextContent('1:30');
     await user.click(within(timer).getByRole('button', { name: '15 seconds more' }));
     expect(timer).toHaveTextContent('1:45');
     await user.click(within(timer).getByRole('button', { name: 'Skip rest' }));
-    expect(screen.queryByRole('timer')).not.toBeInTheDocument();
+    expect(screen.queryByRole('timer', { name: 'Rest' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Set 2 not done' })); // the last set: the exercise folds away
     const folded = await screen.findByRole('button', { name: 'Squat, done' });
+    expect(screen.getByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Finished in/);
     expect(screen.queryByRole('button', { name: /^Set 1/ })).not.toBeInTheDocument();
     expect(screen.getByRole('timer', { name: 'Rest' })).toBeInTheDocument();
     await user.click(folded);

@@ -8,7 +8,7 @@ import { addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedS
 import { newId } from '../domain/id';
 import { beatsBest, exerciseKey, type PersonalRecord } from '../domain/records';
 import { markedDone, doneSets, doneSetsOf, deviatesFromPlan, restOf, totalSetsOf, type Exercise, type ExerciseSet, type Workout } from '../domain/workout';
-import { clockTime, formatKg, formatRest, parseNumber, relativeDay, setSummary, today } from './format';
+import { clockTime, elapsedTime, formatKg, formatRest, parseNumber, relativeDay, setSummary, today } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog } from './kit';
 import { PrPrompt } from './Records';
@@ -179,6 +179,29 @@ const RestTimer = ({ rest, onChange }: { rest: Rest; onChange: (rest: Rest | nul
   );
 };
 
+/**
+ * The stopwatch in the middle of a session: running from Start (or the first set) until the last
+ * set is ticked, then showing how long it all took. Workouts logged before it existed show none.
+ */
+const SessionClock = ({ workout }: { workout: Workout }) => {
+  const { startedAt, finishedAt } = workout;
+  const running = startedAt !== null && finishedAt === null;
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (!running) return;
+    setNow(Date.now());
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tick);
+  }, [running]);
+  if (startedAt === null && doneSetsOf(workout) > 0) return null;
+  return (
+    <div className={`session-clock ${finishedAt !== null ? 'finished' : ''}`} role="timer" aria-label="Workout time">
+      <div className="session-clock-label">{startedAt === null ? 'Starts with your first set' : finishedAt !== null ? 'Finished in' : 'Workout time'}</div>
+      <div className="session-clock-time">{elapsedTime(startedAt === null ? 0 : (finishedAt ?? now) - startedAt)}</div>
+    </div>
+  );
+};
+
 type Dialog =
   | { kind: 'rename' } | { kind: 'delete' } | { kind: 'saveAsPlan' } | { kind: 'copy' }
   | { kind: 'editExercise'; exercise: Exercise } | { kind: 'deleteExercise'; exercise: Exercise }
@@ -241,6 +264,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
         ]} />
       </div>
       <ProgressBar value={doneSetsOf(workout)} max={totalSetsOf(workout)} label={`${workout.title} progress`} />
+      <SessionClock workout={workout} />
 
       {workout.exercises.map((exercise) => {
         const finished = exercise.sets.length > 0 && doneSets(exercise) === exercise.sets.length;

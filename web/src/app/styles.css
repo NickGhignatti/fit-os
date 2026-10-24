@@ -313,6 +313,12 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 .fold-icon svg { width: 18px; height: 18px; transition: transform 0.2s ease; }
 .fold-icon.open svg { transform: rotate(180deg); }
 
+/* The session stopwatch, centred between the progress bar and the first exercise. */
+.session-clock { text-align: center; margin: 14px 0 2px; }
+.session-clock-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-tertiary); }
+.session-clock-time { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.session-clock.finished .session-clock-time { color: var(--accent); }
+
 /* The rest between two sets: a dark strip under the set just done, its bar draining as time
    runs, turning green when it is time for the next set. */
 .rest-timer {

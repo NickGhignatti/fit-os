@@ -17,7 +17,7 @@ import type {
 } from './repositories';
 import { combine } from './stream';
 import { pendingSessionOn, sessionOn, type PendingSession, type TrainingPlan } from './trainingPlan';
-import { doneSetsOf, markedDone, setFollowing, toggledDone, totalSetsOf, workoutToPlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
+import { doneSetsOf, markedDone, setFollowing, toggledDone, totalSetsOf, withClock, workoutToPlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
 
 // ---- Observing --------------------------------------------------------------
 
@@ -196,12 +196,12 @@ const editWorkout = (deps: WorkoutDeps, workoutId: string, change: (w: Workout) 
   });
 
 /** Marks a set done (pre-filling actuals from the plan) or not done. */
-export const toggleSetDone = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet): Promise<boolean> =>
-  editWorkout(deps, workoutId, (w) => updateSet(w, toggledDone(set)));
+export const toggleSetDone = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet, now = Date.now()): Promise<boolean> =>
+  editWorkout(deps, workoutId, (w) => withClock(updateSet(w, toggledDone(set)), now));
 
 /** Saves an edited set; a completed set gets the planned value for any actual left blank. */
-export const logSet = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet): Promise<boolean> =>
-  editWorkout(deps, workoutId, (w) => updateSet(w, set.done ? markedDone(set) : set));
+export const logSet = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet, now = Date.now()): Promise<boolean> =>
+  editWorkout(deps, workoutId, (w) => withClock(updateSet(w, set.done ? markedDone(set) : set), now));
 
 const lastOf = (sets: readonly { reps: number; weight: number | null }[]): SetPlan | null => {
   const last = sets.at(-1);
@@ -237,6 +237,7 @@ export const startPlannedSession = (
   deps: WorkoutDeps & { trainingPlans: TrainingPlanRepository },
   date: LocalDate,
   planId: string,
+  now = Date.now(),
 ): Promise<string | null> =>
   deps.transaction.run(async () => {
     const plan = await deps.trainingPlans.getPlan(planId);
@@ -246,7 +247,7 @@ export const startPlannedSession = (
     if (existing) return existing.id;
     const session = pendingSessionOn(plan, date, dayWorkouts);
     if (!session) return null;
-    const workout = newWorkout(date, session.title, session.exercises, plan.id);
+    const workout = { ...newWorkout(date, session.title, session.exercises, plan.id), startedAt: now };
     await deps.workouts.save(workout);
     return workout.id;
   });
