@@ -114,7 +114,6 @@ export const Icons = {
   download: <Glyph d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
   upload: <Glyph d="M12 15V3M7 8l5-5 5 5M5 21h14" />,
   person: <Glyph d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM4 21a8 8 0 0 1 16 0" />,
-  community: <Glyph d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6" />,
   copy: <Glyph d="M9 9h11v11H9zM5 15H4V4h11v1" />,
   meal: <Glyph d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" />,
   workout: <Glyph d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />,

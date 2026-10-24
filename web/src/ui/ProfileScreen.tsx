@@ -2,13 +2,10 @@ import { useRef, useState } from 'react';
 import { useContainer, useStream } from '../app/hooks';
 import { exportBackup, parseBackup, restoreBackup, type Backup } from '../data/backup';
 import { ACTIVITY_FACTOR, PACE_KG_PER_WEEK, ageOn, type ActivityLevel, type GoalPace, type Profile, type Sex, type WeightEntry } from '../domain/profile';
-import { observeDailyTargets } from '../domain/useCases';
-import { AccountSection } from './Account';
 import { Calendar } from './Calendar';
-import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKcal, formatKg, parseNumber, today } from './format';
+import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKg, parseNumber, today } from './format';
 import { useToast } from './hooks';
-import { ConfirmDialog, Fab, Icons, Loading, MacroChips, Modal, PageHeader, PromptDialog, type FabAction } from './kit';
-import { TargetsDialog } from './TargetsDialog';
+import { ConfirmDialog, Icons, Loading, Modal, PageHeader, type FabAction } from './kit';
 import { LegalLinks } from './Legal';
 import { useReceiveAction } from './Transfer';
 
@@ -137,28 +134,23 @@ const DataSection = () => {
 
 export const ProfileScreen = () => {
   const { repos } = useContainer();
-  const toast = useToast();
   const date = today();
   const profile = useStream((c) => c.repos.profile.observeProfile());
   const weights = useStream((c) => c.repos.profile.observeWeights());
-  const targets = useStream((c) => observeDailyTargets(c.repos.profile, date), [date]);
-  const [dialog, setDialog] = useState<'profile' | 'weight' | 'targets' | null>(null);
+  const [editing, setEditing] = useState(false);
 
-  if (!profile || !weights || targets === undefined) return <Loading />;
+  if (!profile || !weights) return <Loading />;
 
   const latest = weights.at(-1);
   const first = weights[0];
   const age = ageOn(profile, date);
-  const missing = [
-    profile.sex === null && 'sex', age === null && 'birth date', profile.heightCm === null && 'height', !latest && 'a weigh-in',
-  ].filter(Boolean) as string[];
   const hasDetails = profile.sex !== null || profile.birthDate !== null || profile.heightCm !== null;
 
   return (
     <>
       <PageHeader title="Profile" />
 
-      <button className="card profile-hero" aria-label={hasDetails ? 'Edit profile' : 'Set up profile'} onClick={() => setDialog('profile')}>
+      <button className="card profile-hero" aria-label={hasDetails ? 'Edit profile' : 'Set up profile'} onClick={() => setEditing(true)}>
         <span className="avatar">{Icons.person}</span>
         <span className="grow">
           <span className="hero-title">{hasDetails ? 'About you' : 'Set up your profile'}</span>
@@ -172,26 +164,6 @@ export const ProfileScreen = () => {
         <span className="muted hero-chevron" aria-hidden="true">›</span>
       </button>
 
-      <AccountSection />
-
-      <h2>Daily goal</h2>
-      <section className="card" aria-label="Daily goal">
-        {targets ? (
-          <>
-            <div className="big-number">{formatKcal(targets.nutrients.kcal)}</div>
-            <MacroChips n={targets.nutrients} />
-            <p className="small muted">
-              {targets.isCustom
-                ? 'Includes your own numbers. Anything you did not set is worked out from your profile.'
-                : 'From your profile and latest weight (Mifflin–St Jeor). Protein 1.8 g per kg, fat 25% of calories, carbs for the rest.'}
-            </p>
-          </>
-        ) : (
-          <p className="muted">To work out your goal the app still needs: {missing.join(', ') || 'a few details'}. Or set your own targets.</p>
-        )}
-        <button className="btn secondary" style={{ marginTop: 8 }} onClick={() => setDialog('targets')}>Customize targets</button>
-      </section>
-
       <h2>Weight</h2>
       <section className="card" aria-label="Weight">
         {latest ? (
@@ -203,7 +175,7 @@ export const ProfileScreen = () => {
             <WeightChart entries={weights} />
           </>
         ) : (
-          <p className="muted">No weigh-ins yet. Log your weight to see its trend and get a daily goal.</p>
+          <p className="muted">No weigh-ins yet. Log one with the + on Today or the Tracker to see its trend.</p>
         )}
       </section>
 
@@ -217,14 +189,7 @@ export const ProfileScreen = () => {
         Basic foods: CREA, Tabelle di composizione degli alimenti. Packaged products: Open Food Facts (ODbL). Exercises and photos: free-exercise-db (public domain).
       </p>
 
-      <Fab label="Add" actions={[{ label: 'Log weight', icon: Icons.weight, onSelect: () => setDialog('weight') }]} />
-      {dialog === 'profile' && <ProfileDialog profile={profile} onClose={() => setDialog(null)} onSave={(p) => void repos.profile.saveProfile(p)} />}
-      {dialog === 'targets' && <TargetsDialog onClose={() => setDialog(null)} />}
-      {dialog === 'weight' && (
-        <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" initial={latest ? String(latest.kg) : ''} onClose={() => setDialog(null)}
-          validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}
-          onSubmit={(v) => void repos.profile.setWeight(date, parseNumber(v)!).then(() => toast(`Logged ${formatKg(parseNumber(v)!)}`))} />
-      )}
+      {editing && <ProfileDialog profile={profile} onClose={() => setEditing(false)} onSave={(p) => void repos.profile.saveProfile(p)} />}
     </>
   );
 };

@@ -7,7 +7,8 @@ import { observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTraini
 import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
-import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing, PromptDialog } from './kit';
+import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing } from './kit';
+import { WeightDialog } from './Tracker';
 
 interface Count { readonly done: number; readonly total: number }
 
@@ -202,11 +203,7 @@ export const Today = () => {
         { label: 'Scan a barcode', short: 'Scan', icon: Icons.scan, onSelect: () => navigate(foodLink('&scan=1')) },
         { label: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
       ]} />
-      {weighing && (
-        <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" confirmLabel="Save" onClose={() => setWeighing(false)}
-          validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}
-          onSubmit={(v) => void repos.profile.setWeight(date, parseNumber(v)!).then(() => toast(`Logged ${formatKg(parseNumber(v)!)}`))} />
-      )}
+      {weighing && <WeightDialog date={date} onClose={() => setWeighing(false)} />}
     </div>
   );
 };

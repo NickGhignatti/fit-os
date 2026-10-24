@@ -5,7 +5,7 @@ import { sessionOnDay, trainingDays, type TrainingPlan } from '../domain/trainin
 import { observeTrainingWeeks, startPlannedSession } from '../domain/useCases';
 import { ExerciseBrowser } from './Exercises';
 import { shortDayName, today } from './format';
-import { Icons, PageHeader, PlayIcon, Segmented, type FabAction } from './kit';
+import { Icons, PageHeader, PlayIcon, Segmented } from './kit';
 import { PlanList, TRAINING_TEXTS } from './Plans';
 import { RecordsTab } from './Records';
 import { useReceiveAction } from './Transfer';
@@ -27,12 +27,11 @@ export const Workouts = () => {
   const requested = params.get('tab');
   const tab: Tab = requested === 'library' || requested === 'records' ? requested : 'plans';
   const date = today();
-  const { repos, community } = useContainer();
+  const { repos } = useContainer();
   const navigate = useNavigate();
   const plans = useStream((c) => c.repos.trainingPlans.observePlans());
   const weeks = useStream((c) => observeTrainingWeeks(c.repos, date), [date]);
   const [receive, receiving] = useReceiveAction();
-  const browse: FabAction[] = community ? [{ label: 'Browse community workouts', short: 'Community', icon: Icons.community, onSelect: () => navigate('/community') }] : [];
 
   const tabs = (
     <Segmented<Tab> label="Workouts" value={tab} onChange={(t) => setParams(t === 'plans' ? {} : { tab: t }, { replace: true })}
@@ -56,7 +55,7 @@ export const Workouts = () => {
           create={(name, recurrence) => newTrainingPlan(name, recurrence)}
           href={(p) => `/workouts/plan/${p.id}`}
           icon={Icons.workout}
-          more={[receive, ...browse]}
+          more={[receive]}
           header={weeks && weeks.length > 0 ? weeks.map((week) => (
             <section key={week.plan.id} className="session" aria-label={`Active program: ${week.plan.name}`}>
               <div className="grow">

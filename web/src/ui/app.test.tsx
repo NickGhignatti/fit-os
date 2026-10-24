@@ -213,7 +213,7 @@ describe('the calorie tracker', () => {
   it('logs a food, changes its grams, and removes it', async () => {
     const user = userEvent.setup();
     renderApp('/tracker');
-    await chooseFromMenu(user, 'Log food', /Search food/);
+    await chooseFromMenu(user, 'Log food or weight', /Search food/);
     await user.type(await screen.findByLabelText('Search foods'), 'mela');
     await user.click(await firstFoodResult());
     const amount = await screen.findByRole('dialog');
@@ -323,40 +323,29 @@ describe('custom daily targets', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('of 2230 goal')).toBeInTheDocument();
   });
-
-  it('can also be opened from the Profile goal card', async () => {
-    const user = userEvent.setup();
-    renderApp('/profile');
-    await user.click(await screen.findByRole('button', { name: 'Customize targets' }));
-    const form = await dialog('Daily targets');
-    await user.type(within(form).getByLabelText('Calories (kcal)'), '1900');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-    const goal = await screen.findByRole('region', { name: 'Daily goal' });
-    expect(goal).toHaveTextContent('1900 kcal');
-    expect(goal).toHaveTextContent('Includes your own numbers');
-  });
 });
 
 describe('the profile', () => {
-  it('works out a daily goal from the profile and a weigh-in', async () => {
+  it('works out a daily goal from the profile and a weigh-in logged on the Tracker', async () => {
     const user = userEvent.setup();
     renderApp('/profile');
-    const goal = await screen.findByRole('region', { name: 'Daily goal' });
-    expect(goal).toHaveTextContent(/still needs: sex, birth date, height, a weigh-in/);
-
-    await user.click(screen.getByRole('button', { name: 'Set up profile' }));
+    await user.click(await screen.findByRole('button', { name: 'Set up profile' }));
     const form = await dialog('Edit profile');
     await user.selectOptions(within(form).getByLabelText('Sex'), 'male');
     fireEvent.change(within(form).getByLabelText('Birth date'), { target: { value: '1996-01-01' } });
     await user.type(within(form).getByLabelText('Height (cm)'), '180');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('button', { name: 'Edit profile' })).toHaveTextContent('180 cm');
 
-    await user.click(await screen.findByRole('button', { name: 'Log weight' }));
+    await user.click(screen.getByRole('link', { name: 'Tracker' }));
+    await chooseFromMenu(user, 'Log food or weight', 'Log weight');
     await user.type(await screen.findByLabelText('Weight (kg)'), '80');
     await user.click(within(await dialog('Weight')).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Logged 80 kg')).toBeInTheDocument();
+    expect(await screen.findByText(/^of \d+ goal$/)).toBeInTheDocument();
 
-    expect(await within(await screen.findByRole('region', { name: 'Daily goal' })).findByText(/\d+ kcal/)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Weight' })).toHaveTextContent('80 kg');
+    await user.click(screen.getByRole('link', { name: 'Profile' }));
+    expect(await screen.findByRole('region', { name: 'Weight' })).toHaveTextContent('80 kg');
   });
 
   it('shows the calendar for the month and opens a day', async () => {

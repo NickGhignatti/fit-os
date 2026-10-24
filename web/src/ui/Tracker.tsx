@@ -6,9 +6,9 @@ import { mealNutrients } from '../domain/diet';
 import { portionNutrients, type Nutrients } from '../domain/nutrition';
 import { addDays } from '../domain/plan';
 import { logPlannedMeal, observeCalorieDay, observeDailyTargets } from '../domain/useCases';
-import { DEFAULT_MEALS, formatGrams, formatKcal, parseNumber, relativeDay, today } from './format';
+import { DEFAULT_MEALS, formatGrams, formatKcal, formatKg, parseNumber, relativeDay, today } from './format';
 import { useToast } from './hooks';
-import { Carousel, EnergyCard, Fab, Icons, Loading, Modal, PageHeader } from './kit';
+import { Carousel, EnergyCard, Fab, Icons, Loading, Modal, PageHeader, PromptDialog } from './kit';
 import { SendButton } from './Transfer';
 import { TargetsDialog } from './TargetsDialog';
 
@@ -29,6 +29,17 @@ export const MacroLine = ({ n }: { n: Nutrients }) => (
     {MACRO_DOTS.map((m) => <span key={m.key}><i style={{ background: m.color }} />{m.label} {Math.round(n[m.key])} g</span>)}
   </div>
 );
+
+/** Logs a weigh-in for [date]. Shared by the + of Today and of the Tracker. */
+export const WeightDialog = ({ date, onClose }: { date: string; onClose: () => void }) => {
+  const { repos } = useContainer();
+  const toast = useToast();
+  return (
+    <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" confirmLabel="Save" onClose={onClose}
+      validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}
+      onSubmit={(v) => void repos.profile.setWeight(date, parseNumber(v)!).then(() => toast(`Logged ${formatKg(parseNumber(v)!)}`))} />
+  );
+};
 
 const EntryDialog = ({ entry, onSave, onDelete, onClose }: {
   entry: FoodLogEntry; onSave: (grams: number) => void; onDelete: () => void; onClose: () => void;
@@ -59,6 +70,7 @@ export const Tracker = () => {
   const [editing, setEditing] = useState<FoodLogEntry | null>(null);
   const [editingTargets, setEditingTargets] = useState(false);
   const [slide, setSlide] = useState<number | null>(null);
+  const [weighing, setWeighing] = useState(false);
   const navigate = useNavigate();
   const day = useStream((c) => observeCalorieDay(c.repos, date, DEFAULT_MEALS), [date]);
   const logDay = useStream((c) => c.repos.foodLog.observeDay(date), [date]);
@@ -142,11 +154,13 @@ export const Tracker = () => {
       {logDay.entries.length > 0 && <SendButton kind="food_log_day" data={logDay} label="Send this day's food log to another device" />}
 
       {meal && (
-        <Fab label="Log food" actions={[
+        <Fab label="Log food or weight" actions={[
           { label: `Search food for ${meal.name}`, short: 'Search', icon: Icons.search, onSelect: () => navigate(pickLink(meal.name)) },
           { label: `Scan a barcode for ${meal.name}`, short: 'Scan', icon: Icons.scan, onSelect: () => navigate(pickLink(meal.name, '&scan=1')) },
+          { label: 'Log weight', short: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
         ]} />
       )}
+      {weighing && <WeightDialog date={date} onClose={() => setWeighing(false)} />}
       {editingTargets && <TargetsDialog onClose={() => setEditingTargets(false)} />}
       {editing && (
         <EntryDialog entry={editing} onClose={() => setEditing(null)}

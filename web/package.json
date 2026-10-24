@@ -29,7 +29,6 @@
     "wrangler": "^4.151.1"
   },
   "dependencies": {
-    "@supabase/auth-js": "^2.65.1",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "dexie": "^4.0.10",

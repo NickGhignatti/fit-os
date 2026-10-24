@@ -470,12 +470,7 @@ svg.chart { width: 100%; height: auto; }
   box-shadow: var(--shadow-raised); animation: fade 0.2s ease-out both;
 }
 
-/* ---- Account and legal ------------------------------------------------------------------ */
-.btn.google {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  background: #fff; color: #1f1f1f; border: 1px solid #dadce0;
-}
-.btn.google:active { background: #f1f3f4; }
+/* ---- Legal ------------------------------------------------------------------------------ */
 .legal h2 { margin-top: 28px; }
 .legal h3 { font-size: 16px; margin: 18px 0 6px; }
 .legal p, .legal li { line-height: 1.6; }

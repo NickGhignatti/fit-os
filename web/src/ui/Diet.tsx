@@ -11,7 +11,6 @@ import { useToast } from './hooks';
 import { MacroLine } from './Tracker';
 import { ActionMenu, Carousel, ConfirmDialog, Empty, Fab, Icons, Loading, MacroChips, Modal, PageHeader, type FabAction } from './kit';
 import { DIET_TEXTS, PlanList, PlanMenu, usePlanDay } from './Plans';
-import { PublishButton } from './Community';
 import { SendButton, useReceiveAction } from './Transfer';
 
 const dietSummary = (plan: DietPlan): string => {
@@ -25,15 +24,13 @@ const dietSummary = (plan: DietPlan): string => {
 };
 
 export const Food = () => {
-  const { repos, community } = useContainer();
-  const navigate = useNavigate();
+  const { repos } = useContainer();
   const plans = useStream((c) => c.repos.dietPlans.observePlans());
   const [receive, receiving] = useReceiveAction();
-  const browse: FabAction[] = community ? [{ label: 'Browse community diets', short: 'Community', icon: Icons.community, onSelect: () => navigate('/community') }] : [];
   return (
     <>
       <PageHeader title="Diet" />
-      <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary} icon={Icons.meal} more={[receive, ...browse]}
+      <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary} icon={Icons.meal} more={[receive]}
         create={(name, recurrence) => newDietPlan(name, recurrence)} href={(p) => `/food/plan/${p.id}`} />
       {receiving}
     </>
@@ -242,7 +239,6 @@ export const DietPlanScreen = () => {
       <PlanBody key={plan.id} plan={plan} />
       <div className="stack" style={{ marginTop: 12 }}>
         <SendButton kind="diet_plan" data={plan} label="Send this diet to another device" />
-        <PublishButton kind="diet" plan={plan} />
       </div>
     </>
   );

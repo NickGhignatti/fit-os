@@ -8,7 +8,6 @@ import { addPlannedSetLikeLast } from '../domain/useCases';
 import { dayName, formatKg, parseNumber, shortDayName, setSummary } from './format';
 import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { PlanMenu, TRAINING_TEXTS, usePlanDay } from './Plans';
-import { PublishButton } from './Community';
 import { SendButton } from './Transfer';
 import { ExerciseDialog } from './WorkoutCard';
 
@@ -140,7 +139,6 @@ export const TrainingPlanScreen = () => {
       <PlanBody key={plan.id} plan={plan} />
       <div className="stack" style={{ marginTop: 12 }}>
         <SendButton kind="training_plan" data={plan} label="Send this workout to another device" />
-        <PublishButton kind="training" plan={plan} />
       </div>
     </>
   );
