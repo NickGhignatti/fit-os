@@ -121,6 +121,9 @@ export const Icons = {
   meal: <Glyph d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" />,
   workout: <Glyph d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />,
   chevron: <Glyph d="M6 9l6 6 6-6" />,
+  check: <Glyph d="M5 12.5l4.5 4.5L19 7.5" />,
+  pause: <Glyph d="M9 5v14M15 5v14" />,
+  reset: <Glyph d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />,
   record: <Glyph d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />,
 };
 

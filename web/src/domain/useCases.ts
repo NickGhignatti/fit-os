@@ -17,7 +17,7 @@ import type {
 } from './repositories';
 import { combine } from './stream';
 import { pendingSessionOn, sessionOn, type PendingSession, type TrainingPlan } from './trainingPlan';
-import { doneSetsOf, markedDone, setFollowing, toggledDone, totalSetsOf, withClock, workoutToPlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
+import { doneSetsOf, markedDone, setFollowing, toggledDone, totalSetsOf, started, stopped, stopwatchOf, withClock, workoutToPlan, ZERO, type ExerciseSet, type SetPlan, type Workout } from './workout';
 
 // ---- Observing --------------------------------------------------------------
 
@@ -199,6 +199,13 @@ const editWorkout = (deps: WorkoutDeps, workoutId: string, change: (w: Workout) 
 export const toggleSetDone = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet, now = Date.now()): Promise<boolean> =>
   editWorkout(deps, workoutId, (w) => withClock(updateSet(w, toggledDone(set)), now));
 
+/** Starts, stops or zeroes a workout's stopwatch. */
+export const setStopwatch = (deps: WorkoutDeps, workoutId: string, action: 'start' | 'stop' | 'reset', now = Date.now()): Promise<boolean> =>
+  editWorkout(deps, workoutId, (w) => {
+    const clock = stopwatchOf(w);
+    return { ...w, ...(action === 'start' ? started(clock, now) : action === 'stop' ? stopped(clock, now) : ZERO) };
+  });
+
 /** Saves an edited set; a completed set gets the planned value for any actual left blank. */
 export const logSet = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet, now = Date.now()): Promise<boolean> =>
   editWorkout(deps, workoutId, (w) => withClock(updateSet(w, set.done ? markedDone(set) : set), now));
@@ -247,7 +254,7 @@ export const startPlannedSession = (
     if (existing) return existing.id;
     const session = pendingSessionOn(plan, date, dayWorkouts);
     if (!session) return null;
-    const workout = { ...newWorkout(date, session.title, session.exercises, plan.id), startedAt: now };
+    const workout = { ...newWorkout(date, session.title, session.exercises, plan.id), runningSince: now };
     await deps.workouts.save(workout);
     return workout.id;
   });

@@ -292,32 +292,55 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 .title { font-weight: 600; }
 .badge { background: var(--accent-container); color: var(--on-accent-container); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
 
-.set-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--divider); }
-.check {
-  flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border);
-  background: transparent; color: var(--on-accent); font-size: 20px; cursor: pointer;
+/* A set to tick: what to do on the left (tap to edit), a small rounded box on the right. Done
+   sets fade back and their box fills with the soft green used across the app. */
+.set-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--divider); }
+.set-main {
+  flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 52px; padding: 0;
+  border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
 }
-.check.on { background: var(--accent); border-color: var(--accent); }
+.set-label { font-size: 13px; font-weight: 600; color: var(--ink-tertiary); min-width: 40px; }
+.set-target { font-weight: 600; font-variant-numeric: tabular-nums; }
+.set-row.done .set-target { color: var(--ink-tertiary); }
+.set-check { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin-right: -8px; padding: 0; border: 0; background: none; cursor: pointer; }
+.set-box {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+  border: 1.5px solid var(--border); color: transparent; transition: background 0.15s ease, border-color 0.15s ease;
+}
+.set-box svg { width: 16px; height: 16px; }
+.set-check.on .set-box { background: var(--accent-container); border-color: transparent; color: var(--on-accent-container); }
+.set-check:active .set-box { transform: scale(0.9); }
 
 /* An exercise in a logged workout. Once every set is done it folds into one quiet line that
    opens again on tap; nothing is lost, only tucked away. */
 .exercise-block { margin-top: 14px; }
 .exercise-done {
-  display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 0; border: 0; background: none;
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 0; border: 0; background: none;
   font: inherit; color: inherit; text-align: left; cursor: pointer; opacity: 0.72;
 }
-.exercise-done .check { display: grid; place-items: center; width: 32px; height: 32px; font-size: 15px; }
 .exercise-done .grow { display: flex; flex-direction: column; }
 .exercise-done .title { text-decoration: line-through; text-decoration-color: var(--ink-tertiary); }
 .fold-icon { display: grid; place-items: center; color: var(--ink-tertiary); }
 .fold-icon svg { width: 18px; height: 18px; transition: transform 0.2s ease; }
 .fold-icon.open svg { transform: rotate(180deg); }
 
-/* The session stopwatch, centred between the progress bar and the first exercise. */
-.session-clock { text-align: center; margin: 14px 0 2px; }
-.session-clock-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-tertiary); }
-.session-clock-time { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.session-clock.finished .session-clock-time { color: var(--accent); }
+/* The session stopwatch at the top of a workout: big quiet digits, and the same round buttons
+   as elsewhere (a dark one to start or stop, a grey one to go back to zero). */
+.stopwatch { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-muted); }
+.stopwatch > [role='timer'] { flex: 1; }
+.stopwatch-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-tertiary); }
+.stopwatch-time { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stopwatch.running .stopwatch-label { color: var(--accent); }
+.stopwatch.finished .stopwatch-time { color: var(--accent); }
+.stopwatch-controls { display: flex; align-items: center; gap: 8px; }
+.stopwatch-btn {
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow); transition: transform 0.12s ease;
+}
+.stopwatch-btn svg { width: 20px; height: 20px; }
+.stopwatch-btn.main { width: 52px; height: 52px; background: var(--ink); color: var(--ink-inverse); box-shadow: none; }
+.stopwatch-btn:active { transform: scale(0.92); }
+.stopwatch-btn:disabled { color: var(--ink-tertiary); box-shadow: none; cursor: default; }
 
 /* The rest between two sets: a dark strip under the set just done, its bar draining as time
    runs, turning green when it is time for the next set. */

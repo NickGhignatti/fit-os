@@ -13,8 +13,13 @@ import {
   setFollowing,
   setPlan,
   summarize,
+  elapsedOn,
+  started,
+  stopped,
+  stopwatchOf,
   toggledDone,
   withClock,
+  ZERO,
   type ExerciseSet,
   type Workout,
 } from './workout';
@@ -79,21 +84,28 @@ const workout = (planId: string | null, sets: ExerciseSet[]): Workout => ({
   date: '2026-10-14',
   title: 'Push',
   planId,
-  startedAt: null,
-  finishedAt: null,
+  elapsedMs: 0,
+  runningSince: null,
   exercises: [{ id: 'e', name: 'Bench', notes: '', catalogId: null, restSeconds: null, sets }],
 });
 
-describe('the session clock', () => {
-  it('starts with the first set, stops with the last, and runs again when one is un-ticked', () => {
-    const fresh = workout(null, [set(), set()]);
-    expect(withClock(fresh, 1_000)).toMatchObject({ startedAt: null, finishedAt: null });
+describe('the session stopwatch', () => {
+  it('stops and goes on, adding up its runs', () => {
+    const run = started(ZERO, 1_000);
+    expect(elapsedOn(run, 4_000)).toBe(3_000);
+    const paused = stopped(run, 4_000);
+    expect(elapsedOn(paused, 60_000)).toBe(3_000); // no time passes while stopped
+    expect(elapsedOn(started(paused, 10_000), 12_000)).toBe(5_000);
+    expect(stopwatchOf({})).toEqual(ZERO); // saved before the stopwatch existed
+  });
+
+  it('starts with the first set when nobody pressed start, and stops with the last', () => {
+    expect(withClock(workout(null, [set(), set()]), 1_000)).toMatchObject(ZERO);
     const half = withClock(workout(null, [markedDone(set()), set()]), 1_000);
-    expect(half).toMatchObject({ startedAt: 1_000, finishedAt: null });
+    expect(half).toMatchObject({ elapsedMs: 0, runningSince: 1_000 });
     const all = withClock({ ...half, exercises: workout(null, [markedDone(set()), markedDone(set())]).exercises }, 61_000);
-    expect(all).toMatchObject({ startedAt: 1_000, finishedAt: 61_000 });
-    expect(withClock(all, 99_000).finishedAt).toBe(61_000); // an edit to a finished session keeps its end
-    expect(withClock({ ...all, exercises: half.exercises }, 70_000)).toMatchObject({ startedAt: 1_000, finishedAt: null });
+    expect(all).toMatchObject({ elapsedMs: 60_000, runningSince: null });
+    expect(withClock({ ...all, exercises: half.exercises }, 70_000)).toMatchObject({ elapsedMs: 60_000, runningSince: null }); // a stopped watch stays put
   });
 });
 

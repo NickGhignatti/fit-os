@@ -4,10 +4,10 @@ import { useContainer } from '../app/hooks';
 import { deleteExercise, deleteSet, renameWorkout, updateExercise, type ExerciseDetails } from '../domain/edit';
 import type { LocalDate } from '../domain/plan';
 import type { PendingSession } from '../domain/trainingPlan';
-import { addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedSession, toggleSetDone } from '../domain/useCases';
+import { addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, setStopwatch, startPlannedSession, toggleSetDone } from '../domain/useCases';
 import { newId } from '../domain/id';
 import { beatsBest, exerciseKey, type PersonalRecord } from '../domain/records';
-import { markedDone, doneSets, doneSetsOf, deviatesFromPlan, restOf, totalSetsOf, type Exercise, type ExerciseSet, type Workout } from '../domain/workout';
+import { markedDone, doneSets, doneSetsOf, deviatesFromPlan, elapsedOn, restOf, stopwatchOf, totalSetsOf, type Exercise, type ExerciseSet, type Workout } from '../domain/workout';
 import { clockTime, elapsedTime, formatKg, formatRest, parseNumber, relativeDay, setSummary, today } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog } from './kit';
@@ -180,24 +180,35 @@ const RestTimer = ({ rest, onChange }: { rest: Rest; onChange: (rest: Rest | nul
 };
 
 /**
- * The stopwatch in the middle of a session: running from Start (or the first set) until the last
- * set is ticked, then showing how long it all took. Workouts logged before it existed show none.
+ * The stopwatch at the top of a session. Start (or the first ticked set) sets it going and the
+ * last set stops it, but it is an ordinary stopwatch too: stop, go on, back to zero.
  */
 const SessionClock = ({ workout }: { workout: Workout }) => {
-  const { startedAt, finishedAt } = workout;
-  const running = startedAt !== null && finishedAt === null;
+  const { repos } = useContainer();
+  const clock = stopwatchOf(workout);
+  const running = clock.runningSince !== null;
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     if (!running) return;
     setNow(Date.now());
-    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const tick = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(tick);
   }, [running]);
-  if (startedAt === null && doneSetsOf(workout) > 0) return null;
+  const ms = elapsedOn(clock, now);
+  const total = totalSetsOf(workout);
+  const finished = !running && ms > 0 && total > 0 && doneSetsOf(workout) === total;
+  const act = (action: 'start' | 'stop' | 'reset') => void setStopwatch(repos, workout.id, action);
   return (
-    <div className={`session-clock ${finishedAt !== null ? 'finished' : ''}`} role="timer" aria-label="Workout time">
-      <div className="session-clock-label">{startedAt === null ? 'Starts with your first set' : finishedAt !== null ? 'Finished in' : 'Workout time'}</div>
-      <div className="session-clock-time">{elapsedTime(startedAt === null ? 0 : (finishedAt ?? now) - startedAt)}</div>
+    <div className={`stopwatch ${running ? 'running' : ''} ${finished ? 'finished' : ''}`}>
+      <div role="timer" aria-label="Workout time">
+        <div className="stopwatch-label">{finished ? 'Finished in' : !running && ms > 0 ? 'Stopped' : 'Workout time'}</div>
+        <div className="stopwatch-time">{elapsedTime(ms)}</div>
+      </div>
+      <div className="stopwatch-controls">
+        <button className="stopwatch-btn" aria-label="Reset stopwatch" disabled={ms === 0} onClick={() => act('reset')}>{Icons.reset}</button>
+        <button className="stopwatch-btn main" aria-label={running ? 'Stop stopwatch' : ms > 0 ? 'Resume stopwatch' : 'Start stopwatch'}
+          onClick={() => act(running ? 'stop' : 'start')}>{running ? Icons.pause : <PlayIcon />}</button>
+      </div>
     </div>
   );
 };
@@ -273,7 +284,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
           return (
             <div key={exercise.id} className="exercise-block">
               <button className="exercise-done" aria-expanded={false} aria-label={`${exercise.name}, done`} onClick={() => unfold(exercise.id, true)}>
-                <span className="check on" aria-hidden="true">✓</span>
+                <span className="set-check on" aria-hidden="true"><span className="set-box">{Icons.check}</span></span>
                 <span className="grow">
                   <span className="title">{exercise.name}</span>
                   <span className="small muted">{exercise.sets.length}/{exercise.sets.length} sets · {plan}</span>
@@ -309,21 +320,18 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
             {exercise.sets.length === 0 && <p className="small muted">No sets. Use ⋮ › Add set.</p>}
             {exercise.sets.map((set, index) => (
               <div key={set.id}>
-                <div className="set-row">
-                  <button className={`check ${set.done ? 'on' : ''}`} aria-label={`Set ${index + 1} ${set.done ? 'done' : 'not done'}`}
-                    aria-pressed={set.done} onClick={() => void toggle(exercise, set)}>{set.done ? '✓' : ''}</button>
-                  <button className="list-item grow" style={{ border: 0, minHeight: 44, padding: 0 }}
-                    onClick={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })}>
-                    <span className="grow">
-                      <span className="title">Set {index + 1}</span>{' '}
-                      <span className="muted">{set.plannedReps}{set.plannedWeight !== null ? ` × ${formatKg(set.plannedWeight)}` : ''}</span>
-                      {deviatesFromPlan(set) && (
-                        <span className="chip carbs" style={{ marginLeft: 8 }}>
-                          Did {set.actualReps ?? set.plannedReps}{set.actualWeight !== null ? ` × ${formatKg(set.actualWeight)}` : ''}
-                        </span>
-                      )}
-                    </span>
+                <div className={`set-row ${set.done ? 'done' : ''}`}>
+                  <button className="set-main" onClick={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })}>
+                    <span className="set-label">Set {index + 1}</span>{' '}
+                    <span className="set-target">{set.plannedReps}{set.plannedWeight !== null ? ` × ${formatKg(set.plannedWeight)}` : ''}</span>
+                    {deviatesFromPlan(set) && (
+                      <span className="chip carbs">
+                        Did {set.actualReps ?? set.plannedReps}{set.actualWeight !== null ? ` × ${formatKg(set.actualWeight)}` : ''}
+                      </span>
+                    )}
                   </button>
+                  <button className={`set-check ${set.done ? 'on' : ''}`} aria-label={`Set ${index + 1} ${set.done ? 'done' : 'not done'}`}
+                    aria-pressed={set.done} onClick={() => void toggle(exercise, set)}><span className="set-box">{Icons.check}</span></button>
                 </div>
                 {timerAfter(exercise.id, set.id)}
               </div>

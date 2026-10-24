@@ -85,8 +85,8 @@ export const workoutSchema: Schema<Workout> = z.object({
   date,
   title: text(80),
   planId: id.nullable(),
-  startedAt: z.number().int().nonnegative().nullable().default(null),
-  finishedAt: z.number().int().nonnegative().nullable().default(null),
+  elapsedMs: z.number().int().nonnegative().default(0),
+  runningSince: z.number().int().nonnegative().nullable().default(null),
   exercises: z
     .array(z.object({ id, name: text(120), notes: text(2_000), sets: z.array(exerciseSet).max(100), catalogId: text(120).nullable(), restSeconds: rest }))
     .max(100),

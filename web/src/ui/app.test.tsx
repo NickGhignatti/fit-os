@@ -638,6 +638,12 @@ describe('resting between sets', () => {
     await user.click(await screen.findByRole('button', { name: 'Start workout' }));
 
     expect(await screen.findByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Workout time0:0\d/);
+    await user.click(screen.getByRole('button', { name: 'Stop stopwatch' }));
+    expect(await screen.findByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Stopped/);
+    await user.click(screen.getByRole('button', { name: 'Reset stopwatch' }));
+    await waitFor(() => expect(screen.getByRole('timer', { name: 'Workout time' })).toHaveTextContent('Workout time0:00'));
+    await user.click(screen.getByRole('button', { name: 'Start stopwatch' }));
+    expect(await screen.findByRole('button', { name: 'Stop stopwatch' })).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Set 1 not done' }));
     const timer = await screen.findByRole('timer', { name: 'Rest' });
     expect(timer).toHaveTextContent('1:30');

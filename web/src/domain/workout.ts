@@ -39,11 +39,31 @@ export interface Workout {
   readonly exercises: readonly Exercise[];
   /** The training plan this workout was started from, if any. */
   readonly planId: string | null;
-  /** When the session began (epoch ms): Start was pressed, or the first set was ticked. */
-  readonly startedAt: number | null;
-  /** When its last set was ticked; null while any set is still to do. */
-  readonly finishedAt: number | null;
+  /** The session stopwatch: time counted in earlier runs, in ms. */
+  readonly elapsedMs: number;
+  /** When the stopwatch's current run began (epoch ms); null while it is stopped. */
+  readonly runningSince: number | null;
 }
+
+/** A stopwatch that can stop and go on: what it counted so far, and when its current run began. */
+export interface Stopwatch {
+  readonly elapsedMs: number;
+  readonly runningSince: number | null;
+}
+
+/** A workout's stopwatch. Workouts saved before it existed have none stored: they read as zero. */
+export const stopwatchOf = (w: { readonly elapsedMs?: number; readonly runningSince?: number | null }): Stopwatch => ({
+  elapsedMs: w.elapsedMs ?? 0,
+  runningSince: w.runningSince ?? null,
+});
+
+export const elapsedOn = (s: Stopwatch, now: number): number =>
+  s.elapsedMs + (s.runningSince === null ? 0 : Math.max(0, now - s.runningSince));
+
+export const started = (s: Stopwatch, now: number): Stopwatch => (s.runningSince === null ? { ...s, runningSince: now } : s);
+export const stopped = (s: Stopwatch, now: number): Stopwatch =>
+  s.runningSince === null ? s : { elapsedMs: elapsedOn(s, now), runningSince: null };
+export const ZERO: Stopwatch = { elapsedMs: 0, runningSince: null };
 
 /** True when the set was completed with different numbers than planned. */
 export const deviatesFromPlan = (s: ExerciseSet): boolean =>
@@ -64,18 +84,17 @@ export const markedDone = (s: ExerciseSet): ExerciseSet => ({
 export const toggledDone = (s: ExerciseSet): ExerciseSet => (s.done ? { ...s, done: false } : markedDone(s));
 
 /**
- * Keeps the session clock in step with the sets: the first ticked set starts it (unless Start
- * already did), ticking the last one stops it, and un-ticking one sets it running again.
- * Workouts saved before the clock existed have neither time stored.
+ * Keeps the stopwatch in step with the sets: ticking the first set starts it if nobody did, and
+ * ticking the last one stops it. Anything else is left to the person holding it.
  */
 export const withClock = (w: Workout, now: number): Workout => {
   const done = doneSetsOf(w);
   const total = totalSetsOf(w);
-  return {
-    ...w,
-    startedAt: w.startedAt ?? (done > 0 ? now : null),
-    finishedAt: total > 0 && done === total ? (w.finishedAt ?? now) : null,
-  };
+  const clock = stopwatchOf(w);
+  const next = total > 0 && done === total ? stopped(clock, now)
+    : done > 0 && clock.elapsedMs === 0 && clock.runningSince === null ? started(clock, now)
+    : clock;
+  return { ...w, ...next };
 };
 
 export const doneSets = (e: Exercise): number => e.sets.filter((s) => s.done).length;
