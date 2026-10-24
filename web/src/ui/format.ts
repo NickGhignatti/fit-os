@@ -29,6 +29,19 @@ export const setSummary = (sets: readonly { reps: number; weight: number | null 
     : sets.map((s) => `${s.reps}${weight(s.weight)}`).join(' · ');
 };
 
+/** A rest time: "Off", "45s", "2m", "1m 30s". */
+export const formatRest = (seconds: number): string => {
+  if (seconds <= 0) return 'Off';
+  const m = Math.floor(seconds / 60), s = seconds % 60;
+  return m === 0 ? `${s}s` : s === 0 ? `${m}m` : `${m}m ${s}s`;
+};
+
+/** A countdown on a clock face: "1:05". */
+export const clockTime = (ms: number): string => {
+  const total = Math.ceil(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
 export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 
 export const dayName = (day: PlanDay): string => (day === 0 ? 'Every day' : WEEKDAYS[day - 1]!);

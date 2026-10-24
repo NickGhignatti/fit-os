@@ -120,6 +120,7 @@ export const Icons = {
   copy: <Glyph d="M9 9h11v11H9zM5 15H4V4h11v1" />,
   meal: <Glyph d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" />,
   workout: <Glyph d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />,
+  chevron: <Glyph d="M6 9l6 6 6-6" />,
   record: <Glyph d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />,
 };
 

@@ -149,6 +149,7 @@ describe('a workout plan, from creation to a logged session', () => {
     await user.click(within(editor).getByLabelText('Completed'));
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 
+    await user.click(await screen.findByRole('button', { name: 'Squat, done' })); // its only set is done, so it folded
     expect(await screen.findByText(/Did 4/)).toBeInTheDocument();
   });
 
@@ -623,6 +624,43 @@ describe('following several workouts at once', () => {
     expect(open).toHaveAttribute('href', `/day/${today()}`);
     await user.click(open);
     expect(await screen.findByRole('button', { name: 'Back' })).toBeInTheDocument();
+  });
+});
+
+describe('resting between sets', () => {
+  it('counts down after each set, folds a finished exercise, and keeps a rest time per exercise', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const plan = newTrainingPlan('Legs', 'daily', { 0: [{ name: 'Squat', notes: '', catalogId: null, sets: [{ reps: 5, weight: 100 }, { reps: 5, weight: 100 }] }] });
+    await device.repos.trainingPlans.save(plan);
+    await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    renderApp(`/day/${today()}`, device);
+    await user.click(await screen.findByRole('button', { name: 'Start workout' }));
+
+    await user.click(await screen.findByRole('button', { name: 'Set 1 not done' }));
+    const timer = await screen.findByRole('timer', { name: 'Rest' });
+    expect(timer).toHaveTextContent('1:30');
+    await user.click(within(timer).getByRole('button', { name: '15 seconds more' }));
+    expect(timer).toHaveTextContent('1:45');
+    await user.click(within(timer).getByRole('button', { name: 'Skip rest' }));
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Set 2 not done' })); // the last set: the exercise folds away
+    const folded = await screen.findByRole('button', { name: 'Squat, done' });
+    expect(screen.queryByRole('button', { name: /^Set 1/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('timer', { name: 'Rest' })).toBeInTheDocument();
+    await user.click(folded);
+    expect(screen.getByRole('button', { name: 'Set 1 done' })).toBeInTheDocument(); // still all there
+    await user.click(screen.getByRole('button', { name: 'Fold Squat' }));
+    expect(await screen.findByRole('button', { name: 'Squat, done' })).toBeInTheDocument();
+
+    cleanup();
+    renderApp(`/workouts/plan/${plan.id}`, device);
+    await chooseFromMenu(user, 'Squat options', 'Edit');
+    const edit = await dialog('Edit exercise');
+    await user.click(within(edit).getByRole('radio', { name: '45s' }));
+    await user.click(within(edit).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Squat' })).toHaveTextContent('45s rest'));
   });
 });
 

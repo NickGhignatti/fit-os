@@ -8,13 +8,14 @@ import {
 import { addExercise, addPlannedExercise } from '../domain/edit';
 import { newId } from '../domain/id';
 import type { PlanDay } from '../domain/plan';
-import type { ExercisePlan } from '../domain/workout';
+import { DEFAULT_REST, type ExercisePlan } from '../domain/workout';
 import {
   CATEGORY_LABEL, EQUIPMENT_LABEL, LEVEL_LABEL, MUSCLE_LABEL, parseNumber,
 } from './format';
 import { useAsync, useToast } from './hooks';
 import { ConfirmDialog, Empty, Loading, Modal, PageHeader, useDebounced } from './kit';
 import { ExerciseRecordsSection } from './Records';
+import { RestPicker } from './WorkoutCard';
 
 /** Makes up an exercise, or edits one. Only the name is needed; it is kept on this device. */
 const CustomExerciseDialog = ({ initialName = '', exercise, onSaved, onClose }: {
@@ -149,6 +150,7 @@ const AddExerciseDialog = ({ name, catalogId, onSubmit, onClose }: {
   const [reps, setReps] = useState('10');
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
+  const [rest, setRest] = useState(DEFAULT_REST);
   const n = parseNumber(sets);
   const r = parseNumber(reps);
   const w = parseNumber(weight);
@@ -163,12 +165,13 @@ const AddExerciseDialog = ({ name, catalogId, onSubmit, onClose }: {
       <form className="stack" onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
-        onSubmit({ name: title.trim(), notes: notes.trim(), catalogId, sets: Array.from({ length: n }, () => ({ reps: r, weight: w })) });
+        onSubmit({ name: title.trim(), notes: notes.trim(), catalogId, restSeconds: rest, sets: Array.from({ length: n }, () => ({ reps: r, weight: w })) });
         onClose();
       }}>
         {input('Exercise', title, setTitle, 'text')}
         <div className="row">{input('Sets', sets, setSets)}{input('Reps', reps, setReps)}{input('kg', weight, setWeight)}</div>
         {input('Notes (optional)', notes, setNotes, 'text')}
+        <RestPicker value={rest} onChange={setRest} />
         <p className="small muted">Leave kg empty for bodyweight. You can tweak single sets later.</p>
         <div className="actions">
           <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>

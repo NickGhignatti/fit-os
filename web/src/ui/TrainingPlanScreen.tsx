@@ -5,7 +5,8 @@ import { deletePlannedExercise, deletePlannedSet, updatePlannedExercise, updateP
 import { daysOf } from '../domain/plan';
 import { sessionOnDay, type PlannedExercise, type PlannedSet, type TrainingPlan } from '../domain/trainingPlan';
 import { addPlannedSetLikeLast } from '../domain/useCases';
-import { dayName, formatKg, parseNumber, shortDayName, setSummary } from './format';
+import { restOf } from '../domain/workout';
+import { dayName, formatKg, formatRest, parseNumber, shortDayName, setSummary } from './format';
 import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { PlanMenu, TRAINING_TEXTS, usePlanDay } from './Plans';
 import { ShareButton } from './Transfer';
@@ -84,7 +85,10 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
               {exercise.catalogId
                 ? <Link className="title" to={`/exercises/${encodeURIComponent(exercise.catalogId)}`}>{exercise.name}</Link>
                 : <span className="title">{exercise.name}</span>}
-              <div className="small muted">{exercise.notes ? `${exercise.notes} · ` : ''}{setSummary(exercise.sets)}</div>
+              <div className="small muted">
+                {exercise.notes ? `${exercise.notes} · ` : ''}{setSummary(exercise.sets)}
+                {restOf(exercise) > 0 ? ` · ${formatRest(restOf(exercise))} rest` : ''}
+              </div>
             </div>
             <ActionMenu label={`${exercise.name} options`} actions={[
               { label: 'Add set', onSelect: () => void addPlannedSetLikeLast(repos, plan.id, exercise.id) },
@@ -106,7 +110,7 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
 
       {dialog?.kind === 'edit' && (
         <ExerciseDialog exercise={dialog.exercise} onClose={() => setDialog(null)}
-          onSave={(name, notes) => save(updatePlannedExercise(plan, dialog.exercise.id, name, notes))} />
+          onSave={(details) => save(updatePlannedExercise(plan, dialog.exercise.id, details))} />
       )}
       {dialog?.kind === 'delete' && (
         <ConfirmDialog title="Delete exercise?" message={`“${dialog.exercise.name}” and its sets will be removed.`} onClose={() => setDialog(null)}

@@ -78,7 +78,7 @@ const workout = (planId: string | null, sets: ExerciseSet[]): Workout => ({
   date: '2026-10-14',
   title: 'Push',
   planId,
-  exercises: [{ id: 'e', name: 'Bench', notes: '', catalogId: null, sets }],
+  exercises: [{ id: 'e', name: 'Bench', notes: '', catalogId: null, restSeconds: null, sets }],
 });
 
 describe('day summaries', () => {
@@ -91,7 +91,7 @@ describe('day summaries', () => {
   });
 });
 
-const exercise = { id: 'p1', name: 'Squat', notes: '', catalogId: null, sets: [{ id: 'a', reps: 5, weight: 100 }] };
+const exercise = { id: 'p1', name: 'Squat', notes: '', catalogId: null, restSeconds: null, sets: [{ id: 'a', reps: 5, weight: 100 }] };
 const weekly: TrainingPlan = {
   id: 'plan',
   name: 'Strength',

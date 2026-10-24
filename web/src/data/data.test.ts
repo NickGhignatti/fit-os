@@ -45,7 +45,7 @@ const plan = (over: Partial<TrainingPlan> = {}): TrainingPlan => ({
   name: 'Strength',
   recurrence: 'weekly',
   isActive: false,
-  sessions: { 1: [{ id: newId(), name: 'Squat', notes: '', catalogId: null, sets: [{ id: newId(), reps: 5, weight: 100 }] }] },
+  sessions: { 1: [{ id: newId(), name: 'Squat', notes: '', catalogId: null, restSeconds: null, sets: [{ id: newId(), reps: 5, weight: 100 }] }] },
   ...over,
 });
 
@@ -60,6 +60,7 @@ const workout = (over: Partial<Workout> = {}): Workout => ({
       name: 'Bench',
       notes: '',
       catalogId: null,
+      restSeconds: null,
       sets: [{ id: newId(), plannedReps: 8, plannedWeight: 60, actualReps: 8, actualWeight: 60, done: true }],
     },
   ],

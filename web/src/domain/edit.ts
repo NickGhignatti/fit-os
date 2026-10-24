@@ -26,6 +26,7 @@ const exerciseFromPlan = (p: ExercisePlan): Exercise => ({
   name: p.name,
   notes: p.notes,
   catalogId: p.catalogId,
+  restSeconds: p.restSeconds ?? null,
   sets: p.sets.map(setFromPlan),
 });
 
@@ -50,8 +51,15 @@ const mapExercise = (w: Workout, id: string, f: (e: Exercise) => Exercise): Work
   exercises: w.exercises.map((e) => (e.id === id ? f(e) : e)),
 });
 
-export const updateExercise = (w: Workout, id: string, name: string, notes: string): Workout =>
-  mapExercise(w, id, (e) => ({ ...e, name, notes }));
+/** What the exercise dialog edits, in a workout and in a plan alike. */
+export interface ExerciseDetails {
+  readonly name: string;
+  readonly notes: string;
+  readonly restSeconds: number | null;
+}
+
+export const updateExercise = (w: Workout, id: string, details: ExerciseDetails): Workout =>
+  mapExercise(w, id, (e) => ({ ...e, ...details }));
 
 export const deleteExercise = (w: Workout, id: string): Workout => ({
   ...w,
@@ -82,6 +90,7 @@ const plannedExerciseFrom = (p: ExercisePlan): PlannedExercise => ({
   name: p.name,
   notes: p.notes,
   catalogId: p.catalogId,
+  restSeconds: p.restSeconds ?? null,
   sets: p.sets.map(plannedSetFrom),
 });
 
@@ -111,8 +120,8 @@ export const addPlannedExercise = (plan: TrainingPlan, day: PlanDay, exercise: E
   sessions: { ...plan.sessions, [day]: [...(plan.sessions[day] ?? []), plannedExerciseFrom(exercise)] },
 });
 
-export const updatePlannedExercise = (plan: TrainingPlan, id: string, name: string, notes: string): TrainingPlan =>
-  mapSessions(plan, (list) => list.map((e) => (e.id === id ? { ...e, name, notes } : e)));
+export const updatePlannedExercise = (plan: TrainingPlan, id: string, details: ExerciseDetails): TrainingPlan =>
+  mapSessions(plan, (list) => list.map((e) => (e.id === id ? { ...e, ...details } : e)));
 
 export const deletePlannedExercise = (plan: TrainingPlan, id: string): TrainingPlan =>
   mapSessions(plan, (list) => list.filter((e) => e.id !== id));

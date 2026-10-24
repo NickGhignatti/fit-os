@@ -18,7 +18,18 @@ export interface Exercise {
   readonly sets: readonly ExerciseSet[];
   /** The catalogue exercise this one is, if picked from it. */
   readonly catalogId: string | null;
+  /** Seconds to rest after each set; 0 means no timer, null the usual [DEFAULT_REST]. */
+  readonly restSeconds: number | null;
 }
+
+/** The rest between sets when an exercise doesn't say: a minute and a half. */
+export const DEFAULT_REST = 90;
+
+/**
+ * How long to rest after a set of [e]. Exercises saved before rest times existed have none
+ * stored at all, so a missing value counts as unset too.
+ */
+export const restOf = (e: { readonly restSeconds?: number | null }): number => e.restSeconds ?? DEFAULT_REST;
 
 /** A training session planned (and possibly logged) on a given day. */
 export interface Workout {
@@ -78,6 +89,7 @@ export interface ExercisePlan {
   readonly notes: string;
   readonly sets: readonly SetPlan[];
   readonly catalogId: string | null;
+  readonly restSeconds?: number | null;
 }
 
 export const setPlan = (reps: number, weight: number | null): SetPlan => {
@@ -96,6 +108,7 @@ export const exerciseToPlan = (e: Exercise): ExercisePlan => ({
   notes: e.notes,
   sets: e.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })),
   catalogId: e.catalogId,
+  restSeconds: e.restSeconds ?? null,
 });
 
 /** What a workout asks for, without any logged results. */

@@ -299,6 +299,38 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 }
 .check.on { background: var(--accent); border-color: var(--accent); }
 
+/* An exercise in a logged workout. Once every set is done it folds into one quiet line that
+   opens again on tap; nothing is lost, only tucked away. */
+.exercise-block { margin-top: 14px; }
+.exercise-done {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: left; cursor: pointer; opacity: 0.72;
+}
+.exercise-done .check { display: grid; place-items: center; width: 32px; height: 32px; font-size: 15px; }
+.exercise-done .grow { display: flex; flex-direction: column; }
+.exercise-done .title { text-decoration: line-through; text-decoration-color: var(--ink-tertiary); }
+.fold-icon { display: grid; place-items: center; color: var(--ink-tertiary); }
+.fold-icon svg { width: 18px; height: 18px; transition: transform 0.2s ease; }
+.fold-icon.open svg { transform: rotate(180deg); }
+
+/* The rest between two sets: a dark strip under the set just done, its bar draining as time
+   runs, turning green when it is time for the next set. */
+.rest-timer {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 6px;
+  margin: 6px 0 4px; padding: 10px 10px 12px 16px; border-radius: var(--radius-sm);
+  background: var(--ink); color: var(--ink-inverse); animation: fade 0.2s ease-out both;
+}
+.rest-timer.over { background: var(--accent); color: var(--on-accent); }
+.rest-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+.rest-time { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.rest-btn {
+  min-width: 48px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer;
+  background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; font: inherit; font-size: 14px; font-weight: 600;
+}
+.rest-btn:active { background: color-mix(in srgb, currentColor 26%, transparent); }
+.rest-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width 0.25s linear; }
+.rest-timer.over .rest-bar { display: none; }
+
 /* ---- Entrance --------------------------------------------------------------------------- */
 /* Blocks of a screen rise in on open. Fill "backwards" only: a held transform would make the
    block the frame of any fixed child (the +, a dialog) and pin it there. */

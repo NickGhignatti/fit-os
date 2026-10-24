@@ -16,6 +16,8 @@ export interface PlannedExercise {
   readonly sets: readonly PlannedSet[];
   /** The catalogue exercise this one is, if picked from it. */
   readonly catalogId: string | null;
+  /** Seconds to rest after each set; see [Exercise.restSeconds]. */
+  readonly restSeconds: number | null;
 }
 
 /** A workout routine: one session repeated every day, or a session per weekday. */
@@ -56,6 +58,7 @@ export const plannedToPlan = (e: PlannedExercise): ExercisePlan => ({
   notes: e.notes,
   sets: e.sets.map(setToPlan),
   catalogId: e.catalogId,
+  restSeconds: e.restSeconds ?? null,
 });
 
 /** A session the active plan asks for, not yet turned into a workout that can be logged. */

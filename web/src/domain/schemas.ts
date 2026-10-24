@@ -40,6 +40,8 @@ const planDayKey = z.enum(['0', '1', '2', '3', '4', '5', '6', '7']);
 const byDay = <T extends z.ZodTypeAny>(item: T) =>
   z.record(planDayKey, z.array(item).max(100)).transform((r) => r as Record<number, z.infer<T>[]>);
 
+/** Seconds of rest after a set; files from before rest times existed have none. */
+const rest = z.number().int().nonnegative().max(3_600).nullable().default(null);
 const plannedSet = z.object({ id, reps: z.number().int().positive().max(10_000), weight });
 const plannedExercise = z.object({
   id,
@@ -47,6 +49,7 @@ const plannedExercise = z.object({
   notes: text(2_000),
   sets: z.array(plannedSet).max(100),
   catalogId: text(120).nullable(),
+  restSeconds: rest,
 });
 
 export const trainingPlanSchema: Schema<TrainingPlan> = z.object({
@@ -83,7 +86,7 @@ export const workoutSchema: Schema<Workout> = z.object({
   title: text(80),
   planId: id.nullable(),
   exercises: z
-    .array(z.object({ id, name: text(120), notes: text(2_000), sets: z.array(exerciseSet).max(100), catalogId: text(120).nullable() }))
+    .array(z.object({ id, name: text(120), notes: text(2_000), sets: z.array(exerciseSet).max(100), catalogId: text(120).nullable(), restSeconds: rest }))
     .max(100),
 });
 
