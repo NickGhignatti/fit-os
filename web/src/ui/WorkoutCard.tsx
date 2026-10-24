@@ -134,26 +134,24 @@ export const restLine = (e: { readonly restSeconds?: number | null; readonly res
     .filter(Boolean).join(' · ');
 
 /**
- * One set: its number, what to do spelled out ("5 reps · 100 kg"), its note or room for one, and
- * the box to tick on the right. A tap on the left opens the set to edit it.
+ * One set: its number, what to do spelled out ("5 reps · 100 kg"), and its note (or room for one)
+ * on the right. A tap opens the set to edit it; it is ticked off by swiping it away. The toggle is
+ * still there for screen readers and keyboards, only out of sight.
  */
 const SetRow = ({ set, number, onToggle, onEdit }: { set: ExerciseSet; number: number; onToggle: () => void; onEdit: () => void }) => (
   <div className={`set-row ${set.done ? 'done' : ''}`}>
     <button className="set-main" onClick={onEdit}>
       <span className="set-label">Set {number}</span>{' '}
-      <span className="set-what">
-        <span className="set-vals">
-          <span className="set-val"><b>{set.plannedReps}</b> reps</span>{' '}
-          <span className="set-val">{set.plannedWeight === null ? 'bodyweight' : <><b>{formatWeight(set.plannedWeight)}</b> kg</>}</span>
-          {deviatesFromPlan(set) && (
-            <span className="chip carbs">Did {set.actualReps ?? set.plannedReps}{set.actualWeight !== null ? ` × ${formatKg(set.actualWeight)}` : ''}</span>
-          )}
-        </span>{' '}
-        <span className={`set-note ${set.note ? '' : 'blank'}`}>{set.note || 'Add a note'}</span>
-      </span>
+      <span className="set-vals">
+        <span className="set-val"><b>{set.plannedReps}</b> reps</span>{' '}
+        <span className="set-val">{set.plannedWeight === null ? 'bodyweight' : <><b>{formatWeight(set.plannedWeight)}</b> kg</>}</span>
+        {deviatesFromPlan(set) && (
+          <span className="chip carbs">Did {set.actualReps ?? set.plannedReps}{set.actualWeight !== null ? ` × ${formatKg(set.actualWeight)}` : ''}</span>
+        )}
+      </span>{' '}
+      <span className={`set-note ${set.note ? '' : 'blank'}`}>{set.note || 'Add a note'}</span>
     </button>
-    <button className={`set-check ${set.done ? 'on' : ''}`} aria-label={`Set ${number} ${set.done ? 'done' : 'not done'}`}
-      aria-pressed={set.done} onClick={onToggle}><span className="set-box">{Icons.check}</span></button>
+    <button className="sr-only" aria-label={`Set ${number} ${set.done ? 'done' : 'not done'}`} aria-pressed={set.done} onClick={onToggle} />
   </div>
 );
 
@@ -228,7 +226,14 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
     <SetRow set={set} number={index + 1} onToggle={() => void toggle(exercise, set)}
       onEdit={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })} />
   );
-  const setRows = (exercise: Exercise) => exercise.sets.map((set, index) => <div key={set.id}>{setRow(exercise, set, index)}</div>);
+  /** A set to swipe: away to tick it off, or, once done, back to undo it. */
+  const swipeable = (exercise: Exercise, set: ExerciseSet, index: number) => (
+    <SwipeToComplete key={set.id} label={`Set ${index + 1} of ${exercise.name}`} under={set.done ? 'Undo' : 'Done'}
+      onComplete={() => void toggle(exercise, set)}>
+      {setRow(exercise, set, index)}
+    </SwipeToComplete>
+  );
+  const setRows = (exercise: Exercise) => exercise.sets.map((set, index) => swipeable(exercise, set, index));
 
   /**
    * The sets still to do, each swiped away (or ticked) once done; done ones step aside, shown
@@ -246,13 +251,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
           </button>
         )}
         {resting && <RestTimer key={rest.at} rest={rest} label="Rest" onChange={setRest} />}
-        {exercise.sets.map((set, index) => set.done
-          ? showing && <div key={set.id} className="done-set">{setRow(exercise, set, index)}</div>
-          : (
-            <SwipeToComplete key={set.id} label={`Set ${index + 1} of ${exercise.name}`} onComplete={() => void toggle(exercise, set)}>
-              {setRow(exercise, set, index)}
-            </SwipeToComplete>
-          ))}
+        {exercise.sets.map((set, index) => (set.done && !showing ? null : swipeable(exercise, set, index)))}
       </>
     );
   };

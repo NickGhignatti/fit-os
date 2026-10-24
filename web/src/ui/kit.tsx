@@ -400,7 +400,9 @@ const SWIPE_DONE_PX = 96;
  * [onComplete] runs; short of that it springs back. Up-and-down drags still scroll the page, and
  * a swipe never counts as a tap on what is inside.
  */
-export const SwipeToComplete = ({ label, onComplete, children }: { label: string; onComplete: () => void; children: ReactNode }) => {
+export const SwipeToComplete = ({ label, under = 'Done', onComplete, children }: {
+  label: string; under?: string; onComplete: () => void; children: ReactNode;
+}) => {
   const [dx, setDx] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -439,7 +441,7 @@ export const SwipeToComplete = ({ label, onComplete, children }: { label: string
   const ready = Math.abs(dx) >= SWIPE_DONE_PX;
   return (
     <div className={`swipe ${dx !== 0 ? 'moving' : ''} ${ready ? 'ready' : ''}`} aria-label={label} role="group">
-      <div className={`swipe-under ${dx < 0 ? 'right' : ''}`} aria-hidden="true">{Icons.check}<span>Done</span></div>
+      <div className={`swipe-under ${dx < 0 ? 'right' : ''}`} aria-hidden="true">{under === 'Done' ? Icons.check : Icons.reset}<span>{under}</span></div>
       <div className={`swipe-body ${leaving || dx === 0 ? 'settle' : ''}`} style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         onClickCapture={(e) => { if (dragged.current) { e.stopPropagation(); e.preventDefault(); dragged.current = false; } }}>
