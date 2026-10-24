@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useContainer } from '../app/hooks';
 import { deleteExercise, deleteSet, renameWorkout, updateExercise, type ExerciseDetails } from '../domain/edit';
 import type { LocalDate } from '../domain/plan';
@@ -12,7 +12,7 @@ import { clockTime, elapsedTime, formatKg, formatRest, parseNumber, relativeDay,
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog } from './kit';
 import { PrPrompt } from './Records';
-import { SendButton } from './Transfer';
+import { ShareButton } from './Transfer';
 
 export const DateDialog = ({ title, initial, confirmLabel, onSubmit, onClose }: {
   title: string; initial: LocalDate; confirmLabel: string; onSubmit: (date: LocalDate) => void; onClose: () => void;
@@ -221,7 +221,6 @@ type Dialog =
 export const WorkoutCard = ({ workout }: { workout: Workout }) => {
   const { repos } = useContainer();
   const toast = useToast();
-  const navigate = useNavigate();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const close = () => setDialog(null);
   const save = (w: Workout) => void repos.workouts.save(w);
@@ -266,9 +265,9 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
           <div className="title">{workout.title}</div>
           <div className="small muted">{doneSetsOf(workout)}/{totalSetsOf(workout)} sets done</div>
         </div>
+        <ShareButton kind="workout" data={workout} title={workout.title} />
         <ActionMenu actions={[
           { label: 'Rename', onSelect: () => setDialog({ kind: 'rename' }) },
-          { label: 'Add exercise', onSelect: () => navigate(`/exercises/pick?workout=${workout.id}`) },
           { label: 'Save as daily workout', onSelect: () => setDialog({ kind: 'saveAsPlan' }) },
           { label: 'Copy to another day', onSelect: () => setDialog({ kind: 'copy' }) },
           { label: 'Delete', danger: true, onSelect: () => setDialog({ kind: 'delete' }) },
@@ -340,10 +339,6 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
         );
       })}
 
-      <div className="actions" style={{ justifyContent: 'flex-start' }}>
-        <button className="btn secondary" onClick={() => navigate(`/exercises/pick?workout=${workout.id}`)}>Add exercise</button>
-      </div>
-      <SendButton kind="workout" data={workout} />
       {pr && <PrPrompt record={pr} onClose={() => setPr(null)} />}
 
       {dialog?.kind === 'rename' && (

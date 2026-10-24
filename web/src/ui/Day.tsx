@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useContainer, useStream } from '../app/hooks';
-import { newWorkout } from '../domain/edit';
+import { useStream } from '../app/hooks';
 import { addDays } from '../domain/plan';
 import { observeDayAgenda } from '../domain/useCases';
 import { dateTitle, relativeDay, today } from './format';
-import { Empty, Fab, Icons, Loading, PageHeader, PromptDialog } from './kit';
+import { Empty, Fab, Icons, Loading, PageHeader, type FabAction } from './kit';
 import { PendingSessionCard, WorkoutCard } from './WorkoutCard';
 
 const VALID_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -13,10 +11,17 @@ const VALID_DATE = /^\d{4}-\d{2}-\d{2}$/;
 export const Day = () => {
   const { date = '' } = useParams();
   const navigate = useNavigate();
-  const { repos } = useContainer();
   const valid = VALID_DATE.test(date);
   const agenda = useStream((c) => observeDayAgenda(c.repos, valid ? date : today()), [date, valid]);
-  const [adding, setAdding] = useState(false);
+
+  // While training the + only adds exercises: to the session under way, or, with several, to the
+  // one picked from the fan. On an empty day the first exercise brings its own workout.
+  const addExercise: FabAction[] = !agenda || agenda.workouts.length === 0
+    ? [{ label: 'Add exercise', icon: Icons.workout, onSelect: () => navigate(`/exercises/pick?date=${date}`) }]
+    : agenda.workouts.map((w) => ({
+      label: agenda.workouts.length > 1 ? `Add exercise to ${w.title}` : 'Add exercise', short: w.title, icon: Icons.workout,
+      onSelect: () => navigate(`/exercises/pick?workout=${w.id}`),
+    }));
 
   if (!valid) return <Empty>That isn't a date. <button className="link" onClick={() => navigate('/')}>Go to today</button></Empty>;
   if (!agenda) return <Loading />;
@@ -32,13 +37,9 @@ export const Day = () => {
       {agenda.pendingSessions.map((session) => <PendingSessionCard key={session.planId} session={session} date={date} />)}
       {agenda.workouts.map((w) => <WorkoutCard key={w.id} workout={w} />)}
       {agenda.pendingSessions.length === 0 && agenda.workouts.length === 0 && (
-        <Empty>Nothing planned for this day.<br />Tap + to log one.</Empty>
+        <Empty>Nothing planned for this day.<br />Tap + to add an exercise.</Empty>
       )}
-      <Fab label="Add" actions={[{ label: 'Add workout', icon: Icons.workout, onSelect: () => setAdding(true) }]} />
-      {adding && (
-        <PromptDialog title="Add workout" label="Name" initial="Workout" confirmLabel="Add" onClose={() => setAdding(false)}
-          onSubmit={(title) => void repos.workouts.save(newWorkout(date, title))} />
-      )}
+      <Fab label="Add an exercise" actions={addExercise} />
     </>
   );
 };

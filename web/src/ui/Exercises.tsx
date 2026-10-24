@@ -5,7 +5,7 @@ import {
   EQUIPMENT, MUSCLES, customExerciseId, customToInfo, noFilter,
   type CustomExercise, type Equipment, type ExerciseFilter, type ExerciseInfo, type Muscle,
 } from '../domain/catalog';
-import { addExercise, addPlannedExercise } from '../domain/edit';
+import { addExercise, addPlannedExercise, newWorkout } from '../domain/edit';
 import { newId } from '../domain/id';
 import type { PlanDay } from '../domain/plan';
 import { DEFAULT_REST, type ExercisePlan } from '../domain/workout';
@@ -182,7 +182,10 @@ const AddExerciseDialog = ({ name, catalogId, onSubmit, onClose }: {
   );
 };
 
-/** Picks a catalogue exercise for a workout (`?workout=ID`) or a plan's day (`?plan=ID&day=N`). */
+/**
+ * Picks a catalogue exercise for a workout (`?workout=ID`), a plan's day (`?plan=ID&day=N`), or an
+ * empty day (`?date=YYYY-MM-DD`), which gets a new workout only once something is added.
+ */
 export const ExercisePicker = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -191,6 +194,7 @@ export const ExercisePicker = () => {
   const workoutId = params.get('workout');
   const planId = params.get('plan');
   const day = Number(params.get('day') ?? 0) as PlanDay;
+  const date = params.get('date');
 
   const add = async (plan: ExercisePlan) => {
     await repos.transaction.run(async () => {
@@ -200,12 +204,14 @@ export const ExercisePicker = () => {
       } else if (planId) {
         const target = await repos.trainingPlans.getPlan(planId);
         if (target) await repos.trainingPlans.save(addPlannedExercise(target, day, plan));
+      } else if (date) {
+        await repos.workouts.save(newWorkout(date, 'Workout', [plan]));
       }
     });
     navigate(-1);
   };
 
-  if (!workoutId && !planId) return <Empty>Choose where to add exercises from a workout or a plan.</Empty>;
+  if (!workoutId && !planId && !date) return <Empty>Choose where to add exercises from a workout or a plan.</Empty>;
 
   return (
     <>

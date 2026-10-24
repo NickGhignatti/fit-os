@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { Blob as NodeBlob } from 'node:buffer';
 import { webcrypto } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { addMeal, newDietPlan, newTrainingPlan } from '../domain/edit';
+import { addMeal, newDietPlan, newTrainingPlan, newWorkout } from '../domain/edit';
 import { weekdayOf } from '../domain/plan';
 import { InMemoryTransferGateway } from '../transfer/gateway';
 import { envelopeFile } from '../transfer/transfer';
@@ -624,6 +624,42 @@ describe('following several workouts at once', () => {
     expect(open).toHaveAttribute('href', `/day/${today()}`);
     await user.click(open);
     expect(await screen.findByRole('button', { name: 'Back' })).toBeInTheDocument();
+  });
+});
+
+describe('the + while training', () => {
+  const addSquat = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.type(await screen.findByLabelText('Search exercises'), 'squat');
+    await user.click((await screen.findAllByRole('button', { name: /squat/i }))[0]!);
+    await user.click(within(await dialog('Add exercise')).getByRole('button', { name: 'Add' }));
+  };
+
+  it('adds an exercise to the session under way, with no buttons left at the bottom', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    await device.repos.workouts.save(newWorkout(today(), 'Legs'));
+    renderApp(`/day/${today()}`, device);
+
+    const card = await screen.findByRole('region', { name: 'Legs' });
+    expect(within(card).queryByRole('button', { name: /Add exercise|Send/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await addSquat(user);
+    expect(await within(await screen.findByRole('region', { name: 'Legs' })).findByText(/3 × 10/)).toBeInTheDocument();
+  });
+
+  it('starts a workout on an empty day only once an exercise is added', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    renderApp(`/day/${today()}`, device);
+
+    await user.click(await screen.findByRole('button', { name: 'Add exercise' }));
+    await user.click(await screen.findByRole('button', { name: 'Back' })); // changed their mind: nothing is left behind
+    expect(await screen.findByText(/Nothing planned for this day/)).toBeInTheDocument();
+    expect(await device.db.workouts.count()).toBe(0);
+
+    await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+    await addSquat(user);
+    expect(await screen.findByRole('region', { name: 'Workout' })).toHaveTextContent(/3 × 10/);
   });
 });
 
