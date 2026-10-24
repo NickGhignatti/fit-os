@@ -6,9 +6,11 @@ import { mealNutrients } from '../domain/diet';
 import { portionNutrients, type Nutrients } from '../domain/nutrition';
 import { addDays } from '../domain/plan';
 import { logPlannedMeal, observeCalorieDay, observeDailyTargets } from '../domain/useCases';
-import { DEFAULT_MEALS, formatGrams, formatKcal, formatKg, parseNumber, relativeDay, today } from './format';
+import { MAX_MEALS, type Profile } from '../domain/profile';
+import { DEFAULT_MEALS, formatGrams, formatKcal, parseNumber, relativeDay, today } from './format';
 import { useToast } from './hooks';
-import { Carousel, EnergyCard, Fab, Icons, Loading, Modal, PageHeader, PromptDialog } from './kit';
+import { Carousel, EnergyCard, Fab, Icons, Loading, Modal, PageHeader } from './kit';
+import { WeightDialog } from './Weight';
 import { SendButton } from './Transfer';
 import { TargetsDialog } from './TargetsDialog';
 
@@ -17,6 +19,56 @@ const EditIcon = () => (
     <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+/** The meals of a day the user chose, or the usual four. Diet plans with meals that day win over it. */
+export const mealNamesOf = (profile: Profile): readonly string[] => profile.mealNames ?? DEFAULT_MEALS;
+
+const SUGGESTED: Record<number, readonly string[]> = {
+  1: ['Meal'],
+  2: ['Lunch', 'Dinner'],
+  3: ['Breakfast', 'Lunch', 'Dinner'],
+  4: DEFAULT_MEALS,
+  5: ['Breakfast', 'Morning snack', 'Lunch', 'Afternoon snack', 'Dinner'],
+  6: ['Breakfast', 'Morning snack', 'Lunch', 'Afternoon snack', 'Dinner', 'Evening snack'],
+};
+const suggested = (n: number): readonly string[] => SUGGESTED[n] ?? [...SUGGESTED[6]!, ...Array.from({ length: n - 6 }, (_, i) => `Meal ${i + 7}`)];
+
+/**
+ * How many meals a day, and their names. Untouched suggestions follow the count; once a name is
+ * edited, changing the count only adds or drops meals at the end.
+ */
+const MealsDialog = ({ names, planSetsMeals, onSave, onClose }: {
+  names: readonly string[]; planSetsMeals: boolean; onSave: (names: readonly string[]) => void; onClose: () => void;
+}) => {
+  const [list, setList] = useState<readonly string[]>(names);
+  const resize = (n: number) => setList((l) => {
+    if (l.join('\n') === suggested(l.length).join('\n')) return suggested(n);
+    return n < l.length ? l.slice(0, n) : [...l, ...suggested(n).slice(l.length)];
+  });
+  const clean = list.map((name) => name.trim());
+  const valid = clean.every(Boolean) && new Set(clean.map((name) => name.toLowerCase())).size === clean.length;
+  return (
+    <Modal title="Meals per day" onClose={onClose}>
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (valid) { onSave(clean); onClose(); } }}>
+        <div className="stepper" role="group" aria-label="Number of meals">
+          <button type="button" className="icon-btn round" aria-label="One meal fewer" disabled={list.length <= 1} onClick={() => resize(list.length - 1)}>−</button>
+          <span className="stepper-value" aria-live="polite">{list.length}</span>
+          <button type="button" className="icon-btn round" aria-label="One more meal" disabled={list.length >= MAX_MEALS} onClick={() => resize(list.length + 1)}>+</button>
+        </div>
+        {list.map((name, i) => (
+          <input key={i} className="field" aria-label={`Meal ${i + 1}`} value={name} maxLength={40}
+            onChange={(e) => setList((l) => l.map((n, j) => (j === i ? e.target.value : n)))} />
+        ))}
+        {!valid && <p className="small danger-text">Give every meal its own name.</p>}
+        {planSetsMeals && <p className="small muted">Your active diet sets the meals today. These are used on days it plans none.</p>}
+        <div className="actions">
+          <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn" disabled={!valid}>Save</button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
 
 const MACRO_DOTS = [
   { key: 'protein', label: 'P', color: 'var(--protein)' },
@@ -29,17 +81,6 @@ export const MacroLine = ({ n }: { n: Nutrients }) => (
     {MACRO_DOTS.map((m) => <span key={m.key}><i style={{ background: m.color }} />{m.label} {Math.round(n[m.key])} g</span>)}
   </div>
 );
-
-/** Logs a weigh-in for [date]. Shared by the + of Today and of the Tracker. */
-export const WeightDialog = ({ date, onClose }: { date: string; onClose: () => void }) => {
-  const { repos } = useContainer();
-  const toast = useToast();
-  return (
-    <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" confirmLabel="Save" onClose={onClose}
-      validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}
-      onSubmit={(v) => void repos.profile.setWeight(date, parseNumber(v)!).then(() => toast(`Logged ${formatKg(parseNumber(v)!)}`))} />
-  );
-};
 
 const EntryDialog = ({ entry, onSave, onDelete, onClose }: {
   entry: FoodLogEntry; onSave: (grams: number) => void; onDelete: () => void; onClose: () => void;
@@ -72,12 +113,15 @@ export const Tracker = () => {
   const [slide, setSlide] = useState<number | null>(null);
   const [weighing, setWeighing] = useState(false);
   const navigate = useNavigate();
-  const day = useStream((c) => observeCalorieDay(c.repos, date, DEFAULT_MEALS), [date]);
+  const profile = useStream((c) => c.repos.profile.observeProfile());
+  const names = profile ? mealNamesOf(profile) : DEFAULT_MEALS;
+  const day = useStream((c) => observeCalorieDay(c.repos, date, names), [date, names.join('\n')]);
+  const [editingMeals, setEditingMeals] = useState(false);
   const logDay = useStream((c) => c.repos.foodLog.observeDay(date), [date]);
   const targets = useStream((c) => observeDailyTargets(c.repos.profile, date), [date]);
   const go = (d: string) => { setSlide(null); setParams(d === now ? {} : { date: d }, { replace: true }); };
 
-  if (!day || !logDay || targets === undefined) return <Loading />;
+  if (!day || !logDay || !profile || targets === undefined) return <Loading />;
 
   const goal = targets?.nutrients.kcal ?? day.planned?.kcal;
   const goalLabel = targets ? 'goal' : 'planned';
@@ -102,7 +146,10 @@ export const Tracker = () => {
       </EnergyCard>
 
       <div className="section-head">
-        <h2>Meals</h2>
+        <div className="row" style={{ gap: 4 }}>
+          <h2>Meals</h2>
+          <button className="icon-btn small-icon" aria-label="Edit meals" onClick={() => setEditingMeals(true)}><EditIcon /></button>
+        </div>
         <span className="small muted">{day.meals.filter((m) => m.entries.length > 0).length} of {day.meals.length} logged</span>
       </div>
       <Carousel key={date} label="Meals" titles={day.meals.map((m) => m.name)} index={active} onIndex={setSlide}>
@@ -159,6 +206,10 @@ export const Tracker = () => {
           { label: `Scan a barcode for ${meal.name}`, short: 'Scan', icon: Icons.scan, onSelect: () => navigate(pickLink(meal.name, '&scan=1')) },
           { label: 'Log weight', short: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
         ]} />
+      )}
+      {editingMeals && (
+        <MealsDialog names={mealNamesOf(profile)} planSetsMeals={day.meals.some((m) => m.planned)} onClose={() => setEditingMeals(false)}
+          onSave={(list) => { setSlide(null); void repos.profile.saveProfile({ ...profile, mealNames: list.join('\n') === DEFAULT_MEALS.join('\n') ? null : list }); }} />
       )}
       {weighing && <WeightDialog date={date} onClose={() => setWeighing(false)} />}
       {editingTargets && <TargetsDialog onClose={() => setEditingTargets(false)} />}

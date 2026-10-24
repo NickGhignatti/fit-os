@@ -1,9 +1,9 @@
 import QRCode from 'qrcode';
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useContainer } from '../app/hooks';
 import { importEnvelope } from '../data/importItem';
 import { normalizeCode } from '../transfer/code';
-import { receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
+import { envelopeFile, parseEnvelope, receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
 import { useToast } from './hooks';
 import { Icons, Modal, type FabAction } from './kit';
 import { ScannerDialog } from './Scanner';
@@ -178,3 +178,81 @@ export const useReceiveAction = (): [FabAction, ReactNode] => {
   ];
 };
 
+
+/** Saves [text] as a file through the browser's download. */
+export const download = (name: string, text: string) => {
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const link = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+const fileName = (title: string) => `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}.fitos.json`;
+
+/**
+ * Hands the item to the phone's share sheet as a .fitos.json file (to a chat, mail, drive…), or
+ * downloads it where the browser cannot share files.
+ */
+const shareFile = async (kind: TransferKind, data: unknown, title: string) => {
+  const name = fileName(title);
+  const text = envelopeFile(kind, data);
+  const file = typeof File === 'undefined' ? null : new File([text], name, { type: 'application/json' });
+  if (file && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title });
+    } catch {
+      // closed without sharing
+    }
+  } else {
+    download(name, text);
+  }
+};
+
+/**
+ * The share icon of a plan: a sheet with "Share as file" (anyone can import it) and, when sending
+ * is set up, "Send with a code" to your own other device.
+ */
+export const ShareButton = ({ kind, data, title }: { kind: TransferKind; data: unknown; title: string }) => {
+  const { transfer } = useContainer();
+  const [open, setOpen] = useState<'menu' | 'code' | null>(null);
+  return (
+    <>
+      <button className="icon-btn" aria-label="Share" onClick={() => setOpen('menu')}>{Icons.share}</button>
+      {open === 'menu' && (
+        <Modal title={`Share “${title}”`} onClose={() => setOpen(null)}>
+          <div className="stack">
+            <button className="menu-item with-icon" onClick={() => { setOpen(null); void shareFile(kind, data, title); }}>
+              {Icons.file}<span className="grow">Share as file<br /><span className="small muted">A .fitos.json file anyone can import</span></span>
+            </button>
+            {transfer && (
+              <button className="menu-item with-icon" onClick={() => setOpen('code')}>
+                {Icons.receive}<span className="grow">Send with a code<br /><span className="small muted">To your other device, once</span></span>
+              </button>
+            )}
+          </div>
+        </Modal>
+      )}
+      {open === 'code' && <SendDialog kind={kind} data={data} onClose={() => setOpen(null)} />}
+    </>
+  );
+};
+
+/** The "Import a file" action of a +: reads a .fitos.json file and stores its item as a copy. */
+export const useImportFileAction = (): [FabAction, ReactNode] => {
+  const { db } = useContainer();
+  const toast = useToast();
+  const input = useRef<HTMLInputElement>(null);
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    const envelope = parseEnvelope(await file.text());
+    const imported = envelope ? await importEnvelope(db, envelope) : { status: 'invalid' as const };
+    toast(imported.status === 'imported' ? `Imported ${KIND_LABEL[imported.kind]} “${imported.title}”` : "That file can't be imported.");
+    if (input.current) input.current.value = '';
+  };
+  return [
+    { label: 'Import a file', short: 'Import', icon: Icons.file, onSelect: () => input.current?.click() },
+    <input ref={input} type="file" accept=".json,application/json" hidden aria-label="Item file" onChange={(e) => void onFile(e.target.files?.[0])} />,
+  ];
+};

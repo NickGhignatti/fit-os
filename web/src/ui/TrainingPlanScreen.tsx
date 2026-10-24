@@ -8,7 +8,7 @@ import { addPlannedSetLikeLast } from '../domain/useCases';
 import { dayName, formatKg, parseNumber, shortDayName, setSummary } from './format';
 import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { PlanMenu, TRAINING_TEXTS, usePlanDay } from './Plans';
-import { SendButton } from './Transfer';
+import { ShareButton } from './Transfer';
 import { ExerciseDialog } from './WorkoutCard';
 
 const PlannedSetDialog = ({ number, set, onSave, onDelete, onClose }: {
@@ -135,11 +135,11 @@ export const TrainingPlanScreen = () => {
   return (
     <>
       <PageHeader back title={plan.name} subtitle={`${plan.recurrence === 'daily' ? 'Daily' : 'Weekly'}${plan.isActive ? ' · Active' : ''}`}
-        actions={<PlanMenu plan={plan} repo={repos.trainingPlans} texts={TRAINING_TEXTS} afterDelete={() => navigate('/workouts', { replace: true })} />} />
+        actions={<>
+          <ShareButton kind="training_plan" data={plan} title={plan.name} />
+          <PlanMenu plan={plan} repo={repos.trainingPlans} texts={TRAINING_TEXTS} afterDelete={() => navigate('/workouts', { replace: true })} />
+        </>} />
       <PlanBody key={plan.id} plan={plan} />
-      <div className="stack" style={{ marginTop: 12 }}>
-        <SendButton kind="training_plan" data={plan} label="Send this workout to another device" />
-      </div>
     </>
   );
 };

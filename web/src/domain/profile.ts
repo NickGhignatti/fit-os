@@ -37,7 +37,12 @@ export interface Profile {
   readonly customProtein: number | null;
   readonly customCarbs: number | null;
   readonly customFat: number | null;
+  /** The meals of a day, in order, when no diet plan sets them; null for the usual four. */
+  readonly mealNames: readonly string[] | null;
 }
+
+/** How many meals a day the user may choose between. */
+export const MAX_MEALS = 8;
 
 export const defaultProfile: Profile = {
   sex: null,
@@ -49,6 +54,7 @@ export const defaultProfile: Profile = {
   customProtein: null,
   customCarbs: null,
   customFat: null,
+  mealNames: null,
 };
 
 /** Whole years between [birthDate] and [date], like java.time.Period.between(..).years. */

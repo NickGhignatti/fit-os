@@ -3,7 +3,7 @@ import { EQUIPMENT, MUSCLES, type CustomExercise } from './catalog';
 import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import type { FoodItem } from './nutrition';
-import type { Profile, WeightEntry } from './profile';
+import { MAX_MEALS, type Profile, type WeightEntry } from './profile';
 import type { PersonalRecord } from './records';
 import type { TrainingPlan } from './trainingPlan';
 import type { Workout } from './workout';
@@ -103,6 +103,7 @@ export const profileSchema: Schema<Profile> = z.object({
   customProtein: count(2_000).nullable().default(null),
   customCarbs: count(2_000).nullable().default(null),
   customFat: count(2_000).nullable().default(null),
+  mealNames: z.array(z.string().trim().min(1).max(40)).min(1).max(MAX_MEALS).nullable().default(null),
 });
 
 export const weightEntrySchema: Schema<WeightEntry> = z.object({ id, date, kg: z.number().finite().positive().max(1000) });

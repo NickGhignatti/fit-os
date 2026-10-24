@@ -52,7 +52,14 @@ export type ReceiveResult =
   /** Found but unreadable: damaged, or from an incompatible app version. */
   | { readonly status: 'unreadable' };
 
-const parseEnvelope = (text: string): Envelope | null => {
+/**
+ * An item as a file anyone can keep or pass on (".fitos.json"): the same envelope a transfer
+ * carries, unencrypted. Importing it goes through the same checks as a received item.
+ */
+export const envelopeFile = (kind: TransferKind, data: unknown, now: () => Date = () => new Date()): string =>
+  JSON.stringify({ v: VERSION, kind, data, sentAt: now().toISOString() } satisfies Envelope, null, 2);
+
+export const parseEnvelope = (text: string): Envelope | null => {
   try {
     const value = JSON.parse(text) as Partial<Envelope>;
     return value.v === VERSION && KINDS.includes(value.kind as TransferKind) && typeof value.sentAt === 'string'

@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import { useContainer, useStream } from '../app/hooks';
 import { exportBackup, parseBackup, restoreBackup, type Backup } from '../data/backup';
-import { ACTIVITY_FACTOR, PACE_KG_PER_WEEK, ageOn, type ActivityLevel, type GoalPace, type Profile, type Sex, type WeightEntry } from '../domain/profile';
+import { ACTIVITY_FACTOR, PACE_KG_PER_WEEK, ageOn, type ActivityLevel, type GoalPace, type Profile, type Sex } from '../domain/profile';
 import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKg, parseNumber, today } from './format';
 import { useToast } from './hooks';
 import { ConfirmDialog, Icons, Loading, Modal, PageHeader, type FabAction } from './kit';
 import { LegalLinks } from './Legal';
-import { useReceiveAction } from './Transfer';
+import { download, useReceiveAction } from './Transfer';
 
 const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave: (p: Profile) => void; onClose: () => void }) => {
   const [sex, setSex] = useState<Sex | ''>(profile.sex ?? '');
@@ -50,36 +50,6 @@ const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave:
       </form>
     </Modal>
   );
-};
-
-/** Weight over time as a line. Text alternatives carry the same numbers for screen readers. */
-export const WeightChart = ({ entries }: { entries: readonly WeightEntry[] }) => {
-  if (entries.length < 2) return null;
-  const [w, h, pad] = [320, 140, 12];
-  const kgs = entries.map((e) => e.kg);
-  const [lo, hi] = [Math.min(...kgs), Math.max(...kgs)];
-  const span = hi - lo || 1;
-  const t0 = Date.parse(entries[0]!.date);
-  const t1 = Date.parse(entries.at(-1)!.date);
-  const x = (date: string) => pad + ((t1 === t0 ? 0.5 : (Date.parse(date) - t0) / (t1 - t0)) * (w - 2 * pad));
-  const y = (kg: number) => h - pad - ((kg - lo) / span) * (h - 2 * pad);
-  const points = entries.map((e) => `${x(e.date).toFixed(1)},${y(e.kg).toFixed(1)}`).join(' ');
-  return (
-    <svg className="chart" viewBox={`0 0 ${w} ${h}`} role="img"
-      aria-label={`Weight trend, from ${formatKg(entries[0]!.kg)} to ${formatKg(entries.at(-1)!.kg)} over ${entries.length} weigh-ins`}>
-      <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {entries.map((e) => <circle key={e.id} cx={x(e.date)} cy={y(e.kg)} r="3.5" fill="var(--accent)"><title>{`${e.date}: ${formatKg(e.kg)}`}</title></circle>)}
-    </svg>
-  );
-};
-
-const download = (name: string, text: string) => {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const link = Object.assign(document.createElement('a'), { href: url, download: name });
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
 const summarize = (b: Backup): string => {
@@ -142,7 +112,6 @@ export const ProfileScreen = () => {
   if (!profile || !weights) return <Loading />;
 
   const latest = weights.at(-1);
-  const first = weights[0];
   const age = ageOn(profile, date);
   const hasDetails = profile.sex !== null || profile.birthDate !== null || profile.heightCm !== null;
 
@@ -163,21 +132,6 @@ export const ProfileScreen = () => {
         </span>
         <span className="muted hero-chevron" aria-hidden="true">›</span>
       </button>
-
-      <h2>Weight</h2>
-      <section className="card" aria-label="Weight">
-        {latest ? (
-          <>
-            <div className="big-number">{formatKg(latest.kg)}</div>
-            {first && first.id !== latest.id && (
-              <p className="small muted">{`${latest.kg - first.kg >= 0 ? '+' : '−'}${formatKg(Math.abs(latest.kg - first.kg))} since ${first.date}`}</p>
-            )}
-            <WeightChart entries={weights} />
-          </>
-        ) : (
-          <p className="muted">No weigh-ins yet. Log one with the + on Today or the Tracker to see its trend.</p>
-        )}
-      </section>
 
       <h2>Calendar</h2>
       <Calendar />

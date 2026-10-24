@@ -8,6 +8,7 @@ import { webcrypto } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { addMeal, newDietPlan, newTrainingPlan } from '../domain/edit';
 import { InMemoryTransferGateway } from '../transfer/gateway';
+import { envelopeFile } from '../transfer/transfer';
 import { makeDevice, renderApp } from './testing';
 
 // jsdom lacks WebCrypto and Blob streams, which the transfer encryption needs; Node has both.
@@ -141,7 +142,7 @@ describe('a diet, from creation to a logged meal', () => {
     const user = userEvent.setup();
     renderApp('/food');
 
-    await chooseFromMenu(user, 'Add a diet', 'New diet');
+    await chooseFromMenu(user, 'Add a diet or weight', 'New diet');
     const create = await dialog('New diet');
     await user.clear(within(create).getByLabelText('Name'));
     await user.type(within(create).getByLabelText('Name'), 'Cut');
@@ -186,7 +187,7 @@ describe('a diet, from creation to a logged meal', () => {
   it('copies a weekly diet day onto other days', async () => {
     const user = userEvent.setup();
     renderApp('/food');
-    await chooseFromMenu(user, 'Add a diet', 'New diet');
+    await chooseFromMenu(user, 'Add a diet or weight', 'New diet');
     const create = await dialog('New diet');
     await user.click(within(create).getByRole('radio', { name: 'Weekly' }));
     await user.click(within(create).getByRole('button', { name: 'Create' }));
@@ -283,7 +284,7 @@ describe('custom daily targets', () => {
     const device = makeDevice();
     await device.repos.profile.saveProfile({
       sex: 'male', birthDate: '1996-01-01', heightCm: 180, activity: 'moderate', pace: 'maintain',
-      customKcal: null, customProtein: null, customCarbs: null, customFat: null,
+      customKcal: null, customProtein: null, customCarbs: null, customFat: null, mealNames: null,
     });
     await device.repos.profile.setWeight('2026-10-01', 80);
     renderApp('/tracker', device);
@@ -344,7 +345,7 @@ describe('the profile', () => {
     expect(await screen.findByText('Logged 80 kg')).toBeInTheDocument();
     expect(await screen.findByText(/^of \d+ goal$/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('link', { name: 'Profile' }));
+    await user.click(screen.getByRole('link', { name: 'Diet' }));
     expect(await screen.findByRole('region', { name: 'Weight' })).toHaveTextContent('80 kg');
   });
 
@@ -368,7 +369,7 @@ describe('moving a plan to another device', () => {
     await phone.repos.trainingPlans.save(plan);
     const first = renderApp(`/workouts/plan/${plan.id}`, phone);
 
-    await user.click(await screen.findByRole('button', { name: 'Send this workout to another device' }));
+    await chooseFromMenu(user, 'Share', /Send with a code/);
     await user.click(within(await dialog(/Send this workout plan/)).getByRole('button', { name: 'Create code' }));
     const code = (await screen.findByLabelText('Transfer code')).textContent!;
     expect(code).toMatch(/^[0-9A-Z]{5}-[0-9A-Z]{5}$/);
@@ -383,7 +384,8 @@ describe('moving a plan to another device', () => {
     await user.click(within(receive).getByRole('button', { name: 'Receive' }));
 
     expect(await screen.findByText(/Imported workout plan “Strength”/)).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: /Strength/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'All workouts' }));
+    expect(await within(await dialog('Your workouts')).findByRole('link', { name: /Strength/ })).toBeInTheDocument();
     expect(server.size).toBe(0);
   }, 20_000);
 
@@ -489,16 +491,21 @@ describe('following several workouts at once', () => {
     const user = userEvent.setup();
     renderApp('/workouts', await twoPlans());
 
-    await user.click(await screen.findByRole('button', { name: 'Set as active Lifting' }));
-    await user.click(await screen.findByRole('button', { name: 'Set as active Volleyball' }));
+    await user.click(await screen.findByRole('button', { name: 'All workouts' }));
+    const list = await dialog('Your workouts');
+    await user.click(within(list).getByRole('button', { name: 'Set as active Lifting' }));
+    await user.click(await within(list).findByRole('button', { name: 'Set as active Volleyball' }));
+    await user.keyboard('{Escape}');
 
-    expect(await screen.findByRole('region', { name: 'Active program: Lifting' })).toBeInTheDocument();
-    expect(await screen.findByRole('region', { name: 'Active program: Volleyball' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Start today's session/ })).toHaveLength(2);
+    const week = await screen.findByRole('region', { name: 'This week' });
+    await waitFor(() => expect(week).toHaveTextContent(/Lifting.*Volleyball/));
+    expect(within(week).getAllByRole('button', { name: /Start today's session/ })).toHaveLength(2);
 
-    await user.click(screen.getByRole('button', { name: 'Deactivate Lifting' })); // turning one off leaves the other
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Active program: Lifting' })).not.toBeInTheDocument());
-    expect(screen.getByRole('region', { name: 'Active program: Volleyball' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'All workouts' }));
+    await user.click(within(await dialog('Your workouts')).getByRole('button', { name: 'Deactivate Lifting' })); // turning one off leaves the other
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getByRole('region', { name: 'This week' })).not.toHaveTextContent('Lifting'));
+    expect(screen.getByRole('region', { name: 'This week' })).toHaveTextContent('Volleyball');
   });
 
   it('lists each plan to do on Today, and finishing one does not tick the other', async () => {
@@ -570,5 +577,73 @@ describe('following several workouts at once', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(await screen.findByRole('link', { name: 'Continue Lifting' })).toHaveAttribute('href', expect.stringMatching(/^\/day\//));
     expect(screen.getByRole('link', { name: 'Continue Volleyball' })).toBeInTheDocument();
+  });
+});
+
+describe('sharing a plan as a file', () => {
+  // jsdom's File has no text(); browsers do.
+  const jsonFile = (content: string, name: string) =>
+    Object.assign(new File([content], name, { type: 'application/json' }), { text: async () => content });
+
+  it('imports a .fitos.json file as an inactive copy, and refuses anything else', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    const plan = newTrainingPlan('Strength', 'daily', { 0: [{ name: 'Squat', notes: '', catalogId: null, sets: [{ reps: 5, weight: 100 }] }] });
+    const device = makeDevice();
+    renderApp('/workouts', device);
+
+    const file = jsonFile(envelopeFile('training_plan', { ...plan, isActive: true }), 'strength.fitos.json');
+    await user.upload(await screen.findByLabelText('Item file'), file);
+    expect(await screen.findByText(/Imported workout plan “Strength”/)).toBeInTheDocument();
+    const saved = await device.db.trainingPlans.toArray();
+    expect(saved).toHaveLength(1);
+    expect(saved[0]!.isActive).toBe(false);
+    expect(saved[0]!.id).not.toBe(plan.id);
+
+    await user.upload(screen.getByLabelText('Item file'), jsonFile('{"hello":1}', 'other.json'));
+    expect(await screen.findByText("That file can't be imported.")).toBeInTheDocument();
+  });
+
+  it('offers to share a plan from its screen', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const plan = newTrainingPlan('Strength', 'daily');
+    await device.repos.trainingPlans.save(plan);
+    renderApp(`/workouts/plan/${plan.id}`, device);
+    await user.click(await screen.findByRole('button', { name: 'Share' }));
+    const sheet = await dialog('Share “Strength”');
+    expect(within(sheet).getByRole('button', { name: /Share as file/ })).toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: /Send with a code/ })).not.toBeInTheDocument(); // no server in this build
+  });
+});
+
+describe('meals per day', () => {
+  it('lets you choose how many meals a day and name them', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    renderApp('/tracker', device);
+    const tabs = async () => within(await screen.findByRole('tablist', { name: 'Meals' })).getAllByRole('tab').map((t) => t.textContent);
+    expect(await tabs()).toEqual(['Breakfast', 'Lunch', 'Snack', 'Dinner']);
+
+    await user.click(screen.getByRole('button', { name: 'Edit meals' }));
+    const form = await dialog('Meals per day');
+    await user.click(within(form).getByRole('button', { name: 'One more meal' }));
+    expect(within(form).getByLabelText('Meal 2')).toHaveValue('Morning snack'); // untouched names follow the count
+    await user.clear(within(form).getByLabelText('Meal 5'));
+    await user.type(within(form).getByLabelText('Meal 5'), 'Late dinner');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    await waitFor(async () => expect(await tabs()).toEqual(['Breakfast', 'Morning snack', 'Lunch', 'Afternoon snack', 'Late dinner']));
+    expect((await device.db.profile.get('me'))!.mealNames).toHaveLength(5);
+  });
+
+  it('refuses two meals with the same name', async () => {
+    const user = userEvent.setup();
+    renderApp('/tracker');
+    await user.click(await screen.findByRole('button', { name: 'Edit meals' }));
+    const form = await dialog('Meals per day');
+    await user.clear(within(form).getByLabelText('Meal 2'));
+    await user.type(within(form).getByLabelText('Meal 2'), 'breakfast');
+    expect(within(form).getByText('Give every meal its own name.')).toBeInTheDocument();
+    expect(within(form).getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 });

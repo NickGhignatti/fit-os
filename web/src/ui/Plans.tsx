@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { PlanDay, Recurrence } from '../domain/plan';
 import type { PlanRepository } from '../domain/repositories';
-import { Empty, Fab, Loading, Modal, ActionMenu, ConfirmDialog, PromptDialog, Segmented, type FabAction, type MenuAction } from './kit';
+import { Empty, Loading, Modal, ActionMenu, ConfirmDialog, PromptDialog, Segmented, type FabAction, type MenuAction } from './kit';
 
 export interface PlanLike {
   readonly id: string;
@@ -90,52 +90,53 @@ export const PlanMenu = <P extends PlanLike>({ plan, repo, texts, extra = [], af
   );
 };
 
-export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, create, href, header, icon, more = [] }: {
-  plans: readonly P[] | undefined;
-  repo: PlanRepository<P>;
-  texts: PlanTexts;
-  summary: (plan: P) => string;
-  create: (name: string, recurrence: Recurrence) => P;
-  href: (plan: P) => string;
-  header?: ReactNode;
-  icon: ReactNode;
-  /** Other ways to add a plan, beside creating one, on the same +. */
-  more?: readonly FabAction[];
-}) => {
+/** Every saved plan, each with a switch to follow it or not, and a tap to open it. */
+export const PlanRows = <P extends PlanLike>({ plans, repo, summary, href, onOpen }: {
+  plans: readonly P[]; repo: PlanRepository<P>; summary: (plan: P) => string; href: (plan: P) => string; onOpen?: () => void;
+}) => (
+  <>
+    {plans.map((plan) => (
+      <div key={plan.id} className="list-item" style={{ cursor: 'default' }}>
+        <Link to={href(plan)} className="grow" style={{ color: 'inherit', textDecoration: 'none' }} onClick={onOpen}>
+          <div className="title">{plan.name} {plan.isActive && <span className="badge">Active</span>}</div>
+          <div className="small muted">{plan.recurrence === 'daily' ? 'Daily' : 'Weekly'} · {summary(plan)}</div>
+        </Link>
+        <button className="btn secondary" aria-label={`${plan.isActive ? 'Deactivate' : 'Set as active'} ${plan.name}`}
+          onClick={() => void repo.setPlanActive(plan.id, !plan.isActive)}>
+          {plan.isActive ? 'Deactivate' : 'Activate'}
+        </button>
+      </div>
+    ))}
+  </>
+);
+
+/** The "New …" action of a +, and the dialog it opens; a new plan opens right away. */
+export const usePlanCreation = <P extends PlanLike>({ repo, texts, icon, create, href }: {
+  repo: PlanRepository<P>; texts: PlanTexts; icon: ReactNode; create: (name: string, recurrence: Recurrence) => P; href: (plan: P) => string;
+}): [FabAction, ReactNode] => {
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
-  if (!plans) return <Loading />;
+  return [
+    { label: texts.newLabel, short: 'New', icon, onSelect: () => setCreating(true) },
+    creating && (
+      <NewPlanDialog texts={texts} onClose={() => setCreating(false)} onCreate={(name, recurrence) => {
+        const plan = create(name, recurrence);
+        void repo.save(plan).then(() => navigate(href(plan)));
+      }} />
+    ),
+  ];
+};
 
+/** The saved plans as a card, or a hint to create one. */
+export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, href }: {
+  plans: readonly P[] | undefined; repo: PlanRepository<P>; texts: PlanTexts; summary: (plan: P) => string; href: (plan: P) => string;
+}) => {
+  if (!plans) return <Loading />;
+  if (plans.length === 0) return <Empty>{texts.empty.split('\n').map((line, i) => <div key={i}>{line}</div>)}</Empty>;
   return (
-    <>
-      {header}
-      {plans.length === 0 ? (
-        <Empty>{texts.empty.split('\n').map((line, i) => <div key={i}>{line}</div>)}</Empty>
-      ) : (
-        <section className="card" aria-label="Saved plans">
-          <div className="small muted">{plans.length} total</div>
-          {plans.map((plan) => (
-            <div key={plan.id} className="list-item" style={{ cursor: 'default' }}>
-              <Link to={href(plan)} className="grow" style={{ color: 'inherit', textDecoration: 'none' }}>
-                <div className="title">{plan.name} {plan.isActive && <span className="badge">Active</span>}</div>
-                <div className="small muted">{plan.recurrence === 'daily' ? 'Daily' : 'Weekly'} · {summary(plan)}</div>
-              </Link>
-              <button className="btn secondary" aria-label={`${plan.isActive ? 'Deactivate' : 'Set as active'} ${plan.name}`}
-                onClick={() => void repo.setPlanActive(plan.id, !plan.isActive)}>
-                {plan.isActive ? 'Deactivate' : 'Activate'}
-              </button>
-            </div>
-          ))}
-        </section>
-      )}
-      <Fab label={`Add a ${texts.noun}`} actions={[{ label: texts.newLabel, short: 'New', icon, onSelect: () => setCreating(true) }, ...more]} />
-      {creating && (
-        <NewPlanDialog texts={texts} onClose={() => setCreating(false)} onCreate={(name, recurrence) => {
-          const plan = create(name, recurrence);
-          void repo.save(plan).then(() => navigate(href(plan)));
-        }} />
-      )}
-    </>
+    <section className="card" aria-label="Saved plans">
+      <PlanRows plans={plans} repo={repo} summary={summary} href={href} />
+    </section>
   );
 };
 

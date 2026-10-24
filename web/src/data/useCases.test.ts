@@ -282,7 +282,7 @@ describe('observing', () => {
   it('computes daily targets from the profile and the latest weigh-in', async () => {
     const r = repos();
     expect(await nextWhere(observeDailyTargets(r.profile, MONDAY), () => true)).toBeNull();
-    await r.profile.saveProfile({ sex: 'male', birthDate: '1996-10-12', heightCm: 180, activity: 'moderate', pace: 'maintain', customKcal: null, customProtein: null, customCarbs: null, customFat: null });
+    await r.profile.saveProfile({ sex: 'male', birthDate: '1996-10-12', heightCm: 180, activity: 'moderate', pace: 'maintain', customKcal: null, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
     await r.profile.setWeight('2026-10-01', 82);
     await r.profile.setWeight('2026-10-10', 80);
     const targets = await nextWhere(observeDailyTargets(r.profile, MONDAY), (t) => t !== null);

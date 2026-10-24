@@ -75,7 +75,7 @@ describe('profiles written before custom macros existed', () => {
   const legacy = { sex: 'male', birthDate: null, heightCm: 180, activity: 'moderate', pace: 'maintain', customKcal: 2100 };
 
   it('validate, with the new targets empty', () => {
-    expect(profileSchema.parse(legacy)).toEqual({ ...legacy, customProtein: null, customCarbs: null, customFat: null });
+    expect(profileSchema.parse(legacy)).toEqual({ ...legacy, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
   });
 
   it('are accepted inside an old backup file', () => {

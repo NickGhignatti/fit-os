@@ -222,7 +222,7 @@ describe('foods and profile', () => {
   it('defaults the profile, and keeps one weigh-in per day', async () => {
     const repo = new DexieProfileRepository(db);
     expect((await nextWhere(repo.observeProfile(), () => true)).activity).toBe('moderate');
-    await repo.saveProfile({ sex: 'male', birthDate: '1996-10-17', heightCm: 180, activity: 'active', pace: 'lose', customKcal: null, customProtein: null, customCarbs: null, customFat: null });
+    await repo.saveProfile({ sex: 'male', birthDate: '1996-10-17', heightCm: 180, activity: 'active', pace: 'lose', customKcal: null, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
     expect((await nextWhere(repo.observeProfile(), (p) => p.sex === 'male')).heightCm).toBe(180);
 
     await repo.setWeight('2026-10-14', 80);
@@ -312,7 +312,7 @@ describe('backup', () => {
     await source.customFoods.put({ ...chicken, id: 'custom:1' });
     await new DexieFavoriteFoodRepository(source).setFavorite(chicken, true);
     await new DexieProfileRepository(source).setWeight('2026-10-14', 80);
-    await new DexieProfileRepository(source).saveProfile({ sex: 'female', birthDate: null, heightCm: 170, activity: 'light', pace: 'maintain', customKcal: 2000, customProtein: null, customCarbs: null, customFat: null });
+    await new DexieProfileRepository(source).saveProfile({ sex: 'female', birthDate: null, heightCm: 170, activity: 'light', pace: 'maintain', customKcal: 2000, customProtein: null, customCarbs: null, customFat: null, mealNames: null });
 
     const text = JSON.stringify(await exportBackup(source, () => new Date('2026-10-17T10:00:00Z')));
     const parsed = parseBackup(text);

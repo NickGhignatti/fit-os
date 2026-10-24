@@ -6,12 +6,13 @@ import { mealNutrients, mealsOnDay, nutrientsOnDay, plannedDays, type DietPlan, 
 import { portionNutrients, portionOf } from '../domain/nutrition';
 import { daysOf, type PlanDay } from '../domain/plan';
 import { copyDietDay } from '../domain/useCases';
-import { dayName, formatGrams, formatKcal, parseNumber, shortDayName } from './format';
+import { dayName, formatGrams, formatKcal, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
 import { MacroLine } from './Tracker';
 import { ActionMenu, Carousel, ConfirmDialog, Empty, Fab, Icons, Loading, MacroChips, Modal, PageHeader, type FabAction } from './kit';
-import { DIET_TEXTS, PlanList, PlanMenu, usePlanDay } from './Plans';
-import { SendButton, useReceiveAction } from './Transfer';
+import { DIET_TEXTS, PlanList, PlanMenu, usePlanCreation, usePlanDay } from './Plans';
+import { ShareButton, useImportFileAction, useReceiveAction } from './Transfer';
+import { WeightCard, WeightDialog } from './Weight';
 
 const dietSummary = (plan: DietPlan): string => {
   const days = plannedDays(plan);
@@ -26,13 +27,26 @@ const dietSummary = (plan: DietPlan): string => {
 export const Food = () => {
   const { repos } = useContainer();
   const plans = useStream((c) => c.repos.dietPlans.observePlans());
+  const href = (p: DietPlan) => `/food/plan/${p.id}`;
+  const [create, creating] = usePlanCreation({ repo: repos.dietPlans, texts: DIET_TEXTS, icon: Icons.meal, create: newDietPlan, href });
+  const [importFile, importing] = useImportFileAction();
   const [receive, receiving] = useReceiveAction();
+  const [weighing, setWeighing] = useState(false);
   return (
     <>
       <PageHeader title="Diet" />
-      <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary} icon={Icons.meal} more={[receive]}
-        create={(name, recurrence) => newDietPlan(name, recurrence)} href={(p) => `/food/plan/${p.id}`} />
+      <h2>Weight</h2>
+      <WeightCard />
+      <h2>Your diets</h2>
+      <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary} href={href} />
+      <Fab label="Add a diet or weight" actions={[
+        create, importFile, receive,
+        { label: 'Log weight', short: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
+      ]} />
+      {creating}
+      {importing}
       {receiving}
+      {weighing && <WeightDialog date={today()} onClose={() => setWeighing(false)} />}
     </>
   );
 };
@@ -235,11 +249,11 @@ export const DietPlanScreen = () => {
   return (
     <>
       <PageHeader back title={plan.name} subtitle={`${plan.recurrence === 'daily' ? 'Daily' : 'Weekly'}${plan.isActive ? ' · Active' : ''}`}
-        actions={<PlanMenu plan={plan} repo={repos.dietPlans} texts={DIET_TEXTS} afterDelete={() => navigate('/food', { replace: true })} />} />
+        actions={<>
+          <ShareButton kind="diet_plan" data={plan} title={plan.name} />
+          <PlanMenu plan={plan} repo={repos.dietPlans} texts={DIET_TEXTS} afterDelete={() => navigate('/food', { replace: true })} />
+        </>} />
       <PlanBody key={plan.id} plan={plan} />
-      <div className="stack" style={{ marginTop: 12 }}>
-        <SendButton kind="diet_plan" data={plan} label="Send this diet to another device" />
-      </div>
     </>
   );
 };

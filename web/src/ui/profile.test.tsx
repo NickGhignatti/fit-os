@@ -11,11 +11,11 @@ afterEach(cleanup);
 describe('the order of the profile page', () => {
   const sections = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
 
-  it('puts you on top, then your weight and calendar, and your data at the bottom with the legal links', async () => {
+  it('puts you on top, then the calendar, and your data at the bottom with the legal links', async () => {
     renderApp('/profile', makeDevice());
     await screen.findByRole('button', { name: 'Set up profile' });
-    expect(sections()).toEqual(['Weight', 'Calendar', 'Your data']);
-    expect(screen.queryByRole('region', { name: 'Daily goal' })).not.toBeInTheDocument(); // the goal lives on the Tracker
+    expect(sections()).toEqual(['Calendar', 'Your data']);
+    expect(screen.queryByRole('region', { name: 'Daily goal' })).not.toBeInTheDocument(); // the goal lives on the Tracker, the weight on Diet
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
   });

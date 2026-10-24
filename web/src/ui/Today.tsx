@@ -8,7 +8,8 @@ import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
 import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing } from './kit';
-import { WeightDialog } from './Tracker';
+import { mealNamesOf } from './Tracker';
+import { WeightDialog } from './Weight';
 
 interface Count { readonly done: number; readonly total: number }
 
@@ -102,7 +103,9 @@ export const Today = () => {
   const navigate = useNavigate();
   const agenda = useStream((c) => observeDayAgenda(c.repos, date), [date]);
   const weeks = useStream((c) => observeTrainingWeeks(c.repos, date), [date]);
-  const calories = useStream((c) => observeCalorieDay(c.repos, date, DEFAULT_MEALS), [date]);
+  const profile = useStream((c) => c.repos.profile.observeProfile());
+  const names = profile ? mealNamesOf(profile) : DEFAULT_MEALS;
+  const calories = useStream((c) => observeCalorieDay(c.repos, date, names), [date, names.join('\n')]);
   const targets = useStream((c) => observeDailyTargets(c.repos.profile, date), [date]);
   const [weighing, setWeighing] = useState(false);
 
