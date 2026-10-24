@@ -296,12 +296,20 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
    sets fade back and their box fills with the soft green used across the app. */
 .set-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--divider); }
 .set-main {
-  flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 52px; padding: 0;
+  flex: 1; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0;
   border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
 }
-.set-label { font-size: 13px; font-weight: 600; color: var(--ink-tertiary); min-width: 40px; }
-.set-target { font-weight: 600; font-variant-numeric: tabular-nums; }
-.set-row.done .set-target { color: var(--ink-tertiary); }
+.set-label {
+  flex: none; width: 34px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-tertiary); line-height: 1.2;
+}
+.set-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.set-vals { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; color: var(--ink-secondary); font-size: 14px; }
+.set-val b { font-size: 18px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; margin-right: 2px; }
+.set-vals .chip { font-size: 12px; }
+.set-note { font-size: 13px; color: var(--ink-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-note.blank { color: var(--ink-tertiary); opacity: 0.7; }
+.set-row.done .set-val b, .set-row.done .set-vals { color: var(--ink-tertiary); }
 .set-check { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin-right: -8px; padding: 0; border: 0; background: none; cursor: pointer; }
 .set-box {
   display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
@@ -311,22 +319,55 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 .set-check.on .set-box { background: var(--accent-container); border-color: transparent; color: var(--on-accent-container); }
 .set-check:active .set-box { transform: scale(0.9); }
 
-/* An exercise in a logged workout. Once every set is done it folds into one quiet line that
-   opens again on tap; nothing is lost, only tucked away. */
-.exercise-block { margin-top: 14px; }
-.exercise-done {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 0; border: 0; background: none;
-  font: inherit; color: inherit; text-align: left; cursor: pointer; opacity: 0.72;
+/* An exercise still to do in a session; it is swiped away, either way, once done. */
+.exercise-block { padding-top: 14px; }
+.exercise-rest { font-size: 12px; color: var(--ink-tertiary); }
+.exercise-notes { margin-top: 2px; font-size: 13px; color: var(--ink-secondary); }
+.swipe { position: relative; margin: 0 -16px; overflow: hidden; }
+.swipe-under {
+  position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; padding: 0 24px;
+  background: var(--accent-container); color: var(--on-accent-container); font-weight: 700; opacity: 0;
 }
-.exercise-done .grow { display: flex; flex-direction: column; }
-.exercise-done .title { text-decoration: line-through; text-decoration-color: var(--ink-tertiary); }
-.fold-icon { display: grid; place-items: center; color: var(--ink-tertiary); }
-.fold-icon svg { width: 18px; height: 18px; transition: transform 0.2s ease; }
-.fold-icon.open svg { transform: rotate(180deg); }
+.swipe-under.right { justify-content: flex-end; }
+.swipe-under svg { width: 22px; height: 22px; }
+.swipe.moving .swipe-under { opacity: 0.6; }
+.swipe.ready .swipe-under { opacity: 1; }
+.swipe-body { position: relative; padding: 0 16px; background: var(--surface); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.swipe-body.settle { transition: transform 0.18s ease-out; }
+.swipe-hint { margin: 14px 0 0; text-align: center; font-size: 12px; color: var(--ink-tertiary); }
+.all-done { margin: 18px 0 4px; text-align: center; color: var(--ink-secondary); font-weight: 600; }
+
+/* Everything already done, gathered into one card under the timers; it opens the full list. */
+.done-card {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 10px; padding: 10px 12px 10px 4px;
+  border: 0; border-radius: var(--radius-sm); background: var(--accent-container); color: var(--on-accent-container);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.done-card .set-check { margin: 0; width: 36px; height: 36px; }
+.done-card .set-check .set-box { background: var(--surface); }
+.done-card .grow { display: flex; flex-direction: column; }
+.done-card .small { color: inherit; opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.done-count { font-weight: 700; font-variant-numeric: tabular-nums; }
+.done-chevron { display: grid; transform: rotate(-90deg); }
+.done-chevron svg { width: 18px; height: 18px; }
+.done-card:active { transform: scale(0.99); }
+.completed-exercise + .completed-exercise { margin-top: 18px; }
+.completed-exercise > .small { margin-bottom: 4px; }
+
+/* The timers on top: the stopwatch, and under it the rest between exercises once one is done. */
+.timer-zone { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.timer-zone .stopwatch, .timer-zone .rest-timer { margin: 0; }
+.rest-offer {
+  display: flex; align-items: center; gap: 8px; padding: 10px 6px 10px 16px; border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border); animation: fade 0.2s ease-out both;
+}
+.rest-next { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rest-offer .rest-label { color: var(--accent); opacity: 1; }
+.btn.small { min-height: 36px; padding: 6px 14px; font-size: 14px; }
 
 /* The session stopwatch at the top of a workout: big quiet digits, and the same round buttons
    as elsewhere (a dark one to start or stop, a grey one to go back to zero). */
-.stopwatch { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-muted); }
+.stopwatch { display: flex; align-items: center; gap: 12px; margin: 0; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-muted); }
 .stopwatch > [role='timer'] { flex: 1; }
 .stopwatch-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-tertiary); }
 .stopwatch-time { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -647,3 +688,53 @@ svg.chart { width: 100%; height: auto; }
   position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
   background: var(--ink); color: var(--ink-inverse); font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
 }
+
+/* ---- Exercise browser ------------------------------------------------------------------- */
+/* A live search box with the filter switch beside it. Filters live in a panel that folds away;
+   the ones in use stay visible as chips, each removable, with one link to clear them all. */
+.search-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.search-field {
+  flex: 1; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 6px 0 14px;
+  border-radius: var(--radius-sm); background: var(--surface-muted); border: 1.5px solid transparent; color: var(--ink-tertiary);
+}
+.search-field:focus-within { border-color: var(--ink); background: var(--surface); }
+.search-field svg { width: 18px; height: 18px; flex: none; }
+.search-field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: inherit; color: var(--ink); padding: 12px 0; }
+.search-field input::-webkit-search-cancel-button { display: none; }
+.search-clear { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-tertiary); cursor: pointer; }
+.search-clear svg { width: 16px; height: 16px; }
+.filter-btn { position: relative; width: 48px; height: 48px; border-radius: var(--radius-sm); background: var(--surface-muted); }
+.filter-btn.on { background: var(--ink); color: var(--ink-inverse); }
+.filter-btn .count {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; line-height: 18px;
+}
+.filter-panel { margin-bottom: 10px; padding: 14px 14px 6px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); animation: fade 0.2s ease-out both; }
+.filter-group + .filter-group { margin-top: 6px; }
+.filter-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-tertiary); margin-bottom: 8px; }
+.pills.wrap { flex-wrap: wrap; overflow: visible; }
+.active-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 8px 0 12px; border: 0; border-radius: 999px;
+  background: var(--ink); color: var(--ink-inverse); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.filter-chip svg { width: 14px; height: 14px; }
+.active-filters .link { font-size: 13px; }
+
+/* Exercises as cards: the name, its muscles, and small tags, with a round + to add it. */
+.exercise-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.exercise-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 14px 14px 16px; border: 0;
+  border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); color: inherit;
+  font: inherit; text-align: left; text-decoration: none; cursor: pointer; transition: transform 0.12s ease;
+}
+.exercise-card:active { transform: scale(0.98); }
+.exercise-card .grow { display: flex; flex-direction: column; gap: 3px; }
+.exercise-card-name { font-weight: 700; font-size: 16px; }
+.exercise-card-muscles { font-size: 13px; color: var(--ink-secondary); }
+.exercise-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag { padding: 2px 8px; border-radius: 999px; background: var(--surface-muted); color: var(--ink-secondary); font-size: 11px; font-weight: 600; }
+.tag.yours { background: var(--accent-container); color: var(--on-accent-container); }
+.exercise-card-go { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink-tertiary); font-size: 22px; }
+.exercise-card-go.add { background: var(--surface-muted); color: var(--ink); }
+.exercise-card-go svg { width: 18px; height: 18px; }

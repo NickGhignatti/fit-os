@@ -9,6 +9,8 @@ export interface ExerciseSet {
   readonly actualReps: number | null;
   readonly actualWeight: number | null;
   readonly done: boolean;
+  /** A word on how the set went; empty when there is none. */
+  readonly note: string;
 }
 
 export interface Exercise {
@@ -20,6 +22,8 @@ export interface Exercise {
   readonly catalogId: string | null;
   /** Seconds to rest after each set; 0 means no timer, null the usual [DEFAULT_REST]. */
   readonly restSeconds: number | null;
+  /** Seconds to rest once the exercise is done, before the next; null the usual [DEFAULT_REST_AFTER]. */
+  readonly restAfterSeconds: number | null;
 }
 
 /** The rest between sets when an exercise doesn't say: a minute and a half. */
@@ -30,6 +34,15 @@ export const DEFAULT_REST = 90;
  * stored at all, so a missing value counts as unset too.
  */
 export const restOf = (e: { readonly restSeconds?: number | null }): number => e.restSeconds ?? DEFAULT_REST;
+
+/** The rest between two exercises when the first doesn't say: two minutes. */
+export const DEFAULT_REST_AFTER = 120;
+
+/** How long to rest after finishing [e], before the next exercise; missing counts as unset, as in [restOf]. */
+export const restAfterOf = (e: { readonly restAfterSeconds?: number | null }): number => e.restAfterSeconds ?? DEFAULT_REST_AFTER;
+
+/** True once every set of [e] is done; an exercise without sets is never done. */
+export const isExerciseDone = (e: Exercise): boolean => e.sets.length > 0 && e.sets.every((s) => s.done);
 
 /** A training session planned (and possibly logged) on a given day. */
 export interface Workout {
@@ -128,6 +141,7 @@ export interface ExercisePlan {
   readonly sets: readonly SetPlan[];
   readonly catalogId: string | null;
   readonly restSeconds?: number | null;
+  readonly restAfterSeconds?: number | null;
 }
 
 export const setPlan = (reps: number, weight: number | null): SetPlan => {
@@ -147,6 +161,7 @@ export const exerciseToPlan = (e: Exercise): ExercisePlan => ({
   sets: e.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })),
   catalogId: e.catalogId,
   restSeconds: e.restSeconds ?? null,
+  restAfterSeconds: e.restAfterSeconds ?? null,
 });
 
 /** What a workout asks for, without any logged results. */

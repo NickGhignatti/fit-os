@@ -31,6 +31,7 @@ const set = (over: Partial<ExerciseSet> = {}): ExerciseSet => ({
   actualReps: null,
   actualWeight: null,
   done: false,
+  note: '',
   ...over,
 });
 
@@ -86,7 +87,7 @@ const workout = (planId: string | null, sets: ExerciseSet[]): Workout => ({
   planId,
   elapsedMs: 0,
   runningSince: null,
-  exercises: [{ id: 'e', name: 'Bench', notes: '', catalogId: null, restSeconds: null, sets }],
+  exercises: [{ id: 'e', name: 'Bench', notes: '', catalogId: null, restSeconds: null, restAfterSeconds: null, sets }],
 });
 
 describe('the session stopwatch', () => {
@@ -119,7 +120,7 @@ describe('day summaries', () => {
   });
 });
 
-const exercise = { id: 'p1', name: 'Squat', notes: '', catalogId: null, restSeconds: null, sets: [{ id: 'a', reps: 5, weight: 100 }] };
+const exercise = { id: 'p1', name: 'Squat', notes: '', catalogId: null, restSeconds: null, restAfterSeconds: null, sets: [{ id: 'a', reps: 5, weight: 100 }] };
 const weekly: TrainingPlan = {
   id: 'plan',
   name: 'Strength',

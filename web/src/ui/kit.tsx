@@ -1,4 +1,4 @@
-import { Children, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
+import { Children, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Nutrients } from '../domain/nutrition';
 
@@ -121,6 +121,8 @@ export const Icons = {
   meal: <Glyph d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" />,
   workout: <Glyph d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />,
   chevron: <Glyph d="M6 9l6 6 6-6" />,
+  filter: <Glyph d="M4 6h16M7 12h10M10 18h4" />,
+  close: <Glyph d="M6 6l12 12M18 6L6 18" />,
   check: <Glyph d="M5 12.5l4.5 4.5L19 7.5" />,
   pause: <Glyph d="M9 5v14M15 5v14" />,
   reset: <Glyph d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />,
@@ -386,4 +388,61 @@ export const useDebounced = <T,>(value: T, ms = 200): T => {
     return () => clearTimeout(id);
   }, [value, ms]);
   return debounced;
+};
+
+/** How far a row must travel sideways before letting go completes it. */
+const SWIPE_DONE_PX = 96;
+
+/**
+ * A row that is swiped away, either way, to complete it: past [SWIPE_DONE_PX] it slides off and
+ * [onComplete] runs; short of that it springs back. Up-and-down drags still scroll the page, and
+ * a swipe never counts as a tap on what is inside.
+ */
+export const SwipeToComplete = ({ label, onComplete, children }: { label: string; onComplete: () => void; children: ReactNode }) => {
+  const [dx, setDx] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const sideways = useRef(false);
+  const dragged = useRef(false);
+  const down = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    start.current = { x: e.clientX, y: e.clientY };
+    sideways.current = false;
+    dragged.current = false;
+  };
+  const move = (e: PointerEvent<HTMLDivElement>) => {
+    if (!start.current) return;
+    const mx = e.clientX - start.current.x;
+    const my = e.clientY - start.current.y;
+    if (!sideways.current) {
+      if (Math.abs(my) > 10 && Math.abs(my) > Math.abs(mx)) { start.current = null; return; } // a scroll
+      if (Math.abs(mx) < 10) return;
+      sideways.current = true;
+      dragged.current = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    setDx(mx);
+  };
+  const up = () => {
+    if (sideways.current && Math.abs(dx) >= SWIPE_DONE_PX) {
+      setLeaving(true);
+      setDx(Math.sign(dx) * window.innerWidth);
+      setTimeout(onComplete, 180);
+    } else {
+      setDx(0);
+    }
+    start.current = null;
+    sideways.current = false;
+  };
+  const ready = Math.abs(dx) >= SWIPE_DONE_PX;
+  return (
+    <div className={`swipe ${dx !== 0 ? 'moving' : ''} ${ready ? 'ready' : ''}`} aria-label={label} role="group">
+      <div className={`swipe-under ${dx < 0 ? 'right' : ''}`} aria-hidden="true">{Icons.check}<span>Done</span></div>
+      <div className={`swipe-body ${leaving || dx === 0 ? 'settle' : ''}`} style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
+        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+        onClickCapture={(e) => { if (dragged.current) { e.stopPropagation(); e.preventDefault(); dragged.current = false; } }}>
+        {children}
+      </div>
+    </div>
+  );
 };

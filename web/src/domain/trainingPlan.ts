@@ -18,6 +18,8 @@ export interface PlannedExercise {
   readonly catalogId: string | null;
   /** Seconds to rest after each set; see [Exercise.restSeconds]. */
   readonly restSeconds: number | null;
+  /** Seconds to rest after the exercise; see [Exercise.restAfterSeconds]. */
+  readonly restAfterSeconds: number | null;
 }
 
 /** A workout routine: one session repeated every day, or a session per weekday. */
@@ -59,6 +61,7 @@ export const plannedToPlan = (e: PlannedExercise): ExercisePlan => ({
   sets: e.sets.map(setToPlan),
   catalogId: e.catalogId,
   restSeconds: e.restSeconds ?? null,
+  restAfterSeconds: e.restAfterSeconds ?? null,
 });
 
 /** A session the active plan asks for, not yet turned into a workout that can be logged. */

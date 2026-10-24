@@ -254,8 +254,8 @@ describe('during a workout', () => {
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument();
     expect(await device.db.records.count()).toBe(1);
 
-    await user.click(screen.getByRole('button', { name: 'Squat, done' })); // the finished exercise folded; open it
-    await user.click(screen.getByRole('button', { name: 'Set 1 done' })); // un-tick
+    await user.click(screen.getByRole('button', { name: /Completed exercises/ })); // the finished exercise moved there
+    await user.click(within(await screen.findByRole('dialog', { name: 'Completed exercises' })).getByRole('button', { name: 'Set 1 done' })); // un-tick
     await screen.findByText('0/1 sets done');
     await settle();
     expect(screen.queryByText('New personal best!')).not.toBeInTheDocument();

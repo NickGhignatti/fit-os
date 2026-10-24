@@ -50,6 +50,7 @@ const plannedExercise = z.object({
   sets: z.array(plannedSet).max(100),
   catalogId: text(120).nullable(),
   restSeconds: rest,
+  restAfterSeconds: rest,
 });
 
 export const trainingPlanSchema: Schema<TrainingPlan> = z.object({
@@ -78,6 +79,7 @@ const exerciseSet = z.object({
   actualReps: z.number().int().nonnegative().max(10_000).nullable(),
   actualWeight: weight,
   done: z.boolean(),
+  note: text(500).default(''),
 });
 
 export const workoutSchema: Schema<Workout> = z.object({
@@ -88,7 +90,7 @@ export const workoutSchema: Schema<Workout> = z.object({
   elapsedMs: z.number().int().nonnegative().default(0),
   runningSince: z.number().int().nonnegative().nullable().default(null),
   exercises: z
-    .array(z.object({ id, name: text(120), notes: text(2_000), sets: z.array(exerciseSet).max(100), catalogId: text(120).nullable(), restSeconds: rest }))
+    .array(z.object({ id, name: text(120), notes: text(2_000), sets: z.array(exerciseSet).max(100), catalogId: text(120).nullable(), restSeconds: rest, restAfterSeconds: rest }))
     .max(100),
 });
 

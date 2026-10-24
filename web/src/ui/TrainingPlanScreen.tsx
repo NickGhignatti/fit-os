@@ -5,12 +5,11 @@ import { deletePlannedExercise, deletePlannedSet, updatePlannedExercise, updateP
 import { daysOf } from '../domain/plan';
 import { sessionOnDay, type PlannedExercise, type PlannedSet, type TrainingPlan } from '../domain/trainingPlan';
 import { addPlannedSetLikeLast } from '../domain/useCases';
-import { restOf } from '../domain/workout';
-import { dayName, formatKg, formatRest, parseNumber, shortDayName, setSummary } from './format';
+import { dayName, formatKg, parseNumber, shortDayName, setSummary } from './format';
 import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { PlanMenu, TRAINING_TEXTS, usePlanDay } from './Plans';
 import { ShareButton } from './Transfer';
-import { ExerciseDialog } from './WorkoutCard';
+import { ExerciseDialog, restLine } from './WorkoutCard';
 
 const PlannedSetDialog = ({ number, set, onSave, onDelete, onClose }: {
   number: number; set: PlannedSet; onSave: (reps: number, weight: number | null) => void; onDelete: () => void; onClose: () => void;
@@ -87,7 +86,7 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
                 : <span className="title">{exercise.name}</span>}
               <div className="small muted">
                 {exercise.notes ? `${exercise.notes} · ` : ''}{setSummary(exercise.sets)}
-                {restOf(exercise) > 0 ? ` · ${formatRest(restOf(exercise))} rest` : ''}
+                {restLine(exercise) ? ` · Rest ${restLine(exercise)}` : ''}
               </div>
             </div>
             <ActionMenu label={`${exercise.name} options`} actions={[

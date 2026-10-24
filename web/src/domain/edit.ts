@@ -3,7 +3,7 @@ import { newId } from './id';
 import type { Portion } from './nutrition';
 import type { LocalDate, PlanDay, Recurrence } from './plan';
 import type { PlannedExercise, PlannedSet, TrainingPlan } from './trainingPlan';
-import type { Exercise, ExercisePlan, ExerciseSet, SetPlan, Workout } from './workout';
+import { markedDone, type Exercise, type ExercisePlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
 
 /**
  * Edits are pure functions: they take an aggregate and return the changed one, never mutating.
@@ -19,6 +19,7 @@ const setFromPlan = (s: SetPlan): ExerciseSet => ({
   actualReps: null,
   actualWeight: null,
   done: false,
+  note: '',
 });
 
 const exerciseFromPlan = (p: ExercisePlan): Exercise => ({
@@ -27,6 +28,7 @@ const exerciseFromPlan = (p: ExercisePlan): Exercise => ({
   notes: p.notes,
   catalogId: p.catalogId,
   restSeconds: p.restSeconds ?? null,
+  restAfterSeconds: p.restAfterSeconds ?? null,
   sets: p.sets.map(setFromPlan),
 });
 
@@ -56,10 +58,15 @@ export interface ExerciseDetails {
   readonly name: string;
   readonly notes: string;
   readonly restSeconds: number | null;
+  readonly restAfterSeconds: number | null;
 }
 
 export const updateExercise = (w: Workout, id: string, details: ExerciseDetails): Workout =>
   mapExercise(w, id, (e) => ({ ...e, ...details }));
+
+/** Ticks every set of the exercise still to do, as when it is swiped away. */
+export const markExerciseDone = (w: Workout, id: string): Workout =>
+  mapExercise(w, id, (e) => ({ ...e, sets: e.sets.map((s) => (s.done ? s : markedDone(s))) }));
 
 export const deleteExercise = (w: Workout, id: string): Workout => ({
   ...w,
@@ -91,6 +98,7 @@ const plannedExerciseFrom = (p: ExercisePlan): PlannedExercise => ({
   notes: p.notes,
   catalogId: p.catalogId,
   restSeconds: p.restSeconds ?? null,
+  restAfterSeconds: p.restAfterSeconds ?? null,
   sets: p.sets.map(plannedSetFrom),
 });
 

@@ -13,10 +13,10 @@ afterEach(cleanup);
 const dialog = (name: string | RegExp) => screen.findByRole('dialog', { name });
 type User = ReturnType<typeof userEvent.setup>;
 
-/** On a plan's picker: "Add your own exercise…", fill the form, Save. */
+/** On a plan's picker: "Add your own exercise", fill the form, Save. */
 const createFromPicker = async (user: User, name: string, details: { muscle?: string; notes?: string } = {}) => {
   await user.type(await screen.findByLabelText('Search exercises'), name);
-  await user.click(screen.getByRole('button', { name: 'Add your own exercise…' }));
+  await user.click(screen.getByRole('button', { name: 'Add your own exercise' }));
   const form = await dialog('New exercise');
   expect(within(form).getByLabelText('Name')).toHaveValue(name); // what was typed carries over
   if (details.muscle) await user.selectOptions(within(form).getByLabelText('Main muscle (optional)'), details.muscle);
@@ -73,7 +73,7 @@ describe('making up an exercise', () => {
   it('needs a name', async () => {
     const user = userEvent.setup();
     renderApp('/workouts?tab=library', makeDevice());
-    await user.click(await screen.findByRole('button', { name: 'Add your own exercise…' }));
+    await user.click(await screen.findByRole('button', { name: 'Add your own exercise' }));
     const form = await dialog('New exercise');
     expect(within(form).getByRole('button', { name: 'Save' })).toBeDisabled();
     await user.type(within(form).getByLabelText('Name'), '   ');
@@ -89,7 +89,7 @@ describe('the exercise library', () => {
     const device = makeDevice();
     renderApp('/workouts?tab=library', device);
 
-    await user.click(await screen.findByRole('button', { name: 'Add your own exercise…' }));
+    await user.click(await screen.findByRole('button', { name: 'Add your own exercise' }));
     const form = await dialog('New exercise');
     await user.type(within(form).getByLabelText('Name'), 'Zzz Sled push');
     await user.selectOptions(within(form).getByLabelText('Main muscle (optional)'), 'quadriceps');
@@ -98,11 +98,19 @@ describe('the exercise library', () => {
 
     expect(await screen.findByText(/Saved “Zzz Sled push” to your exercises/)).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: /Zzz Sled push/ })).toBeInTheDocument(); // no reload needed
+    expect(screen.queryByRole('button', { name: 'Quads' })).not.toBeInTheDocument(); // filters stay tucked away
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
     await user.click(screen.getByRole('button', { name: 'Quads' }));
     await waitFor(() => expect(screen.getByRole('link', { name: /Zzz Sled push/ })).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Quads' })); // off
     await user.click(screen.getByRole('button', { name: 'Chest' }));
     await waitFor(() => expect(screen.queryByRole('link', { name: /Zzz Sled push/ })).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Filters' })); // closing the panel keeps the filter on
+    expect(screen.queryByRole('button', { name: 'Chest' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove filter Chest' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(await screen.findByRole('link', { name: /Zzz Sled push/ })).toBeInTheDocument();
     expect(await device.db.customExercises.count()).toBe(1);
   });
 
@@ -167,7 +175,7 @@ describe("an exercise's own page", () => {
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     await waitFor(async () => expect(await device.db.customExercises.count()).toBe(0));
-    expect(await screen.findByRole('button', { name: 'Add your own exercise…' })).toBeInTheDocument(); // back in the library
+    expect(await screen.findByRole('button', { name: 'Add your own exercise' })).toBeInTheDocument(); // back in the library
     expect((await device.repos.trainingPlans.getPlan(plan.id))!.sessions[0]![0]).toMatchObject({ name: 'Sandbag carry' });
   });
 

@@ -15,6 +15,8 @@ const trim = (n: number, digits = 1): string => String(Number(n.toFixed(digits))
 export const formatKcal = (n: number): string => `${Math.round(n)} kcal`;
 export const formatGrams = (n: number): string => `${trim(n)} g`;
 export const formatKg = (n: number): string => `${trim(n, 2)} kg`;
+/** A weight without its unit, for when "kg" sits beside it: "62.5". */
+export const formatWeight = (n: number): string => trim(n, 2);
 export const formatMacros = (n: Nutrients): string =>
   `P ${Math.round(n.protein)} g · C ${Math.round(n.carbs)} g · F ${Math.round(n.fat)} g`;
 
