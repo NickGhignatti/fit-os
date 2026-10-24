@@ -372,6 +372,23 @@ describe('the profile', () => {
 
     await user.click(screen.getByRole('link', { name: 'Diet' }));
     expect(await screen.findByRole('region', { name: 'Weight' })).toHaveTextContent('80 kg');
+
+    // more than weight: the arrow opens what a body-composition scale reports
+    await chooseFromMenu(user, 'Add a diet or weight', 'Log weight');
+    const sheet = await dialog('Weight');
+    await user.type(within(sheet).getByLabelText('Weight (kg)'), '79.6');
+    expect(within(sheet).queryByLabelText('Body fat (%)')).not.toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: /More measurements/ }));
+    await user.type(within(sheet).getByLabelText('Body fat (%)'), '180'); // not a body fat
+    expect(within(sheet).getByRole('button', { name: 'Save' })).toBeDisabled();
+    await user.clear(within(sheet).getByLabelText('Body fat (%)'));
+    await user.type(within(sheet).getByLabelText('Body fat (%)'), '18.5');
+    await user.type(within(sheet).getByLabelText('Muscle mass (kg)'), '62');
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Logged 79.6 kg and 2 more measures')).toBeInTheDocument();
+    const card = screen.getByRole('region', { name: 'Weight' });
+    await waitFor(() => expect(card).toHaveTextContent(/18.5%Body fat/));
+    expect(card).toHaveTextContent(/62 kgMuscle mass/);
   });
 
   it('shows the calendar for the month and opens a day', async () => {
@@ -704,7 +721,7 @@ describe('resting between sets', () => {
     await user.click(screen.getByRole('button', { name: 'Rest 2m' }));
     expect(screen.getByRole('timer', { name: 'Rest before the next exercise' })).toHaveTextContent('2:00');
 
-    await chooseFromMenu(user, 'Lunge options', 'Mark as done');
+    await user.click(within(screen.getByRole('group', { name: 'Lunge' })).getByRole('button', { name: 'Set 1 not done' }));
     expect(await screen.findByText(/Every exercise is done/)).toBeInTheDocument();
     expect(screen.getByRole('timer', { name: 'Workout time' })).toHaveTextContent(/Finished in/);
 

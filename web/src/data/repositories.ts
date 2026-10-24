@@ -5,7 +5,7 @@ import { emptyDay, type FoodLogDay } from '../domain/foodLog';
 import { newId } from '../domain/id';
 import type { FoodItem, Nutrients } from '../domain/nutrition';
 import type { LocalDate } from '../domain/plan';
-import { defaultProfile, type Profile, type WeightEntry } from '../domain/profile';
+import { defaultProfile, type BodyComposition, type Profile, type WeightEntry } from '../domain/profile';
 import type {
   CustomFoodRepository,
   DietPlanRepository,
@@ -263,10 +263,11 @@ export class DexieProfileRepository implements ProfileRepository {
     return live(() => this.db.weightEntries.orderBy('date').toArray());
   }
 
-  setWeight(date: LocalDate, kg: number): Promise<void> {
+  setWeight(date: LocalDate, kg: number, body: BodyComposition = {}): Promise<void> {
     return this.db.transaction('rw', this.db.weightEntries, async () => {
       const existing = await this.db.weightEntries.where('date').equals(date).first();
-      await this.db.weightEntries.put({ id: existing?.id ?? newId(), date, kg });
+      const merged = { ...existing?.body, ...body };
+      await this.db.weightEntries.put({ id: existing?.id ?? newId(), date, kg, ...(Object.keys(merged).length > 0 ? { body: merged } : {}) });
     });
   }
 

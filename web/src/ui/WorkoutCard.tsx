@@ -7,7 +7,7 @@ import type { LocalDate } from '../domain/plan';
 import { beatsBest, exerciseKey, type PersonalRecord } from '../domain/records';
 import type { PendingSession } from '../domain/trainingPlan';
 import {
-  addSetLikeLast, completeExercise, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedSession, toggleSetDone,
+  addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedSession, toggleSetDone,
 } from '../domain/useCases';
 import {
   deviatesFromPlan, doneSets, doneSetsOf, isExerciseDone, markedDone, restAfterOf, restOf, totalSetsOf,
@@ -224,13 +224,6 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
     }
   };
 
-  const complete = async (exercise: Exercise) => {
-    const open = exercise.sets.filter((s) => !s.done);
-    await completeExercise(repos, workout.id, exercise.id);
-    finished(exercise);
-    for (const s of open) await checkForPr(exercise, markedDone(s));
-  };
-
   const setRow = (exercise: Exercise, set: ExerciseSet, index: number) => (
     <SetRow set={set} number={index + 1} onToggle={() => void toggle(exercise, set)}
       onEdit={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })} />
@@ -326,7 +319,6 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
               {exercise.notes && <div className="exercise-notes">{exercise.notes}</div>}
             </div>
             <ActionMenu label={`${exercise.name} options`} actions={[
-              ...(exercise.sets.length > 0 ? [{ label: 'Mark as done', onSelect: () => void complete(exercise) }] : []),
               { label: 'Add set', onSelect: () => void addSetLikeLast(repos, workout.id, exercise.id) },
               { label: 'Edit', onSelect: () => setDialog({ kind: 'editExercise', exercise }) },
               { label: 'Delete', danger: true, onSelect: () => setDialog({ kind: 'deleteExercise', exercise }) },

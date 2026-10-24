@@ -746,3 +746,21 @@ svg.chart { width: 100%; height: auto; }
 }
 .done-sets-toggle svg { width: 14px; height: 14px; }
 .done-set { opacity: 0.75; }
+
+/* The weigh-in sheet: weight first, the other scale readings behind an arrow, two to a row. */
+.more-toggle {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 4px; border: 0; background: none;
+  font: inherit; font-weight: 600; color: var(--ink); text-align: left; cursor: pointer;
+}
+.more-toggle svg { width: 18px; height: 18px; flex: none; color: var(--ink-tertiary); transition: transform 0.2s ease; }
+.more-toggle.open svg { transform: rotate(180deg); }
+.measure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; animation: fade 0.2s ease-out both; }
+.measure { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.measure.wrong .field { border-color: var(--danger); }
+/* The latest scale readings under the weight on the Diet tab. */
+.body-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin: 10px 0 4px; }
+.body-stat { display: flex; flex-direction: column; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-muted); }
+.body-stat b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.body-stat span { font-size: 11px; color: var(--ink-tertiary); }
+.more-toggle .grow { flex: none; white-space: nowrap; }
+.more-toggle .small { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-weight: 400; }

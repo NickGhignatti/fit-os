@@ -3,7 +3,7 @@ import { newId } from './id';
 import type { Portion } from './nutrition';
 import type { LocalDate, PlanDay, Recurrence } from './plan';
 import type { PlannedExercise, PlannedSet, TrainingPlan } from './trainingPlan';
-import { markedDone, type Exercise, type ExercisePlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
+import type { Exercise, ExercisePlan, ExerciseSet, SetPlan, Workout } from './workout';
 
 /**
  * Edits are pure functions: they take an aggregate and return the changed one, never mutating.
@@ -63,10 +63,6 @@ export interface ExerciseDetails {
 
 export const updateExercise = (w: Workout, id: string, details: ExerciseDetails): Workout =>
   mapExercise(w, id, (e) => ({ ...e, ...details }));
-
-/** Ticks every set of the exercise still to do, as when it is swiped away. */
-export const markExerciseDone = (w: Workout, id: string): Workout =>
-  mapExercise(w, id, (e) => ({ ...e, sets: e.sets.map((s) => (s.done ? s : markedDone(s))) }));
 
 export const deleteExercise = (w: Workout, id: string): Workout => ({
   ...w,

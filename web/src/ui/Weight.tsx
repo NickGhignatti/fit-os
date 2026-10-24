@@ -1,8 +1,11 @@
+import { useState, type FormEvent } from 'react';
 import { useContainer, useStream } from '../app/hooks';
-import type { WeightEntry } from '../domain/profile';
-import { formatKg, parseNumber } from './format';
+import { BODY_MEASURES, type BodyComposition, type BodyMeasureInfo, type WeightEntry } from '../domain/profile';
+import { formatKg, formatWeight, parseNumber } from './format';
 import { useToast } from './hooks';
-import { PromptDialog } from './kit';
+import { Icons, Modal } from './kit';
+
+const measureText = (m: BodyMeasureInfo, value: number) => `${formatWeight(value)}${m.unit === '%' ? '%' : m.unit ? ` ${m.unit}` : ''}`;
 
 /** Weight over time as a line. Text alternatives carry the same numbers for screen readers. */
 export const WeightChart = ({ entries }: { entries: readonly WeightEntry[] }) => {
@@ -41,6 +44,13 @@ export const WeightCard = () => {
               <span className="small muted">{`${latest.kg - first.kg >= 0 ? '+' : '−'}${formatKg(Math.abs(latest.kg - first.kg))} since ${first.date}`}</span>
             )}
           </div>
+          {latest.body && Object.keys(latest.body).length > 0 && (
+            <div className="body-stats">
+              {BODY_MEASURES.filter((m) => latest.body?.[m.key] !== undefined).map((m) => (
+                <div key={m.key} className="body-stat"><b>{measureText(m, latest.body![m.key]!)}</b><span>{m.label}</span></div>
+              ))}
+            </div>
+          )}
           <WeightChart entries={weights} />
         </>
       ) : (
@@ -50,13 +60,55 @@ export const WeightCard = () => {
   );
 };
 
-/** Logs a weigh-in for [date]. Shared by every + that offers it. */
+/**
+ * Logs a weigh-in for [date]. Shared by every + that offers it. Weight is all it needs; the arrow
+ * opens the rest a body-composition scale reports (fat, lean and muscle mass, …), each optional.
+ */
 export const WeightDialog = ({ date, onClose }: { date: string; onClose: () => void }) => {
   const { repos } = useContainer();
   const toast = useToast();
+  const [kg, setKg] = useState('');
+  const [more, setMore] = useState(false);
+  const [measures, setMeasures] = useState<Record<string, string>>({});
+  const weight = parseNumber(kg);
+  const parsed = BODY_MEASURES.map((m) => ({ m, text: measures[m.key] ?? '', value: parseNumber(measures[m.key] ?? '') }));
+  const wrong = parsed.filter((p) => p.text.trim() !== '' && (p.value === null || p.value < p.m.min || p.value > p.m.max));
+  const valid = weight !== null && weight >= 20 && weight <= 500 && wrong.length === 0;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!valid) return;
+    const body: BodyComposition = Object.fromEntries(parsed.filter((p) => p.value !== null).map((p) => [p.m.key, p.value]));
+    const extra = Object.keys(body).length;
+    void repos.profile.setWeight(date, weight, body)
+      .then(() => toast(`Logged ${formatKg(weight)}${extra > 0 ? ` and ${extra} more ${extra === 1 ? 'measure' : 'measures'}` : ''}`));
+    onClose();
+  };
   return (
-    <PromptDialog title="Weight" label="Weight (kg)" inputMode="decimal" confirmLabel="Save" onClose={onClose}
-      validate={(v) => { const n = parseNumber(v); return n !== null && n >= 20 && n <= 500; }}
-      onSubmit={(v) => void repos.profile.setWeight(date, parseNumber(v)!).then(() => toast(`Logged ${formatKg(parseNumber(v)!)}`))} />
+    <Modal title="Weight" onClose={onClose}>
+      <form className="stack" onSubmit={submit}>
+        <label className="stack"><span className="small muted">Weight (kg)</span>
+          <input className="field" inputMode="decimal" autoFocus value={kg} onChange={(e) => setKg(e.target.value)} /></label>
+        <button type="button" className={`more-toggle ${more ? 'open' : ''}`} aria-expanded={more} onClick={() => setMore(!more)}>
+          <span className="grow">More measurements</span>
+          <span className="small muted">Body fat, lean mass, muscle…</span>
+          {Icons.chevron}
+        </button>
+        {more && (
+          <div className="measure-grid">
+            {parsed.map(({ m, text }) => (
+              <label key={m.key} className={`measure ${wrong.some((w) => w.m.key === m.key) ? 'wrong' : ''}`}>
+                <span className="small muted">{m.label}{m.unit ? ` (${m.unit})` : ''}</span>
+                <input className="field" inputMode="decimal" value={text} placeholder={`${m.min}–${m.max}`}
+                  onChange={(e) => setMeasures({ ...measures, [m.key]: e.target.value })} />
+              </label>
+            ))}
+          </div>
+        )}
+        <div className="actions">
+          <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn" disabled={!valid}>Save</button>
+        </div>
+      </form>
+    </Modal>
   );
 };

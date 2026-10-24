@@ -234,6 +234,13 @@ describe('foods and profile', () => {
     await repo.setWeight('2026-10-10', 81);
     const weights = await nextWhere(repo.observeWeights(), (w) => w.length === 2);
     expect(weights.map((w) => [w.date, w.kg])).toEqual([['2026-10-10', 81], ['2026-10-14', 79.5]]);
+
+    // scale readings add up over the day; a plain weigh-in later keeps them
+    await repo.setWeight('2026-10-14', 79.4, { fatPct: 18.2 });
+    await repo.setWeight('2026-10-14', 79.3, { muscleKg: 61 });
+    await repo.setWeight('2026-10-14', 79.2);
+    const day = (await nextWhere(repo.observeWeights(), (w) => w.some((e) => e.kg === 79.2))).find((e) => e.date === '2026-10-14');
+    expect(day?.body).toEqual({ fatPct: 18.2, muscleKg: 61 });
   });
 });
 

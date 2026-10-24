@@ -3,7 +3,7 @@ import { EQUIPMENT, MUSCLES, type CustomExercise } from './catalog';
 import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import type { FoodItem } from './nutrition';
-import { MAX_MEALS, type Profile, type WeightEntry } from './profile';
+import { BODY_MEASURES, MAX_MEALS, type BodyMeasure, type Profile, type WeightEntry } from './profile';
 import type { PersonalRecord } from './records';
 import type { TrainingPlan } from './trainingPlan';
 import type { Workout } from './workout';
@@ -113,7 +113,13 @@ export const profileSchema: Schema<Profile> = z.object({
   mealNames: z.array(z.string().trim().min(1).max(40)).min(1).max(MAX_MEALS).nullable().default(null),
 });
 
-export const weightEntrySchema: Schema<WeightEntry> = z.object({ id, date, kg: z.number().finite().positive().max(1000) });
+const bodyComposition = z.object(Object.fromEntries(
+  BODY_MEASURES.map((m) => [m.key, z.number().finite().min(m.min).max(m.max).optional()]),
+) as Record<BodyMeasure, z.ZodOptional<z.ZodNumber>>);
+
+export const weightEntrySchema: Schema<WeightEntry> = z.object({
+  id, date, kg: z.number().finite().positive().max(1000), body: bodyComposition.optional(),
+});
 
 export const personalRecordSchema: Schema<PersonalRecord> = z
   .object({

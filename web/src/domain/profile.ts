@@ -66,10 +66,37 @@ export const ageOn = (profile: Profile, date: LocalDate): number | null => {
 };
 
 /** One weigh-in; there is at most one per day. */
+/** What a body-composition scale reports besides weight. */
+export type BodyMeasure = 'fatPct' | 'leanKg' | 'muscleKg' | 'proteinPct' | 'waterPct' | 'boneKg' | 'visceralFat';
+
+export interface BodyMeasureInfo {
+  readonly key: BodyMeasure;
+  readonly label: string;
+  /** Shown beside the value; empty for a plain rating. */
+  readonly unit: '%' | 'kg' | '';
+  readonly min: number;
+  readonly max: number;
+}
+
+/** Every measure that can go with a weigh-in, in the order a scale usually lists them. */
+export const BODY_MEASURES: readonly BodyMeasureInfo[] = [
+  { key: 'fatPct', label: 'Body fat', unit: '%', min: 1, max: 75 },
+  { key: 'leanKg', label: 'Lean mass', unit: 'kg', min: 10, max: 300 },
+  { key: 'muscleKg', label: 'Muscle mass', unit: 'kg', min: 5, max: 250 },
+  { key: 'proteinPct', label: 'Protein', unit: '%', min: 1, max: 50 },
+  { key: 'waterPct', label: 'Body water', unit: '%', min: 10, max: 90 },
+  { key: 'boneKg', label: 'Bone mass', unit: 'kg', min: 0.5, max: 15 },
+  { key: 'visceralFat', label: 'Visceral fat', unit: '', min: 1, max: 60 },
+];
+
+export type BodyComposition = { readonly [K in BodyMeasure]?: number };
+
 export interface WeightEntry {
   readonly id: string;
   readonly date: LocalDate;
   readonly kg: number;
+  /** The other numbers measured with it, if any. Weigh-ins from before these existed have none. */
+  readonly body?: BodyComposition;
 }
 
 /** What to eat in a day. */

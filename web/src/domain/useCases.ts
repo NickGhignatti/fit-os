@@ -1,5 +1,5 @@
 import { mealNutrients, mealsOn, type DietPlan, type Meal } from './diet';
-import { addPlannedSet, addSet, markExerciseDone, newTrainingPlan, newWorkout, replaceMeals, updateSet } from './edit';
+import { addPlannedSet, addSet, newTrainingPlan, newWorkout, replaceMeals, updateSet } from './edit';
 import { eaten, emptyDay, type FoodLogDay, type FoodLogEntry } from './foodLog';
 import { newId } from './id';
 import { sum, type Nutrients } from './nutrition';
@@ -198,10 +198,6 @@ const editWorkout = (deps: WorkoutDeps, workoutId: string, change: (w: Workout) 
 /** Marks a set done (pre-filling actuals from the plan) or not done. */
 export const toggleSetDone = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet, now = Date.now()): Promise<boolean> =>
   editWorkout(deps, workoutId, (w) => withClock(updateSet(w, toggledDone(set)), now));
-
-/** Ticks every set of an exercise still to do, keeping the stopwatch in step. */
-export const completeExercise = (deps: WorkoutDeps, workoutId: string, exerciseId: string, now = Date.now()): Promise<boolean> =>
-  editWorkout(deps, workoutId, (w) => withClock(markExerciseDone(w, exerciseId), now));
 
 /** Starts, stops or zeroes a workout's stopwatch. */
 export const setStopwatch = (deps: WorkoutDeps, workoutId: string, action: 'start' | 'stop' | 'reset', now = Date.now()): Promise<boolean> =>

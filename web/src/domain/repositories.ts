@@ -2,7 +2,7 @@ import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import type { FoodItem, Nutrients } from './nutrition';
 import type { LocalDate } from './plan';
-import type { Profile, WeightEntry } from './profile';
+import type { BodyComposition, Profile, WeightEntry } from './profile';
 import type { PersonalRecord } from './records';
 import type { TrainingPlan } from './trainingPlan';
 import type { DaySummary, Workout } from './workout';
@@ -88,7 +88,8 @@ export interface ProfileRepository {
   /** Weigh-ins, oldest first. */
   observeWeights(): Stream<WeightEntry[]>;
   /** Records the weight of [date], replacing any earlier weigh-in of that day. */
-  setWeight(date: LocalDate, kg: number): Promise<void>;
+  /** Logs the weigh-in of [date], replacing any; [body] measures are added to those already logged that day. */
+  setWeight(date: LocalDate, kg: number, body?: BodyComposition): Promise<void>;
   deleteWeight(id: string): Promise<void>;
 }
 
