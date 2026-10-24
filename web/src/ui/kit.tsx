@@ -145,7 +145,9 @@ export const Fab = ({ label, actions }: { label: string; actions: readonly FabAc
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
   const only = actions.length === 1 ? actions[0]! : null;
-  const radius = 80 + 10 * actions.length; // more actions, wider arc, so captions don't touch
+  // Wide enough that neighbours on the arc sit 100px apart, so icons and captions never touch.
+  const step = Math.PI / 2 / Math.max(actions.length - 1, 1);
+  const radius = Math.max(110, Math.round(100 / (2 * Math.sin(step / 2))));
   return (
     <>
       <div className="fab-space" />
@@ -154,7 +156,7 @@ export const Fab = ({ label, actions }: { label: string; actions: readonly FabAc
         {open && (
           <div role="group" aria-label={label}>
             {actions.map((a, i) => {
-              const angle = Math.PI * (1.5 - i / Math.max(actions.length - 1, 1) / 2);
+              const angle = 1.5 * Math.PI - i * step;
               const at = { '--x': `${Math.round(radius * Math.cos(angle))}px`, '--y': `${Math.round(radius * Math.sin(angle))}px`, '--i': i };
               return (
                 <button key={a.label} className="fab-item" aria-label={a.label} disabled={a.disabled} style={at as CSSProperties}

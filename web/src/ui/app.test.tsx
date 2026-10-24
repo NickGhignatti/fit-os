@@ -7,9 +7,10 @@ import { Blob as NodeBlob } from 'node:buffer';
 import { webcrypto } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { addMeal, newDietPlan, newTrainingPlan } from '../domain/edit';
+import { weekdayOf } from '../domain/plan';
 import { InMemoryTransferGateway } from '../transfer/gateway';
 import { envelopeFile } from '../transfer/transfer';
-import { today } from './format';
+import { WEEKDAYS, today } from './format';
 import { makeDevice, renderApp } from './testing';
 
 // jsdom lacks WebCrypto and Blob streams, which the transfer encryption needs; Node has both.
@@ -598,6 +599,30 @@ describe('following several workouts at once', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(await screen.findByRole('link', { name: 'Continue Lifting' })).toHaveAttribute('href', expect.stringMatching(/^\/day\//));
     expect(screen.getByRole('link', { name: 'Continue Volleyball' })).toBeInTheDocument();
+  });
+
+  it('keeps a long day short behind dots, and a tap on the card opens the day', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const names = ['Squat', 'Bench', 'Row', 'Press', 'Curl', 'Plank'];
+    const plan = newTrainingPlan('Lifting', 'daily', { 0: names.map(exercise) });
+    await device.repos.trainingPlans.save(plan);
+    await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    renderApp('/workouts', device);
+
+    const card = await screen.findByRole('region', { name: WEEKDAYS[weekdayOf(today()) - 1] });
+    expect(within(card).getByText('Press')).toBeInTheDocument();
+    expect(within(card).queryByText('Curl')).not.toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Show 2 more exercises' }));
+    expect(within(card).getByText('Plank')).toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Show fewer exercises' }));
+    expect(within(card).queryByText('Plank')).not.toBeInTheDocument();
+    expect(within(card).queryByRole('link', { name: 'Open day' })).not.toBeInTheDocument();
+
+    const open = within(card).getByRole('link', { name: WEEKDAYS[weekdayOf(today()) - 1] });
+    expect(open).toHaveAttribute('href', `/day/${today()}`);
+    await user.click(open);
+    expect(await screen.findByRole('button', { name: 'Back' })).toBeInTheDocument();
   });
 });
 

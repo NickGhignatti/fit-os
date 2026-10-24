@@ -522,6 +522,22 @@ svg.chart { width: 100%; height: auto; }
 /* Pushes the add row to the bottom of the card, leaving at least a little air above it. */
 .meal-card .spacer { flex: 1; min-height: 12px; }
 
+/* A training day: short and the same height as its neighbours until its dots open it, and the
+   day name's link stretched over the whole card, so a tap anywhere opens the day. */
+.carousel-slide > .week-card { position: relative; align-self: flex-start; min-height: 300px; }
+.week-card .card-link { display: block; color: inherit; text-decoration: none; }
+.week-card .card-link::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.week-card .card-link:focus-visible { outline: none; }
+.week-card .card-link:focus-visible::after { box-shadow: 0 0 0 2px var(--ink); }
+.week-card:has(.card-link:active) { transform: scale(0.99); }
+.week-card .more-btn, .week-card .btn.start { position: relative; z-index: 1; }
+.more-btn {
+  display: block; margin: 6px auto 0; min-height: 32px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--surface-muted); color: var(--ink-secondary); font: inherit; font-size: 13px; font-weight: 700; letter-spacing: 0.12em;
+}
+.more-btn[aria-expanded='true'] { letter-spacing: normal; font-weight: 600; }
+.more-btn:active { background: var(--track); }
+
 /* ---- Profile ---------------------------------------------------------------------------- */
 /* The person on top: a round avatar with their details beside it; the whole card opens the editor. */
 .profile-hero {

@@ -24,11 +24,15 @@ export const trainingSummary = (plan: TrainingPlan): string => {
 
 type Tab = 'plans' | 'library' | 'records';
 
+/** Exercises a week card shows before the rest fold away behind its dots. */
+const SHOWN_ROWS = 4;
+
 const percent = (done: number, total: number) => (total > 0 ? Math.round(Math.min(done / total, 1) * 100) : 0);
 
 /**
  * The training days of this week as cards to swipe through, opening on today (or the next day
- * with training). Each card lists what every active plan has that day; today's has a start button.
+ * with training). Each card lists what every active plan has that day, cut short with dots to see
+ * the rest; tapping the card opens the day, and today's has a start button.
  */
 const WeekCarousel = ({ weeks, date }: { weeks: readonly TrainingWeek[]; date: LocalDate }) => {
   const { repos } = useContainer();
@@ -36,6 +40,7 @@ const WeekCarousel = ({ weeks, date }: { weeks: readonly TrainingWeek[]; date: L
   const days = [...new Set(weeks.flatMap((w) => w.days.map((d) => d.date)))].sort();
   const next = days.findIndex((d) => d >= date);
   const [slide, setSlide] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<LocalDate | null>(null);
   if (days.length === 0) return <Empty>Nothing planned this week.<br />Add exercises to an active workout.</Empty>;
   const index = Math.min(slide ?? (next === -1 ? days.length - 1 : next), days.length - 1);
 
@@ -47,33 +52,49 @@ const WeekCarousel = ({ weeks, date }: { weeks: readonly TrainingWeek[]; date: L
         const done = entries.every((e) => e.day.isCompleted);
         const status = d === date ? 'Today' : done ? 'Done' : d < date ? 'Missed' : 'Coming up';
         const pending = d === date ? entries.filter((e) => e.week.hasPendingSessionToday) : [];
+        // Short cards: the first few exercises, the rest behind the dots.
+        const open = expanded === d;
+        let room = open ? Infinity : SHOWN_ROWS;
+        const blocks = entries.map(({ week }) => {
+          const all = sessionOn(week.plan, d);
+          const rows = all.slice(0, Math.max(room, 0));
+          room -= all.length;
+          return { week, rows };
+        }).filter((b) => b.rows.length > 0);
+        const hidden = open ? 0 : -Math.min(room, 0);
         return (
-          <section key={d} className="card meal-card" aria-label={WEEKDAYS[weekdayOf(d) - 1]}>
+          <section key={d} className={`card meal-card week-card ${open ? 'open' : ''}`} aria-label={WEEKDAYS[weekdayOf(d) - 1]}>
             <div className="meal-head">
               <div className="grow">
                 <div className={`eyebrow ${d === date ? 'next' : ''}`}>{status} · {dateTitle(d).split(' ').slice(1).join(' ')}</div>
-                <div className="meal-name">{WEEKDAYS[weekdayOf(d) - 1]}</div>
+                <Link className="meal-name card-link" to={`/day/${d}`}>{WEEKDAYS[weekdayOf(d) - 1]}</Link>
               </div>
               <div className="meal-kcal">
                 <b>{done ? '✓' : `${percent(sets.done, sets.total)}%`}</b>
                 <span className="small muted">{sets.done}/{sets.total} sets</span>
               </div>
             </div>
-            {entries.map(({ week }) => (
+            {blocks.map(({ week, rows }) => (
               <div key={week.plan.id} className="plan-block">
                 <div className="plan-block-name">{week.plan.name}</div>
-                {sessionOn(week.plan, d).map((e) => (
+                {rows.map((e) => (
                   <div key={e.id} className="exercise-row"><span>{e.name}</span><span className="muted">{setSummary(e.sets)}</span></div>
                 ))}
               </div>
             ))}
+            {hidden > 0 || open ? (
+              <button className="more-btn" aria-expanded={open} aria-label={open ? 'Show fewer exercises' : `Show ${hidden} more exercises`}
+                onClick={() => setExpanded(open ? null : d)}>
+                {open ? 'Show less' : '•••'}
+              </button>
+            ) : null}
             <div className="spacer" />
-            {pending.length > 0 ? pending.map(({ week }) => (
+            {pending.map(({ week }) => (
               <button key={week.plan.id} className="btn start" aria-label={`Start today's session of ${week.plan.name}`}
                 onClick={() => void startPlannedSession(repos, date, week.plan.id).then(() => navigate(`/day/${date}`))}>
                 <PlayIcon />Start {pending.length > 1 ? week.plan.name : 'workout'}
               </button>
-            )) : <Link className="add-row" to={`/day/${d}`}>Open day</Link>}
+            ))}
           </section>
         );
       })}
