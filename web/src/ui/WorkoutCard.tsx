@@ -183,6 +183,9 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
   const [pr, setPr] = useState<PersonalRecord | null>(null);
   const [rest, setRest] = useRest(workout.id);
   const [offer, setOffer] = useState<Offer | null>(null);
+  const [shownDone, setShownDone] = useState<ReadonlySet<string>>(new Set());
+  const toggleShownDone = (id: string) =>
+    setShownDone((s) => { const next = new Set(s); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const done = workout.exercises.filter(isExerciseDone);
   const left = workout.exercises.filter((e) => !isExerciseDone(e));
 
@@ -228,13 +231,38 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
     for (const s of open) await checkForPr(exercise, markedDone(s));
   };
 
-  const setRows = (exercise: Exercise) => exercise.sets.map((set, index) => (
-    <div key={set.id}>
-      <SetRow set={set} number={index + 1} onToggle={() => void toggle(exercise, set)}
-        onEdit={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })} />
-      {rest?.at === set.id && <RestTimer key={rest.at} rest={rest} label="Rest" onChange={setRest} />}
-    </div>
-  ));
+  const setRow = (exercise: Exercise, set: ExerciseSet, index: number) => (
+    <SetRow set={set} number={index + 1} onToggle={() => void toggle(exercise, set)}
+      onEdit={() => setDialog({ kind: 'editSet', exercise, set, number: index + 1 })} />
+  );
+  const setRows = (exercise: Exercise) => exercise.sets.map((set, index) => <div key={set.id}>{setRow(exercise, set, index)}</div>);
+
+  /**
+   * The sets still to do, each swiped away (or ticked) once done; done ones step aside, shown
+   * again on request. The rest after a set sits where that set was, above the next one.
+   */
+  const openSets = (exercise: Exercise) => {
+    const resting = rest !== null && exercise.sets.some((s) => s.id === rest.at);
+    const done = exercise.sets.filter((s) => s.done).length;
+    const showing = shownDone.has(exercise.id);
+    return (
+      <>
+        {done > 0 && (
+          <button className="done-sets-toggle" aria-expanded={showing} onClick={() => toggleShownDone(exercise.id)}>
+            {Icons.check}{done} {done === 1 ? 'set' : 'sets'} done · {showing ? 'hide' : 'show'}
+          </button>
+        )}
+        {resting && <RestTimer key={rest.at} rest={rest} label="Rest" onChange={setRest} />}
+        {exercise.sets.map((set, index) => set.done
+          ? showing && <div key={set.id} className="done-set">{setRow(exercise, set, index)}</div>
+          : (
+            <SwipeToComplete key={set.id} label={`Set ${index + 1} of ${exercise.name}`} onComplete={() => void toggle(exercise, set)}>
+              {setRow(exercise, set, index)}
+            </SwipeToComplete>
+          ))}
+      </>
+    );
+  };
 
   return (
     <section className="card workout" aria-label={workout.title}>
@@ -285,32 +313,30 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
 
       {left.length === 0 && workout.exercises.length > 0 && <p className="all-done">Every exercise is done. Well trained.</p>}
       {left.map((exercise) => (
-        <SwipeToComplete key={exercise.id} label={exercise.name} onComplete={() => void complete(exercise)}>
-          <div className="exercise-block">
-            <div className="row between">
-              <div className="grow">
-                {exercise.catalogId
-                  ? <Link className="title" to={`/exercises/${encodeURIComponent(exercise.catalogId)}`}>{exercise.name}</Link>
-                  : <span className="title">{exercise.name}</span>}
-                <div className="small muted">
-                  {doneSets(exercise)}/{exercise.sets.length} sets · {setSummary(exercise.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })))}
-                </div>
-                {restLine(exercise) && <div className="exercise-rest">Rest {restLine(exercise)}</div>}
-                {exercise.notes && <div className="exercise-notes">{exercise.notes}</div>}
+        <div key={exercise.id} className="exercise-block" role="group" aria-label={exercise.name}>
+          <div className="row between">
+            <div className="grow">
+              {exercise.catalogId
+                ? <Link className="title" to={`/exercises/${encodeURIComponent(exercise.catalogId)}`}>{exercise.name}</Link>
+                : <span className="title">{exercise.name}</span>}
+              <div className="small muted">
+                {doneSets(exercise)}/{exercise.sets.length} sets · {setSummary(exercise.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })))}
               </div>
-              <ActionMenu label={`${exercise.name} options`} actions={[
-                ...(exercise.sets.length > 0 ? [{ label: 'Mark as done', onSelect: () => void complete(exercise) }] : []),
-                { label: 'Add set', onSelect: () => void addSetLikeLast(repos, workout.id, exercise.id) },
-                { label: 'Edit', onSelect: () => setDialog({ kind: 'editExercise', exercise }) },
-                { label: 'Delete', danger: true, onSelect: () => setDialog({ kind: 'deleteExercise', exercise }) },
-              ]} />
+              {restLine(exercise) && <div className="exercise-rest">Rest {restLine(exercise)}</div>}
+              {exercise.notes && <div className="exercise-notes">{exercise.notes}</div>}
             </div>
-            {exercise.sets.length === 0 && <p className="small muted">No sets. Use ⋮ › Add set.</p>}
-            {setRows(exercise)}
+            <ActionMenu label={`${exercise.name} options`} actions={[
+              ...(exercise.sets.length > 0 ? [{ label: 'Mark as done', onSelect: () => void complete(exercise) }] : []),
+              { label: 'Add set', onSelect: () => void addSetLikeLast(repos, workout.id, exercise.id) },
+              { label: 'Edit', onSelect: () => setDialog({ kind: 'editExercise', exercise }) },
+              { label: 'Delete', danger: true, onSelect: () => setDialog({ kind: 'deleteExercise', exercise }) },
+            ]} />
           </div>
-        </SwipeToComplete>
+          {exercise.sets.length === 0 && <p className="small muted">No sets. Use ⋮ › Add set.</p>}
+          {openSets(exercise)}
+        </div>
       ))}
-      {left.length > 0 && <p className="swipe-hint">Swipe an exercise sideways when it's done.</p>}
+      {left.length > 0 && <p className="swipe-hint">Swipe a set sideways when it's done.</p>}
 
       {pr && <PrPrompt record={pr} onClose={() => setPr(null)} />}
 

@@ -131,6 +131,8 @@ describe('a workout plan, from creation to a logged session', () => {
 
     await user.click(screen.getByRole('button', { name: 'Set 1 not done' }));
     expect(await screen.findByText('1/3 sets done')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Set 1 done' })).not.toBeInTheDocument(); // a done set steps aside
+    await user.click(screen.getByRole('button', { name: /1 set done · show/ }));
     await user.click(screen.getByRole('button', { name: 'Set 1 done' }));
     expect(await screen.findByText('0/3 sets done')).toBeInTheDocument();
   });
