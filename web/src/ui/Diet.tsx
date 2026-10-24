@@ -12,7 +12,7 @@ import { MacroLine } from './Tracker';
 import { ActionMenu, Carousel, ConfirmDialog, Empty, Fab, Icons, Loading, MacroChips, Modal, PageHeader, type FabAction } from './kit';
 import { DIET_TEXTS, PlanList, PlanMenu, usePlanCreation, usePlanDay } from './Plans';
 import { ShareButton, useImportFileAction, useReceiveAction } from './Transfer';
-import { WeightCard, WeightDialog } from './Weight';
+import { BodyBoard, WeightDialog } from './Weight';
 
 const dietSummary = (plan: DietPlan): string => {
   const days = plannedDays(plan);
@@ -35,8 +35,8 @@ export const Food = () => {
   return (
     <>
       <PageHeader title="Diet" />
-      <h2>Weight</h2>
-      <WeightCard />
+      <h2>Body</h2>
+      <BodyBoard />
       <h2>Your diets</h2>
       <PlanList plans={plans} repo={repos.dietPlans} texts={DIET_TEXTS} summary={dietSummary} href={href} />
       <Fab label="Add a diet or weight" actions={[

@@ -99,6 +99,8 @@ export const foodLogDaySchema: Schema<FoodLogDay> = z.object({
   entries: z.array(z.object({ id, meal: text(80), portion })).max(500),
 });
 
+const widgetSlots = z.array(z.object({ id: text(40), size: z.enum(['half', 'full']) })).max(40);
+
 export const profileSchema: Schema<Profile> = z.object({
   sex: z.enum(['male', 'female']).nullable(),
   birthDate: date.nullable(),
@@ -111,6 +113,7 @@ export const profileSchema: Schema<Profile> = z.object({
   customCarbs: count(2_000).nullable().default(null),
   customFat: count(2_000).nullable().default(null),
   mealNames: z.array(z.string().trim().min(1).max(40)).min(1).max(MAX_MEALS).nullable().default(null),
+  layout: z.object({ today: widgetSlots.optional(), body: widgetSlots.optional() }).optional(),
 });
 
 const bodyComposition = z.object(Object.fromEntries(

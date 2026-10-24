@@ -386,9 +386,9 @@ describe('the profile', () => {
     await user.type(within(sheet).getByLabelText('Muscle mass (kg)'), '62');
     await user.click(within(sheet).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Logged 79.6 kg and 2 more measures')).toBeInTheDocument();
-    const card = screen.getByRole('region', { name: 'Weight' });
-    await waitFor(() => expect(card).toHaveTextContent(/18.5%Body fat/));
-    expect(card).toHaveTextContent(/62 kgMuscle mass/);
+    // each measure has its own chart card under Body
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Body fat' })).toHaveTextContent('18.5%'));
+    expect(screen.getByRole('region', { name: 'Muscle mass' })).toHaveTextContent('62 kg');
   });
 
   it('shows the calendar for the month and opens a day', async () => {
@@ -739,6 +739,44 @@ describe('resting between sets', () => {
     await user.click(within(within(edit).getByRole('radiogroup', { name: 'Rest after the exercise' })).getByRole('radio', { name: '3m' }));
     await user.click(within(edit).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(screen.getByRole('region', { name: 'Squat' })).toHaveTextContent('Rest 45s between sets · 3m after'));
+  });
+});
+
+describe('widgets', () => {
+  it('lets Today be made your own: remove, add and resize widgets, kept for next time', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    await device.repos.profile.setWeight(today(), 80);
+    renderApp('/', device);
+
+    const board = await screen.findByRole('region', { name: 'Widgets' });
+    expect(within(board).queryByRole('region', { name: 'Weight' })).not.toBeInTheDocument();
+    await user.click(within(board).getByRole('button', { name: 'Edit widgets' }));
+    await user.click(within(board).getByRole('button', { name: 'Remove Energy' }));
+    await user.click(within(board).getByRole('button', { name: 'Add widget' }));
+    await user.click(within(await dialog('Add a widget')).getByRole('button', { name: 'Add Weight' }));
+    await user.click(within(board).getByRole('button', { name: 'Make Weight small' }));
+    await user.click(within(board).getByRole('button', { name: 'Done' }));
+
+    expect(within(board).queryByRole('region', { name: /Energy consumed/ })).not.toBeInTheDocument();
+    expect(within(board).getByRole('region', { name: 'Weight' })).toHaveTextContent('80 kg');
+    await waitFor(async () => expect((await device.db.profile.get('me'))?.layout?.today?.at(-1)).toEqual({ id: 'weight', size: 'half' }));
+  });
+
+  it('charts each body measure on Diet, chosen like any widget', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    await device.repos.profile.setWeight('2026-10-01', 81, { waterPct: 57 });
+    await device.repos.profile.setWeight('2026-10-08', 80, { waterPct: 58 });
+    renderApp('/food', device);
+
+    const body = await screen.findByRole('region', { name: 'Body' });
+    expect(within(body).getByRole('img', { name: /Weight trend, from 81 kg to 80 kg/ })).toBeInTheDocument();
+    await user.click(within(body).getByRole('button', { name: 'Edit widgets' }));
+    await user.click(within(body).getByRole('button', { name: 'Add widget' }));
+    await user.click(within(await dialog('Add a widget')).getByRole('button', { name: 'Add Body water' }));
+    await user.keyboard('{Escape}');
+    expect(within(body).getByRole('img', { name: /Body water trend, from 57% to 58%/ })).toBeInTheDocument();
   });
 });
 

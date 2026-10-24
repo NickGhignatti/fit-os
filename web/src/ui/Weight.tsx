@@ -1,62 +1,102 @@
 import { useState, type FormEvent } from 'react';
 import { useContainer, useStream } from '../app/hooks';
-import { BODY_MEASURES, type BodyComposition, type BodyMeasureInfo, type WeightEntry } from '../domain/profile';
+import {
+  BODY_MEASURES, type BodyComposition, type BodyMeasure, type BodyMeasureInfo, type WeightEntry, type WidgetSize, type WidgetSlot,
+} from '../domain/profile';
 import { formatKg, formatWeight, parseNumber } from './format';
 import { useToast } from './hooks';
 import { Icons, Modal } from './kit';
+import { WidgetBoard, type WidgetKind } from './Widgets';
 
-const measureText = (m: BodyMeasureInfo, value: number) => `${formatWeight(value)}${m.unit === '%' ? '%' : m.unit ? ` ${m.unit}` : ''}`;
+type Metric = 'weight' | BodyMeasure;
 
-/** Weight over time as a line. Text alternatives carry the same numbers for screen readers. */
-export const WeightChart = ({ entries }: { entries: readonly WeightEntry[] }) => {
-  if (entries.length < 2) return null;
-  const [w, h, pad] = [320, 140, 12];
-  const kgs = entries.map((e) => e.kg);
-  const [lo, hi] = [Math.min(...kgs), Math.max(...kgs)];
+interface MetricInfo {
+  readonly key: Metric;
+  readonly label: string;
+  readonly unit: BodyMeasureInfo['unit'];
+}
+
+/** Weight first, then every measure a body-composition scale adds. */
+export const METRICS: readonly MetricInfo[] = [{ key: 'weight', label: 'Weight', unit: 'kg' }, ...BODY_MEASURES];
+
+const valueText = (m: MetricInfo, value: number) => `${formatWeight(value)}${m.unit === '%' ? '%' : m.unit ? ` ${m.unit}` : ''}`;
+
+interface Point { readonly id: string; readonly date: string; readonly value: number }
+
+const pointsOf = (entries: readonly WeightEntry[], key: Metric): Point[] =>
+  entries.flatMap((e) => {
+    const value = key === 'weight' ? e.kg : e.body?.[key];
+    return value === undefined ? [] : [{ id: e.id, date: e.date, value }];
+  });
+
+/** A measure over time as a line. Text alternatives carry the same numbers for screen readers. */
+const MetricChart = ({ metric, points, height }: { metric: MetricInfo; points: readonly Point[]; height: number }) => {
+  if (points.length < 2) return null;
+  const [w, h, pad] = [320, height, 10];
+  const values = points.map((p) => p.value);
+  const [lo, hi] = [Math.min(...values), Math.max(...values)];
   const span = hi - lo || 1;
-  const t0 = Date.parse(entries[0]!.date);
-  const t1 = Date.parse(entries.at(-1)!.date);
+  const t0 = Date.parse(points[0]!.date);
+  const t1 = Date.parse(points.at(-1)!.date);
   const x = (date: string) => pad + ((t1 === t0 ? 0.5 : (Date.parse(date) - t0) / (t1 - t0)) * (w - 2 * pad));
-  const y = (kg: number) => h - pad - ((kg - lo) / span) * (h - 2 * pad);
-  const points = entries.map((e) => `${x(e.date).toFixed(1)},${y(e.kg).toFixed(1)}`).join(' ');
+  const y = (v: number) => h - pad - ((v - lo) / span) * (h - 2 * pad);
+  const line = points.map((p) => `${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
   return (
-    <svg className="chart" viewBox={`0 0 ${w} ${h}`} role="img"
-      aria-label={`Weight trend, from ${formatKg(entries[0]!.kg)} to ${formatKg(entries.at(-1)!.kg)} over ${entries.length} weigh-ins`}>
-      <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {entries.map((e) => <circle key={e.id} cx={x(e.date)} cy={y(e.kg)} r="3.5" fill="var(--accent)"><title>{`${e.date}: ${formatKg(e.kg)}`}</title></circle>)}
+    <svg className="chart" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img"
+      aria-label={`${metric.label} trend, from ${valueText(metric, points[0]!.value)} to ${valueText(metric, points.at(-1)!.value)} over ${points.length} readings`}>
+      <polyline points={line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      {points.map((p) => (
+        <circle key={p.id} cx={x(p.date)} cy={y(p.value)} r="3.5" fill="var(--accent)"><title>{`${p.date}: ${valueText(metric, p.value)}`}</title></circle>
+      ))}
     </svg>
   );
 };
 
-/** The latest weigh-in, the change since the first one, and the trend. */
-export const WeightCard = () => {
-  const weights = useStream((c) => c.repos.profile.observeWeights());
-  if (!weights) return null;
-  const latest = weights.at(-1);
-  const first = weights[0];
+/** One measure: its latest reading, the change since the first, and the trend; smaller when half-width. */
+export const MetricCard = ({ metric, entries, size }: { metric: MetricInfo; entries: readonly WeightEntry[]; size: WidgetSize }) => {
+  const points = pointsOf(entries, metric.key);
+  const latest = points.at(-1);
+  const first = points[0];
+  const change = latest && first && first.id !== latest.id ? latest.value - first.value : null;
   return (
-    <section className="card" aria-label="Weight">
+    <section className={`card metric ${size}`} aria-label={metric.label}>
+      <div className="metric-label">{metric.label}</div>
       {latest ? (
         <>
-          <div className="row between">
-            <div className="big-number">{formatKg(latest.kg)}</div>
-            {first && first.id !== latest.id && (
-              <span className="small muted">{`${latest.kg - first.kg >= 0 ? '+' : '−'}${formatKg(Math.abs(latest.kg - first.kg))} since ${first.date}`}</span>
-            )}
-          </div>
-          {latest.body && Object.keys(latest.body).length > 0 && (
-            <div className="body-stats">
-              {BODY_MEASURES.filter((m) => latest.body?.[m.key] !== undefined).map((m) => (
-                <div key={m.key} className="body-stat"><b>{measureText(m, latest.body![m.key]!)}</b><span>{m.label}</span></div>
-              ))}
-            </div>
+          <div className="metric-value">{valueText(metric, latest.value)}</div>
+          {change !== null && (
+            <div className="small muted">{`${change >= 0 ? '+' : '−'}${valueText(metric, Math.abs(change))}`}{size === 'full' ? ` since ${first!.date}` : ''}</div>
           )}
-          <WeightChart entries={weights} />
+          <MetricChart metric={metric} points={points} height={size === 'full' ? 120 : 70} />
         </>
       ) : (
-        <p className="muted">No weigh-ins yet. Log one with the + to see its trend.</p>
+        <p className="small muted">{metric.key === 'weight' ? 'No weigh-ins yet. Log one with the +.' : 'No readings yet. Add one under “More measurements” when you log your weight.'}</p>
       )}
     </section>
+  );
+};
+
+/** Every measure as a widget, for any board that offers them. */
+export const metricWidgets = (entries: readonly WeightEntry[]): WidgetKind[] =>
+  METRICS.map((m) => ({
+    id: m.key,
+    title: m.label,
+    description: m.key === 'weight' ? 'Your weight and its trend' : `${m.label} from your scale, over time`,
+    sizes: m.key === 'weight' ? ['full', 'half'] : ['half', 'full'],
+    render: (size) => <MetricCard metric={m} entries={entries} size={size} />,
+  }));
+
+const DEFAULT_BODY: readonly WidgetSlot[] = [{ id: 'weight', size: 'full' }, { id: 'fatPct', size: 'half' }, { id: 'muscleKg', size: 'half' }];
+
+/** The body charts on Diet: weight and scale readings as widgets the user picks and sizes. */
+export const BodyBoard = () => {
+  const { repos } = useContainer();
+  const weights = useStream((c) => c.repos.profile.observeWeights());
+  const profile = useStream((c) => c.repos.profile.observeProfile());
+  if (!weights || !profile) return null;
+  return (
+    <WidgetBoard label="Body" kinds={metricWidgets(weights)} slots={profile.layout?.body ?? DEFAULT_BODY}
+      onChange={(body) => void repos.profile.saveProfile({ ...profile, layout: { ...profile.layout, body } })} />
   );
 };
 

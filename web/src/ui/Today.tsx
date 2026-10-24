@@ -4,13 +4,20 @@ import { useContainer, useStream } from '../app/hooks';
 import { mealNutrients } from '../domain/diet';
 import { clockNow, mealAt } from '../domain/mealTime';
 import { weekdayOf } from '../domain/plan';
+import type { WidgetSlot } from '../domain/profile';
 import { observeCalorieDay, observeDailyTargets, observeDayAgenda, observeTrainingWeeks, startPlannedSession, type TrainingWeek } from '../domain/useCases';
 import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
 import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing } from './kit';
 import { mealNamesOf } from './Tracker';
-import { WeightDialog } from './Weight';
+import { WeightDialog, metricWidgets } from './Weight';
+import { WidgetBoard } from './Widgets';
+
+/** What Today shows until the user picks: the day's energy, training and meals. */
+const DEFAULT_TODAY: readonly WidgetSlot[] = [
+  { id: 'energy', size: 'full' }, { id: 'training', size: 'full' }, { id: 'progress', size: 'full' }, { id: 'meals', size: 'full' },
+];
 
 interface Count { readonly done: number; readonly total: number }
 
@@ -108,10 +115,11 @@ export const Today = () => {
   const names = profile ? mealNamesOf(profile) : DEFAULT_MEALS;
   const calories = useStream((c) => observeCalorieDay(c.repos, date, names), [date, names.join('\n')]);
   const targets = useStream((c) => observeDailyTargets(c.repos.profile, date), [date]);
+  const weights = useStream((c) => c.repos.profile.observeWeights());
   const [weighing, setWeighing] = useState(false);
 
   // `null` means "not enough data"; `undefined` means "still loading".
-  if (!agenda || !calories || weeks === undefined || targets === undefined) return <Loading />;
+  if (!agenda || !calories || weeks === undefined || targets === undefined || !weights) return <Loading />;
 
   // Today lists only what is left to do; the workout itself is logged on the day's page.
   const day = `/day/${date}`;
@@ -125,16 +133,10 @@ export const Today = () => {
   const nextMeal = calories.meals[mealAt(calories.meals.map((m) => ({ name: m.name, time: m.planned?.time })), clockNow())];
   const foodLink = (extra = '') => (nextMeal ? `/food/pick?date=${date}&meal=${encodeURIComponent(nextMeal.name)}${extra}` : '/tracker');
 
-  return (
-    <div className="today">
-      <PageHeader title="Today" subtitle={dateTitle(date)} />
-
-      <EnergyCard label="Energy consumed" eaten={calories.eaten} goal={targets?.nutrients.kcal} macroGoals={targets?.nutrients}>
-        <span><Link to="/profile">Set up your profile</Link> to get a daily goal.</span>
-      </EnergyCard>
-
-      {trainsToday && <h2>Training</h2>}
-      {!trainsToday ? null : nothingToDo ? (
+  const training = (
+    <>
+      <h2>Training</h2>
+      {nothingToDo ? (
         <div className="card today-done">
           <span className="done-mark"><CheckIcon /></span>
           <span>Training done for today.</span>
@@ -170,36 +172,60 @@ export const Today = () => {
           ))}
         </section>
       )}
-      {trainsToday && weeks.length > 0 && <TrainingProgress weeks={weeks} />}
+    </>
+  );
 
-      {eatsByPlan && (
-        <div className="section-head">
-          <h2>Meals</h2>
-          <span className="small muted">{loggedMeals} of {calories.meals.length} logged</span>
-        </div>
-      )}
-      {eatsByPlan && (
-        <section className="card" aria-label="Nutrition checklist">
-          <ol className="timeline">
-            {calories.meals.map((meal) => {
-              const logged = meal.entries.length > 0;
-              const planned = meal.planned ? mealNutrients(meal.planned) : null;
-              return (
-                <li key={meal.name} className={logged ? 'logged' : meal === nextMeal ? 'next' : ''}>
-                  <span className="dot">{logged && <CheckIcon />}</span>
-                  <div className="grow">
-                    <div className="title">{meal.name}</div>
-                    <div className="small muted">
-                      {logged ? 'Logged' : planned ? `${formatKcal(planned.kcal)} planned` : 'Pending'}
-                    </div>
+  const meals = (
+    <>
+      <div className="section-head">
+        <h2>Meals</h2>
+        <span className="small muted">{loggedMeals} of {calories.meals.length} logged</span>
+      </div>
+      <section className="card" aria-label="Nutrition checklist">
+        <ol className="timeline">
+          {calories.meals.map((meal) => {
+            const logged = meal.entries.length > 0;
+            const planned = meal.planned ? mealNutrients(meal.planned) : null;
+            return (
+              <li key={meal.name} className={logged ? 'logged' : meal === nextMeal ? 'next' : ''}>
+                <span className="dot">{logged && <CheckIcon />}</span>
+                <div className="grow">
+                  <div className="title">{meal.name}</div>
+                  <div className="small muted">
+                    {logged ? 'Logged' : planned ? `${formatKcal(planned.kcal)} planned` : 'Pending'}
                   </div>
-                  <span className="meal-side">{logged ? formatKcal(meal.eaten.kcal) : meal.planned?.time ?? ''}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      )}
+                </div>
+                <span className="meal-side">{logged ? formatKcal(meal.eaten.kcal) : meal.planned?.time ?? ''}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    </>
+  );
+
+  return (
+    <div className="today">
+      <PageHeader title="Today" subtitle={dateTitle(date)} />
+
+      <WidgetBoard label="Widgets" kinds={[
+        {
+          id: 'energy', title: 'Energy', description: 'Calories and macros eaten against your goal', sizes: ['full'],
+          render: () => (
+            <EnergyCard label="Energy consumed" eaten={calories.eaten} goal={targets?.nutrients.kcal} macroGoals={targets?.nutrients}>
+              <span><Link to="/profile">Set up your profile</Link> to get a daily goal.</span>
+            </EnergyCard>
+          ),
+        },
+        { id: 'training', title: 'Training', description: 'The sessions left to do today', sizes: ['full'], render: () => (trainsToday ? training : null) },
+        {
+          id: 'progress', title: 'Training progress', description: "Today's sets and this week's sessions, as rings", sizes: ['full'],
+          render: () => (trainsToday && weeks.length > 0 ? <TrainingProgress weeks={weeks} /> : null),
+        },
+        { id: 'meals', title: 'Meals', description: 'Your diet’s meals for today, ticked off as you log them', sizes: ['full'], render: () => (eatsByPlan ? meals : null) },
+        ...metricWidgets(weights),
+      ]} slots={profile?.layout?.today ?? DEFAULT_TODAY}
+        onChange={(today) => { if (profile) void repos.profile.saveProfile({ ...profile, layout: { ...profile.layout, today } }); }} />
 
       <Fab label="Log food or weight" actions={[
         { label: 'Search food', short: 'Food', icon: Icons.search, onSelect: () => navigate(foodLink()) },

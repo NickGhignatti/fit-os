@@ -39,6 +39,23 @@ export interface Profile {
   readonly customFat: number | null;
   /** The meals of a day, in order, when no diet plan sets them; null for the usual four. */
   readonly mealNames: readonly string[] | null;
+  /** The widgets chosen for each board; a board left out shows its defaults. */
+  readonly layout?: Layouts;
+}
+
+/** A widget takes half the width or all of it. */
+export type WidgetSize = 'half' | 'full';
+
+/** One widget on a board, by the id of its kind. Boards fill from the top, in this order. */
+export interface WidgetSlot {
+  readonly id: string;
+  readonly size: WidgetSize;
+}
+
+/** The boards whose widgets can be chosen: the Today page, and the body charts on Diet. */
+export interface Layouts {
+  readonly today?: readonly WidgetSlot[];
+  readonly body?: readonly WidgetSlot[];
 }
 
 /** How many meals a day the user may choose between. */
