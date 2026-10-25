@@ -13,3 +13,6 @@ captures/
 .env
 .env.*
 !.env.example
+
+# Python bytecode
+__pycache__/
