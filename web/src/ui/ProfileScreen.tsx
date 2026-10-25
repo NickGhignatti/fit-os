@@ -1,13 +1,12 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useContainer, useStream } from '../app/hooks';
-import { exportBackup, parseBackup, restoreBackup, type Backup } from '../data/backup';
+import { exportBackup } from '../data/backup';
 import { ACTIVITY_FACTOR, PACE_KG_PER_WEEK, ageOn, type ActivityLevel, type GoalPace, type Profile, type Sex } from '../domain/profile';
 import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKg, parseNumber, today } from './format';
-import { useToast } from './hooks';
-import { ConfirmDialog, Icons, Loading, Modal, PageHeader, type FabAction } from './kit';
+import { Icons, Loading, Modal, PageHeader, type FabAction } from './kit';
 import { LegalLinks } from './Legal';
-import { download, useReceiveAction } from './Transfer';
+import { shareFile, useImportFileAction, useReceiveAction } from './Transfer';
 
 const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave: (p: Profile) => void; onClose: () => void }) => {
   const [sex, setSex] = useState<Sex | ''>(profile.sex ?? '');
@@ -52,52 +51,32 @@ const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave:
   );
 };
 
-const summarize = (b: Backup): string => {
-  const d = b.data;
-  return `${d.trainingPlans.length} workout plans, ${d.dietPlans.length} diets, ${d.workouts.length} workouts, ${d.foodLogDays.length} food-log days and ${d.weights.length} weigh-ins`;
-};
-
 const DataSection = () => {
   const { store } = useContainer();
-  const toast = useToast();
-  const file = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState<Backup | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
+  const [importFile, importing] = useImportFileAction();
   const [receive, receiving] = useReceiveAction();
   const tools: FabAction[] = [
-    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(store).then((b) => download(`tracker-backup-${today()}.json`, JSON.stringify(b))) },
-    { label: 'Import backup', icon: Icons.upload, onSelect: () => file.current?.click() },
+    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(store).then((b) => shareFile(`Tracker backup ${today()}`, JSON.stringify(b))) },
+    importFile,
     receive,
   ];
-
-  const onFile = async (selected: File | undefined) => {
-    if (!selected) return;
-    setProblem(null);
-    const parsed = parseBackup(await selected.text());
-    if (parsed.ok) setPending(parsed.backup);
-    else setProblem(`That file can't be imported (${parsed.error}).`);
-    if (file.current) file.current.value = '';
-  };
 
   return (
     <>
       <h2>Your data</h2>
       <section className="card">
-        <p className="muted">Everything is stored on this device only. Save a backup file now and then, in case the browser clears its storage.</p>
+        <p className="muted">
+          Everything is stored on this device only. Export a backup now and then, in case the browser clears its storage. On
+          another phone, import the file, or share it to Tracker, to bring everything there.
+        </p>
         <div className="tools">
           {tools.map((t) => (
             <button key={t.label} className="tool" aria-label={t.label} title={t.label} disabled={t.disabled} onClick={t.onSelect}>{t.icon}</button>
           ))}
-          <input ref={file} type="file" accept="application/json,.json" hidden aria-label="Backup file" onChange={(e) => void onFile(e.target.files?.[0])} />
         </div>
-        {problem && <p className="danger-text" role="alert">{problem}</p>}
       </section>
+      {importing}
       {receiving}
-      {pending && (
-        <ConfirmDialog title="Import this backup?" confirmLabel="Import" danger={false} onClose={() => setPending(null)}
-          message={`It contains ${summarize(pending)}. Items with the same id are replaced; everything else on this device is kept.`}
-          onConfirm={() => void restoreBackup(store, pending).then(() => toast('Backup imported'))} />
-      )}
     </>
   );
 };

@@ -101,6 +101,8 @@ export interface ExerciseCatalogRepository {
 export interface BasicFoodRepository {
   /** Foods matching [query], best first; empty for a blank query. */
   search(query: string): Promise<FoodItem[]>;
+  /** The food with this CREA code, e.g. "000805". */
+  byCode(code: string): Promise<FoodItem | undefined>;
 }
 
 export type ProductLookup =

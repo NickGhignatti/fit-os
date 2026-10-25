@@ -11,6 +11,7 @@ import {
   sqlDietPlans,
   sqlTrainingPlans,
 } from '../data/repositories';
+import { CacheSharedFileInbox, type SharedFileInbox } from '../data/importFile';
 import type { Store } from '../data/store';
 import { SupabaseTransferGateway, type TransferGateway } from '../transfer/gateway';
 import type { AppConfig } from './config';
@@ -36,6 +37,8 @@ export interface Container {
   };
   /** Null when no Supabase is configured: sending and receiving are then unavailable. */
   readonly transfer: TransferGateway | null;
+  /** Files shared to the installed app from another app. */
+  readonly sharedFiles: SharedFileInbox;
 }
 
 export const createContainer = (config: AppConfig, store: Store): Container => {
@@ -59,5 +62,6 @@ export const createContainer = (config: AppConfig, store: Store): Container => {
     savedProducts: new SqlSavedProducts(store),
   },
   transfer: config.transferEnabled ? new SupabaseTransferGateway(config.supabaseUrl, config.supabaseKey) : null,
+  sharedFiles: new CacheSharedFileInbox(),
 };
 };

@@ -11,6 +11,7 @@ import { RecordsScreen } from '../ui/Records';
 import { Today } from '../ui/Today';
 import { Tracker } from '../ui/Tracker';
 import { TrainingPlanScreen } from '../ui/TrainingPlanScreen';
+import { ImportShared } from '../ui/Transfer';
 import { Workouts } from '../ui/Workouts';
 
 interface Tab {
@@ -77,6 +78,7 @@ export const App = () => {
               <Route path="/food" element={<Food />} />
               <Route path="/food/plan/:id" element={<DietPlanScreen />} />
               <Route path="/food/pick" element={<FoodPicker />} />
+              <Route path="/import" element={<ImportShared />} />
               <Route path="/tracker" element={<Tracker />} />
               <Route path="/profile" element={<ProfileScreen />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />

@@ -22,6 +22,15 @@ export const manifest: Partial<ManifestOptions> = {
   theme_color: APP_COLOR,
   background_color: APP_COLOR,
   categories: ['health', 'fitness', 'lifestyle'],
+  // Lets Tracker appear in Android's share sheet, so a shared .fitos.json file can be opened in it.
+  // Phones label many files as plain text or bytes, so those types are accepted too; the app reads
+  // the content to tell what the file is. public/share-target.js receives the post.
+  share_target: {
+    action: '/share-target',
+    method: 'POST',
+    enctype: 'multipart/form-data',
+    params: { files: [{ name: 'file', accept: ['application/json', '.json', 'text/plain', 'application/octet-stream'] }] },
+  },
   icons: [
     { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
     { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

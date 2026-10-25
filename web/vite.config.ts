@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => {
           // The SQLite WebAssembly is needed offline, and is bigger than Workbox's 2 MiB default.
           globPatterns: ['**/*.{js,css,html,svg,png,woff2,wasm}'],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          // Receives files shared to the app from Android's share sheet; loaded before Workbox's routes.
+          importScripts: ['/share-target.js'],
           // The "mc-" SQLite builds are only for encrypted databases, which the app does not use.
           globIgnores: ['**/mc-wa-sqlite*'],
           runtimeCaching: [

@@ -1,11 +1,14 @@
 import QRCode from 'qrcode';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useContainer } from '../app/hooks';
+import { restoreBackup, type Backup } from '../data/backup';
+import { readFileContents } from '../data/importFile';
 import { importEnvelope } from '../data/importItem';
 import { normalizeCode } from '../transfer/code';
-import { envelopeFile, parseEnvelope, receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
+import { envelopeFile, receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
 import { useToast } from './hooks';
-import { Icons, Modal, type FabAction } from './kit';
+import { ConfirmDialog, Empty, Icons, Modal, PageHeader, type FabAction } from './kit';
 import { ScannerDialog } from './Scanner';
 
 const LIFETIMES = [
@@ -180,7 +183,7 @@ export const useReceiveAction = (): [FabAction, ReactNode] => {
 
 
 /** Saves [text] as a file through the browser's download. */
-export const download = (name: string, text: string) => {
+const download = (name: string, text: string) => {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   const link = Object.assign(document.createElement('a'), { href: url, download: name });
   document.body.append(link);
@@ -192,12 +195,11 @@ export const download = (name: string, text: string) => {
 const fileName = (title: string) => `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}.fitos.json`;
 
 /**
- * Hands the item to the phone's share sheet as a .fitos.json file (to a chat, mail, drive…), or
- * downloads it where the browser cannot share files.
+ * Hands [text] to the phone's share sheet as a file (to a chat, mail, drive, Files…), or downloads
+ * it where the browser cannot share files. Any Tracker can import it, whatever the name becomes.
  */
-const shareFile = async (kind: TransferKind, data: unknown, title: string) => {
+export const shareFile = async (title: string, text: string) => {
   const name = fileName(title);
-  const text = envelopeFile(kind, data);
   const file = typeof File === 'undefined' ? null : new File([text], name, { type: 'application/json' });
   if (file && navigator.canShare?.({ files: [file] })) {
     try {
@@ -211,19 +213,21 @@ const shareFile = async (kind: TransferKind, data: unknown, title: string) => {
 };
 
 /**
- * The share icon of a plan: a sheet with "Share as file" (anyone can import it) and, when sending
- * is set up, "Send with a code" to your own other device.
+ * The share icon of a plan, workout or day (or a row, given a [label]): a sheet with "Share as
+ * file" (anyone can import it) and, when sending is set up, "Send with a code" to your own other device.
  */
-export const ShareButton = ({ kind, data, title }: { kind: TransferKind; data: unknown; title: string }) => {
+export const ShareButton = ({ kind, data, title, label }: { kind: TransferKind; data: unknown; title: string; label?: string }) => {
   const { transfer } = useContainer();
   const [open, setOpen] = useState<'menu' | 'code' | null>(null);
   return (
     <>
-      <button className="icon-btn" aria-label="Share" onClick={() => setOpen('menu')}>{Icons.share}</button>
+      {label
+        ? <button className="menu-item" onClick={() => setOpen('menu')}>{label}</button>
+        : <button className="icon-btn" aria-label="Share" onClick={() => setOpen('menu')}>{Icons.share}</button>}
       {open === 'menu' && (
         <Modal title={`Share “${title}”`} onClose={() => setOpen(null)}>
           <div className="stack">
-            <button className="menu-item with-icon" onClick={() => { setOpen(null); void shareFile(kind, data, title); }}>
+            <button className="menu-item with-icon" onClick={() => { setOpen(null); void shareFile(title, envelopeFile(kind, data)); }}>
               {Icons.file}<span className="grow">Share as file<br /><span className="small muted">A .fitos.json file anyone can import</span></span>
             </button>
             {transfer && (
@@ -239,20 +243,84 @@ export const ShareButton = ({ kind, data, title }: { kind: TransferKind; data: u
   );
 };
 
-/** The "Import a file" action of a +: reads a .fitos.json file and stores its item as a copy. */
-export const useImportFileAction = (): [FabAction, ReactNode] => {
+const summarize = (b: Backup): string => {
+  const d = b.data;
+  return `${d.trainingPlans.length} workout plans, ${d.dietPlans.length} diets, ${d.workouts.length} workouts, ${d.foodLogDays.length} food-log days and ${d.weights.length} weigh-ins`;
+};
+
+/** Where to look at what a file brought in. */
+const SCREEN_OF: Record<TransferKind | 'backup', string> = {
+  training_plan: '/workouts', workout: '/workouts', diet_plan: '/food', food_log_day: '/tracker', backup: '/',
+};
+
+/**
+ * Brings in the text of any file Tracker writes, recognised from its content: a shared item is
+ * stored as a copy at once; a backup is first summarised and confirmed. [onDone] hears where to
+ * look at the result, or null when nothing was imported.
+ */
+export const useFileImport = (onDone: (screen: string | null) => void = () => {}): [(text: string) => Promise<void>, ReactNode] => {
   const { store } = useContainer();
   const toast = useToast();
+  const [backup, setBackup] = useState<Backup | null>(null);
+  const importText = async (text: string) => {
+    const contents = readFileContents(text);
+    if (contents.kind === 'backup') return setBackup(contents.backup);
+    const imported = contents.kind === 'item' ? await importEnvelope(store, contents.envelope) : { status: 'invalid' as const };
+    toast(imported.status === 'imported' ? `Imported ${KIND_LABEL[imported.kind]} “${imported.title}”` : "That file can't be imported.");
+    onDone(imported.status === 'imported' ? SCREEN_OF[imported.kind] : null);
+  };
+  const dialog = backup && (
+    <ConfirmDialog title="Import this backup?" confirmLabel="Import" danger={false}
+      message={`It contains ${summarize(backup)}. Items with the same id are replaced; everything else on this device is kept.`}
+      onClose={() => { setBackup(null); onDone(null); }}
+      onConfirm={() => void restoreBackup(store, backup).then(() => { toast('Backup imported'); onDone(SCREEN_OF.backup); })} />
+  );
+  return [importText, dialog];
+};
+
+/** The "Import a file" action of a +: opens any file Tracker wrote, an item or a whole backup. */
+export const useImportFileAction = (): [FabAction, ReactNode] => {
   const input = useRef<HTMLInputElement>(null);
+  const [importText, dialog] = useFileImport();
   const onFile = async (file: File | undefined) => {
     if (!file) return;
-    const envelope = parseEnvelope(await file.text());
-    const imported = envelope ? await importEnvelope(store, envelope) : { status: 'invalid' as const };
-    toast(imported.status === 'imported' ? `Imported ${KIND_LABEL[imported.kind]} “${imported.title}”` : "That file can't be imported.");
+    await importText(await file.text());
     if (input.current) input.current.value = '';
   };
   return [
     { label: 'Import a file', short: 'Import', icon: Icons.file, onSelect: () => input.current?.click() },
-    <input ref={input} type="file" accept=".json,application/json" hidden aria-label="Item file" onChange={(e) => void onFile(e.target.files?.[0])} />,
+    <>
+      <input ref={input} type="file" accept=".json,application/json,text/plain" hidden aria-label="File to import" onChange={(e) => void onFile(e.target.files?.[0])} />
+      {dialog}
+    </>,
   ];
+};
+
+/**
+ * Where the app opens when a file is shared to it from another app: imports the file the service
+ * worker received, then goes to what it brought in.
+ */
+export const ImportShared = () => {
+  const { sharedFiles } = useContainer();
+  const navigate = useNavigate();
+  const [state, setState] = useState<'reading' | 'empty' | 'importing'>('reading');
+  const [importText, dialog] = useFileImport((screen) => navigate(screen ?? '/', { replace: true }));
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return; // React runs effects twice in development; the file is taken once
+    started.current = true;
+    void sharedFiles.take().then((file) => {
+      if (!file) return setState('empty');
+      setState('importing');
+      return importText(file.text);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <>
+      <PageHeader title="Import" />
+      {state === 'empty' ? <Empty>No file to import. Share a .fitos.json file to Tracker, or use Import a file.</Empty> : <p className="muted" role="status">Importing…</p>}
+      {dialog}
+    </>
+  );
 };

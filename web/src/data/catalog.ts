@@ -202,6 +202,10 @@ export class StaticBasicFoods implements BasicFoodRepository {
   async search(query: string): Promise<FoodItem[]> {
     return rank(query, await this.foods(), (f) => f.name);
   }
+
+  async byCode(code: string): Promise<FoodItem | undefined> {
+    return (await this.foods()).find((f) => f.id === `crea:${code}`);
+  }
 }
 
 // ---- Packaged products: Open Food Facts (ODbL) ------------------------------

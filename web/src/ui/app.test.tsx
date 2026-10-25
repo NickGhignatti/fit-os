@@ -793,14 +793,14 @@ describe('sharing a plan as a file', () => {
     renderApp('/workouts', device);
 
     const file = jsonFile(envelopeFile('training_plan', { ...plan, isActive: true }), 'strength.fitos.json');
-    await user.upload(await screen.findByLabelText('Item file'), file);
+    await user.upload(await screen.findByLabelText('File to import'), file);
     expect(await screen.findByText(/Imported workout plan “Strength”/)).toBeInTheDocument();
     const saved = await device.store.direct.list(Tables.trainingPlans);
     expect(saved).toHaveLength(1);
     expect(saved[0]!.isActive).toBe(false);
     expect(saved[0]!.id).not.toBe(plan.id);
 
-    await user.upload(screen.getByLabelText('Item file'), jsonFile('{"hello":1}', 'other.json'));
+    await user.upload(screen.getByLabelText('File to import'), jsonFile('{"hello":1}', 'other.json'));
     expect(await screen.findByText("That file can't be imported.")).toBeInTheDocument();
   });
 

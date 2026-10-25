@@ -12,7 +12,7 @@ import { DEFAULT_MEALS, formatGrams, formatKcal, parseNumber, relativeDay, today
 import { useToast } from './hooks';
 import { Carousel, EnergyCard, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { WeightDialog } from './Weight';
-import { SendButton } from './Transfer';
+import { ShareButton } from './Transfer';
 import { TargetsDialog } from './TargetsDialog';
 
 const EditIcon = () => (
@@ -199,7 +199,7 @@ export const Tracker = () => {
         })}
       </Carousel>
 
-      {logDay.entries.length > 0 && <SendButton kind="food_log_day" data={logDay} label="Send this day's food log to another device" />}
+      {logDay.entries.length > 0 && <ShareButton kind="food_log_day" data={logDay} title={`Food log ${date}`} label="Share this day's food log" />}
 
       {meal && (
         <Fab label="Log food or weight" actions={[
