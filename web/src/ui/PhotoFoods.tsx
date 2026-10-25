@@ -42,6 +42,28 @@ const GramsField = ({ label, grams, onChange }: { label: string; grams: number; 
   );
 };
 
+/** The two ways in, each a full-width tile with a picture: the camera, or a photo already taken. */
+const PhotoTiles = ({ again, onFile }: { again: boolean; onFile: (e: ChangeEvent<HTMLInputElement>) => void }) => (
+  <div className="photo-tiles">
+    <label className="photo-tile primary">
+      <span className="photo-tile-icon">{Icons.camera}</span>
+      <span className="grow">
+        <span className="photo-tile-title">{again ? 'Take another photo' : 'Take a photo'}</span>
+        <span className="photo-tile-hint">Point the camera at your plate</span>
+      </span>
+      <input type="file" accept="image/*" capture="environment" hidden aria-label="Take a photo" onChange={onFile} />
+    </label>
+    <label className="photo-tile">
+      <span className="photo-tile-icon">{Icons.gallery}</span>
+      <span className="grow">
+        <span className="photo-tile-title">Choose a photo</span>
+        <span className="photo-tile-hint">One you already took, from your gallery</span>
+      </span>
+      <input type="file" accept="image/*" hidden aria-label="Choose a photo" onChange={onFile} />
+    </label>
+  </div>
+);
+
 /** Finds a food to add by hand, among the ones available offline. */
 const AddFoodDialog = ({ onPick, onClose }: { onPick: (food: FoodItem) => void; onClose: () => void }) => {
   const { repos } = useContainer();
@@ -196,18 +218,7 @@ export const PhotoFoods = () => {
 
       {preview && <img className="photo-preview" src={preview} alt="Your meal" />}
 
-      {phase.kind !== 'working' && (
-        <div className="row photo-actions">
-          <label className="btn grow">
-            {phase.kind === 'pick' ? 'Take a photo' : 'Take another'}
-            <input type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
-          </label>
-          <label className="btn secondary grow">
-            Choose a photo
-            <input type="file" accept="image/*" hidden onChange={onFile} />
-          </label>
-        </div>
-      )}
+      {(phase.kind === 'pick' || phase.kind === 'failed') && <PhotoTiles again={phase.kind === 'failed'} onFile={onFile} />}
       {phase.kind === 'pick' && (
         <p className="small muted">
           The photo is looked at on this phone and never sent anywhere. You check every food and weight before anything is logged.
@@ -240,6 +251,7 @@ export const PhotoFoods = () => {
               Log {count} {count === 1 ? 'food' : 'foods'}{meal ? ` to ${meal}` : ''}
             </button>
           </div>
+          <PhotoTiles again onFile={onFile} />
         </>
       )}
 
