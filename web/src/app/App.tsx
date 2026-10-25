@@ -29,7 +29,7 @@ const Icon = ({ d }: { d: string }) => (
   </svg>
 );
 
-/** The bottom bar, left to right, as in the Android app. */
+/** The bottom bar, left to right. */
 const TABS: readonly Tab[] = [
   { path: '/', label: 'Today', icon: <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /> },
   { path: '/workouts', label: 'Workouts', icon: <Icon d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11" /> },

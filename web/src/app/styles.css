@@ -1,4 +1,4 @@
-/* Design tokens: "Quiet Swiss Modern", ported from the Android app's res/values/colors.xml.
+/* Design tokens: "Quiet Swiss Modern".
    Colours are named by role, never by hue, so a re-skin is an edit to this block only. */
 :root {
   --canvas: #fbfbfa;

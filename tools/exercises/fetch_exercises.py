@@ -5,7 +5,7 @@ Source: https://github.com/yuhonas/free-exercise-db (Unlicense, public domain), 
 so that the bundled data and the image URLs the app builds always match. Images are not bundled:
 the app loads them from the same commit on demand and caches them.
 
-Usage: python3 tools/exercises/fetch_exercises.py data/src/main/assets/exercises.json
+Usage: python3 tools/exercises/fetch_exercises.py web/public/catalog/exercises.json
 """
 import json
 import sys

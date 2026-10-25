@@ -1,13 +1,5 @@
-.gradle/
-.kotlin/
-build/
-local.properties
 .idea/
-*.iml
 .DS_Store
-captures/
-*.apk
-*.aab
 
 # Local configuration and secrets, anywhere in the repo. Templates are named .env.example.
 .env

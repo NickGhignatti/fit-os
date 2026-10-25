@@ -101,7 +101,7 @@ export const PACE_LABEL: Record<GoalPace, string> = {
   maintain: 'Keep my weight', gain_slow: 'Gain 0.25 kg a week', gain: 'Gain 0.5 kg a week',
 };
 
-/** The meals a day is split into when no diet plans it, as in the Android app. */
+/** The meals a day is split into when no diet plans it. */
 export const DEFAULT_MEALS = ['Breakfast', 'Lunch', 'Snack', 'Dinner'] as const;
 
 /** Parses a decimal typed with a comma or a dot; null when it is not a number. */

@@ -8,7 +8,7 @@ provided the source is cited (the app credits CREA wherever these foods are show
 The site has no bulk download, so this reads the public food pages (allowed by robots.txt),
 one request per second, and writes a CSV with the per-100 g values the app needs.
 
-Usage: python3 tools/crea/extract_crea.py data/src/main/assets/crea_foods.csv
+Usage: python3 tools/crea/extract_crea.py web/public/catalog/crea_foods.csv
 """
 import csv
 import html

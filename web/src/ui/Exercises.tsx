@@ -173,7 +173,7 @@ export const ExerciseBrowser = ({ onPick }: { onPick?: (exercise: ExerciseInfo) 
   );
 };
 
-/** Sets, reps and weight for a new exercise, as in the Android "Add exercise" dialog. */
+/** Sets, reps and weight for a new exercise. */
 const AddExerciseDialog = ({ name, catalogId, onSubmit, onClose }: {
   name: string; catalogId: string | null; onSubmit: (plan: ExercisePlan) => void; onClose: () => void;
 }) => {
