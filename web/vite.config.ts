@@ -20,9 +20,15 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        // src/main.tsx registers the service worker itself, to look for updates while the app is open.
+        injectRegister: false,
         includeAssets: ['icon.svg', 'apple-touch-icon.png'],
         manifest,
         workbox: {
+          // A new version takes over open pages at once (the plugin only sets these when it registers
+          // the worker itself, and here src/main.tsx does).
+          skipWaiting: true,
+          clientsClaim: true,
           // The exercise and food catalogues are large; cache them on first use, not at install.
           // The SQLite WebAssembly is needed offline, and is bigger than Workbox's 2 MiB default.
           globPatterns: ['**/*.{js,css,html,svg,png,woff2,wasm}'],

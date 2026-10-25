@@ -53,7 +53,7 @@ export type ReceiveResult =
   | { readonly status: 'unreadable' };
 
 /**
- * An item as a file anyone can keep or pass on (".fitos.json"): the same envelope a transfer
+ * An item as a file anyone can keep or pass on (".fitos.txt"): the same envelope a transfer
  * carries, unencrypted. Importing it goes through the same checks as a received item.
  */
 export const envelopeFile = (kind: TransferKind, data: unknown, now: () => Date = () => new Date()): string =>

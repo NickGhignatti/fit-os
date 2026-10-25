@@ -44,7 +44,7 @@ describe('moving data between phones with a file', () => {
     renderApp('/profile', first);
     await user.click(await screen.findByRole('button', { name: 'Export backup' }));
     await waitFor(() => expect(shared).toHaveLength(1));
-    expect(shared[0]!.name).toBe(`tracker-backup-${today()}.fitos.json`);
+    expect(shared[0]!.name).toBe(`tracker-backup-${today()}.fitos.txt`); // Chrome on Android refuses to share .json
     const backup = await readText(shared[0]!);
     cleanup();
 

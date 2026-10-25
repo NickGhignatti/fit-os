@@ -6,7 +6,7 @@ import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKg, parseNumber, today } from './format';
 import { Icons, Loading, Modal, PageHeader, type FabAction } from './kit';
 import { LegalLinks } from './Legal';
-import { shareFile, useImportFileAction, useReceiveAction } from './Transfer';
+import { useImportFileAction, useReceiveAction, useShareFile } from './Transfer';
 
 const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave: (p: Profile) => void; onClose: () => void }) => {
   const [sex, setSex] = useState<Sex | ''>(profile.sex ?? '');
@@ -53,10 +53,11 @@ const ProfileDialog = ({ profile, onSave, onClose }: { profile: Profile; onSave:
 
 const DataSection = () => {
   const { store } = useContainer();
+  const share = useShareFile();
   const [importFile, importing] = useImportFileAction();
   const [receive, receiving] = useReceiveAction();
   const tools: FabAction[] = [
-    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(store).then((b) => shareFile(`Tracker backup ${today()}`, JSON.stringify(b))) },
+    { label: 'Export backup', icon: Icons.download, onSelect: () => void exportBackup(store).then((b) => share(`Tracker backup ${today()}`, JSON.stringify(b))) },
     importFile,
     receive,
   ];

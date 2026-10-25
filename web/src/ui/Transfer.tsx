@@ -184,7 +184,7 @@ export const useReceiveAction = (): [FabAction, ReactNode] => {
 
 /** Saves [text] as a file through the browser's download. */
 const download = (name: string, text: string) => {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
   const link = Object.assign(document.createElement('a'), { href: url, download: name });
   document.body.append(link);
   link.click();
@@ -192,24 +192,40 @@ const download = (name: string, text: string) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-const fileName = (title: string) => `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}.fitos.json`;
+/**
+ * The file's name. The content is JSON, but Chrome on Android shares only a short list of file
+ * types (images, PDF, plain text…), and .json is not on it: a .json file makes share() fail. So
+ * the file is plain text, and the app tells what it holds from the content, not the name.
+ */
+const fileName = (title: string) => `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}.fitos.txt`;
+
+export type ShareOutcome = 'shared' | 'cancelled' | 'downloaded';
 
 /**
- * Hands [text] to the phone's share sheet as a file (to a chat, mail, drive, Files…), or downloads
- * it where the browser cannot share files. Any Tracker can import it, whatever the name becomes.
+ * Hands [text] to the phone's share sheet as a file (to a chat, mail, drive, Files…). Where the
+ * browser cannot share it, the file is downloaded instead, and the caller says where it went.
  */
-export const shareFile = async (title: string, text: string) => {
+export const shareFile = async (title: string, text: string): Promise<ShareOutcome> => {
   const name = fileName(title);
-  const file = typeof File === 'undefined' ? null : new File([text], name, { type: 'application/json' });
+  const file = typeof File === 'undefined' ? null : new File([text], name, { type: 'text/plain' });
   if (file && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title });
-    } catch {
-      // closed without sharing
+      return 'shared';
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'; // the sheet was closed
     }
-  } else {
-    download(name, text);
   }
+  download(name, text);
+  return 'downloaded';
+};
+
+/** Shares a file and, when it was downloaded instead, says where to find it. */
+export const useShareFile = () => {
+  const toast = useToast();
+  return (title: string, text: string) => shareFile(title, text).then((outcome) => {
+    if (outcome === 'downloaded') toast(`Saved to Downloads as ${fileName(title)}`);
+  });
 };
 
 /**
@@ -218,6 +234,7 @@ export const shareFile = async (title: string, text: string) => {
  */
 export const ShareButton = ({ kind, data, title, label }: { kind: TransferKind; data: unknown; title: string; label?: string }) => {
   const { transfer } = useContainer();
+  const share = useShareFile();
   const [open, setOpen] = useState<'menu' | 'code' | null>(null);
   return (
     <>
@@ -227,8 +244,8 @@ export const ShareButton = ({ kind, data, title, label }: { kind: TransferKind; 
       {open === 'menu' && (
         <Modal title={`Share “${title}”`} onClose={() => setOpen(null)}>
           <div className="stack">
-            <button className="menu-item with-icon" onClick={() => { setOpen(null); void shareFile(title, envelopeFile(kind, data)); }}>
-              {Icons.file}<span className="grow">Share as file<br /><span className="small muted">A .fitos.json file anyone can import</span></span>
+            <button className="menu-item with-icon" onClick={() => { setOpen(null); void share(title, envelopeFile(kind, data)); }}>
+              {Icons.file}<span className="grow">Share as file<br /><span className="small muted">A file any Tracker can import</span></span>
             </button>
             {transfer && (
               <button className="menu-item with-icon" onClick={() => setOpen('code')}>
@@ -290,7 +307,7 @@ export const useImportFileAction = (): [FabAction, ReactNode] => {
   return [
     { label: 'Import a file', short: 'Import', icon: Icons.file, onSelect: () => input.current?.click() },
     <>
-      <input ref={input} type="file" accept=".json,application/json,text/plain" hidden aria-label="File to import" onChange={(e) => void onFile(e.target.files?.[0])} />
+      <input ref={input} type="file" accept=".txt,.json,text/plain,application/json" hidden aria-label="File to import" onChange={(e) => void onFile(e.target.files?.[0])} />
       {dialog}
     </>,
   ];
@@ -319,7 +336,7 @@ export const ImportShared = () => {
   return (
     <>
       <PageHeader title="Import" />
-      {state === 'empty' ? <Empty>No file to import. Share a .fitos.json file to Tracker, or use Import a file.</Empty> : <p className="muted" role="status">Importing…</p>}
+      {state === 'empty' ? <Empty>No file to import. Share a Tracker file to the app, or use Import a file.</Empty> : <p className="muted" role="status">Importing…</p>}
       {dialog}
     </>
   );
