@@ -1,0 +1,3153 @@
+{
+ "version": 1,
+ "size": 224,
+ "grid": 16,
+ "threshold": 0.3,
+ "classes": [
+  {
+   "id": "water",
+   "name": "Water",
+   "foods": [],
+   "share": 0.312
+  },
+  {
+   "id": "coffee",
+   "name": "Coffee",
+   "foods": [
+    {
+     "code": "508200",
+     "grams": 1.0
+    }
+   ],
+   "share": 0.191
+  },
+  {
+   "id": "coffee-milk",
+   "name": "Coffee with milk",
+   "foods": [
+    {
+     "code": "135020",
+     "grams": 150.0
+    },
+    {
+     "code": "508200",
+     "grams": 1.0
+    }
+   ],
+   "share": 0.25
+  },
+  {
+   "id": "tea",
+   "name": "Tea",
+   "foods": [
+    {
+     "code": "508100",
+     "grams": 2.0
+    }
+   ],
+   "share": 0.25
+  },
+  {
+   "id": "wine-red",
+   "name": "Red wine",
+   "foods": [
+    {
+     "code": "405020",
+     "grams": 125.0
+    }
+   ],
+   "share": 0.246
+  },
+  {
+   "id": "wine-white",
+   "name": "White wine",
+   "foods": [
+    {
+     "code": "405010",
+     "grams": 125.0
+    }
+   ],
+   "share": 0.219
+  },
+  {
+   "id": "sparkling-wine",
+   "name": "Sparkling wine",
+   "foods": [
+    {
+     "code": "409000",
+     "grams": 125.0
+    }
+   ],
+   "share": 0.215
+  },
+  {
+   "id": "beer",
+   "name": "Beer",
+   "foods": [
+    {
+     "code": "404010",
+     "grams": 330.0
+    }
+   ],
+   "share": 0.312
+  },
+  {
+   "id": "cocktail",
+   "name": "Cocktail",
+   "foods": [],
+   "share": 0.281
+  },
+  {
+   "id": "orange-juice",
+   "name": "Orange juice",
+   "foods": [
+    {
+     "code": "008010",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.303
+  },
+  {
+   "id": "fruit-juice",
+   "name": "Fruit juice",
+   "foods": [
+    {
+     "code": "008930",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.291
+  },
+  {
+   "id": "smoothie",
+   "name": "Smoothie",
+   "foods": [],
+   "share": 0.312
+  },
+  {
+   "id": "cola",
+   "name": "Cola",
+   "foods": [
+    {
+     "code": "401100",
+     "grams": 330.0
+    }
+   ],
+   "share": 0.344
+  },
+  {
+   "id": "cola-zero",
+   "name": "Diet cola",
+   "foods": [],
+   "share": 0.297
+  },
+  {
+   "id": "soft-drink",
+   "name": "Soft drink",
+   "foods": [],
+   "share": 0.312
+  },
+  {
+   "id": "milk",
+   "name": "Milk",
+   "foods": [
+    {
+     "code": "135010",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.344
+  },
+  {
+   "id": "plant-milk",
+   "name": "Soy or oat milk",
+   "foods": [
+    {
+     "code": "509010",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "chocolate-drink",
+   "name": "Chocolate drink",
+   "foods": [],
+   "share": 0.281
+  },
+  {
+   "id": "white-bread",
+   "name": "White bread",
+   "foods": [
+    {
+     "code": "000530",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "milk-bread",
+   "name": "Milk bread or bun",
+   "foods": [
+    {
+     "code": "000580",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "wholemeal-bread",
+   "name": "Wholemeal bread",
+   "foods": [
+    {
+     "code": "000550",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.508
+  },
+  {
+   "id": "rye-bread",
+   "name": "Rye bread",
+   "foods": [
+    {
+     "code": "000510",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.66
+  },
+  {
+   "id": "rusks",
+   "name": "Rusks or crispbread",
+   "foods": [
+    {
+     "code": "001510",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.645
+  },
+  {
+   "id": "crackers",
+   "name": "Crackers",
+   "foods": [
+    {
+     "code": "001020",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.547
+  },
+  {
+   "id": "breadsticks",
+   "name": "Breadsticks",
+   "foods": [
+    {
+     "code": "002000",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.707
+  },
+  {
+   "id": "rice-cakes",
+   "name": "Rice cakes",
+   "foods": [
+    {
+     "code": "003050",
+     "grams": 15.0
+    }
+   ],
+   "share": 0.602
+  },
+  {
+   "id": "flatbread",
+   "name": "Flatbread",
+   "foods": [
+    {
+     "code": "000530",
+     "grams": 70.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "focaccia",
+   "name": "Focaccia",
+   "foods": [
+    {
+     "code": "000700",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.49
+  },
+  {
+   "id": "croissant",
+   "name": "Croissant",
+   "foods": [
+    {
+     "code": "002510",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "chocolate-croissant",
+   "name": "Chocolate croissant",
+   "foods": [
+    {
+     "code": "002500",
+     "grams": 70.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "brioche",
+   "name": "Brioche",
+   "foods": [
+    {
+     "code": "210060",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "ham-croissant",
+   "name": "Ham croissant",
+   "foods": [
+    {
+     "code": "002510",
+     "grams": 60.0
+    },
+    {
+     "code": "110400",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "pancakes",
+   "name": "Pancakes or crêpes",
+   "foods": [
+    {
+     "code": "000220",
+     "grams": 30.0
+    },
+    {
+     "code": "135020",
+     "grams": 60.0
+    },
+    {
+     "code": "181100",
+     "grams": 25.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "butter",
+   "name": "Butter",
+   "foods": [
+    {
+     "code": "190010",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.281
+  },
+  {
+   "id": "margarine",
+   "name": "Margarine",
+   "foods": [
+    {
+     "code": "009100",
+     "grams": 10.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "jam",
+   "name": "Jam",
+   "foods": [
+    {
+     "code": "204500",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "honey",
+   "name": "Honey",
+   "foods": [
+    {
+     "code": "210010",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.406
+  },
+  {
+   "id": "chocolate-spread",
+   "name": "Chocolate spread",
+   "foods": [
+    {
+     "code": "203500",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "peanut-butter",
+   "name": "Peanut butter",
+   "foods": [
+    {
+     "code": "009010",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.35
+  },
+  {
+   "id": "almond-butter",
+   "name": "Almond butter",
+   "foods": [
+    {
+     "code": "008540",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "cream-cheese",
+   "name": "Cream cheese",
+   "foods": [
+    {
+     "code": "162050",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "hard-cheese",
+   "name": "Cheese",
+   "foods": [
+    {
+     "code": "162420",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.406
+  },
+  {
+   "id": "parmesan",
+   "name": "Parmesan",
+   "foods": [
+    {
+     "code": "166000",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "soft-cheese",
+   "name": "Soft cheese",
+   "foods": [
+    {
+     "code": "160410",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.32
+  },
+  {
+   "id": "blue-cheese",
+   "name": "Blue cheese",
+   "foods": [
+    {
+     "code": "162400",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.363
+  },
+  {
+   "id": "mozzarella",
+   "name": "Mozzarella",
+   "foods": [
+    {
+     "code": "164820",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "feta",
+   "name": "Feta",
+   "foods": [
+    {
+     "code": "162000",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.41
+  },
+  {
+   "id": "cottage-cheese",
+   "name": "Cottage cheese",
+   "foods": [
+    {
+     "code": "170010",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "processed-cheese",
+   "name": "Processed cheese",
+   "foods": [
+    {
+     "code": "162030",
+     "grams": 25.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "fondue",
+   "name": "Cheese fondue",
+   "foods": [
+    {
+     "code": "162420",
+     "grams": 150.0
+    },
+    {
+     "code": "000530",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.553
+  },
+  {
+   "id": "yogurt",
+   "name": "Yogurt",
+   "foods": [
+    {
+     "code": "150010",
+     "grams": 125.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "greek-yogurt",
+   "name": "Greek yogurt",
+   "foods": [
+    {
+     "code": "150020",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "cream",
+   "name": "Cream",
+   "foods": [
+    {
+     "code": "140300",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.219
+  },
+  {
+   "id": "sour-cream",
+   "name": "Sour cream",
+   "foods": [
+    {
+     "code": "140400",
+     "grams": 30.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "cream-sauce",
+   "name": "Cream sauce",
+   "foods": [
+    {
+     "code": "140400",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "ice-cream",
+   "name": "Ice cream",
+   "foods": [
+    {
+     "code": "206040",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "sorbet",
+   "name": "Sorbet",
+   "foods": [
+    {
+     "code": "206800",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "egg",
+   "name": "Egg",
+   "foods": [
+    {
+     "code": "181105",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.408
+  },
+  {
+   "id": "scrambled-eggs",
+   "name": "Scrambled eggs or omelette",
+   "foods": [
+    {
+     "code": "181117",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.469
+  },
+  {
+   "id": "egg-whites",
+   "name": "Egg whites",
+   "foods": [
+    {
+     "code": "182010",
+     "grams": 100.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "chicken",
+   "name": "Chicken",
+   "foods": [
+    {
+     "code": "106213",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.537
+  },
+  {
+   "id": "chicken-breast",
+   "name": "Chicken breast",
+   "foods": [
+    {
+     "code": "106506",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.504
+  },
+  {
+   "id": "chicken-leg",
+   "name": "Chicken leg",
+   "foods": [
+    {
+     "code": "106403",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "chicken-wings",
+   "name": "Chicken wings",
+   "foods": [
+    {
+     "code": "106273",
+     "grams": 90.0
+    }
+   ],
+   "share": 0.711
+  },
+  {
+   "id": "chicken-nuggets",
+   "name": "Chicken nuggets",
+   "foods": [
+    {
+     "code": "119040",
+     "grams": 110.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "breaded-cutlet",
+   "name": "Breaded cutlet",
+   "foods": [
+    {
+     "code": "105236",
+     "grams": 120.0
+    },
+    {
+     "code": "000570",
+     "grams": 20.0
+    },
+    {
+     "code": "009799",
+     "grams": 10.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "beef",
+   "name": "Beef",
+   "foods": [
+    {
+     "code": "101521",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.471
+  },
+  {
+   "id": "minced-meat",
+   "name": "Minced meat or meatballs",
+   "foods": [
+    {
+     "code": "101521",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "hamburger",
+   "name": "Hamburger",
+   "foods": [
+    {
+     "code": "119030",
+     "grams": 180.0
+    }
+   ],
+   "share": 0.547
+  },
+  {
+   "id": "hot-dog",
+   "name": "Hot dog",
+   "foods": [
+    {
+     "code": "000580",
+     "grams": 60.0
+    },
+    {
+     "code": "110906",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.156
+  },
+  {
+   "id": "pork",
+   "name": "Pork",
+   "foods": [
+    {
+     "code": "105236",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.5
+  },
+  {
+   "id": "lamb",
+   "name": "Lamb",
+   "foods": [
+    {
+     "code": "104043",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.555
+  },
+  {
+   "id": "cooked-ham",
+   "name": "Cooked ham",
+   "foods": [
+    {
+     "code": "110400",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "cured-ham",
+   "name": "Cured ham",
+   "foods": [
+    {
+     "code": "110535",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "dried-beef",
+   "name": "Dried beef",
+   "foods": [
+    {
+     "code": "110020",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "salami",
+   "name": "Salami",
+   "foods": [
+    {
+     "code": "110640",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.463
+  },
+  {
+   "id": "bacon",
+   "name": "Bacon",
+   "foods": [
+    {
+     "code": "110310",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.406
+  },
+  {
+   "id": "sausage",
+   "name": "Sausage",
+   "foods": [
+    {
+     "code": "110716",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.508
+  },
+  {
+   "id": "frankfurter",
+   "name": "Frankfurter",
+   "foods": [
+    {
+     "code": "110906",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.453
+  },
+  {
+   "id": "pate",
+   "name": "Pâté",
+   "foods": [
+    {
+     "code": "114020",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "kebab",
+   "name": "Kebab",
+   "foods": [
+    {
+     "code": "000530",
+     "grams": 80.0
+    },
+    {
+     "code": "104029",
+     "grams": 100.0
+    },
+    {
+     "code": "005410",
+     "grams": 20.0
+    },
+    {
+     "code": "006600",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.527
+  },
+  {
+   "id": "chili",
+   "name": "Chili con carne",
+   "foods": [
+    {
+     "code": "101521",
+     "grams": 80.0
+    },
+    {
+     "code": "004130",
+     "grams": 100.0
+    },
+    {
+     "code": "006680",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.5
+  },
+  {
+   "id": "salmon",
+   "name": "Salmon",
+   "foods": [
+    {
+     "code": "122400",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "smoked-salmon",
+   "name": "Smoked salmon",
+   "foods": [
+    {
+     "code": "122410",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "tuna",
+   "name": "Tuna",
+   "foods": [
+    {
+     "code": "123610",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "white-fish",
+   "name": "Fish",
+   "foods": [
+    {
+     "code": "121423",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.617
+  },
+  {
+   "id": "fish-fingers",
+   "name": "Fish fingers",
+   "foods": [
+    {
+     "code": "121490",
+     "grams": 120.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "shrimp",
+   "name": "Shrimp",
+   "foods": [
+    {
+     "code": "128100",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.547
+  },
+  {
+   "id": "sushi",
+   "name": "Sushi",
+   "foods": [
+    {
+     "code": "000105",
+     "grams": 120.0
+    },
+    {
+     "code": "122400",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.66
+  },
+  {
+   "id": "anchovies",
+   "name": "Anchovies",
+   "foods": [
+    {
+     "code": "120020",
+     "grams": 15.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "green-salad",
+   "name": "Green salad",
+   "foods": [
+    {
+     "code": "005410",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.66
+  },
+  {
+   "id": "rocket",
+   "name": "Rocket",
+   "foods": [
+    {
+     "code": "005460",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.561
+  },
+  {
+   "id": "chicory",
+   "name": "Chicory",
+   "foods": [
+    {
+     "code": "005250",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "mixed-salad",
+   "name": "Mixed salad",
+   "foods": [
+    {
+     "code": "005410",
+     "grams": 60.0
+    },
+    {
+     "code": "006600",
+     "grams": 50.0
+    },
+    {
+     "code": "005150",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.707
+  },
+  {
+   "id": "caesar-salad",
+   "name": "Caesar salad",
+   "foods": [
+    {
+     "code": "005410",
+     "grams": 80.0
+    },
+    {
+     "code": "166000",
+     "grams": 10.0
+    },
+    {
+     "code": "000530",
+     "grams": 15.0
+    },
+    {
+     "code": "502760",
+     "grams": 15.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "greek-salad",
+   "name": "Greek salad",
+   "foods": [
+    {
+     "code": "006600",
+     "grams": 100.0
+    },
+    {
+     "code": "005220",
+     "grams": 60.0
+    },
+    {
+     "code": "162000",
+     "grams": 40.0
+    },
+    {
+     "code": "008810",
+     "grams": 15.0
+    },
+    {
+     "code": "009210",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.711
+  },
+  {
+   "id": "caprese",
+   "name": "Caprese salad",
+   "foods": [
+    {
+     "code": "164820",
+     "grams": 100.0
+    },
+    {
+     "code": "006600",
+     "grams": 150.0
+    },
+    {
+     "code": "009210",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "leafy-greens",
+   "name": "Cooked leafy greens",
+   "foods": [
+    {
+     "code": "005085",
+     "grams": 150.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "spinach",
+   "name": "Spinach",
+   "foods": [
+    {
+     "code": "005705",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "raw-spinach",
+   "name": "Raw spinach",
+   "foods": [
+    {
+     "code": "005700",
+     "grams": 60.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "tomato",
+   "name": "Tomato",
+   "foods": [
+    {
+     "code": "006600",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "stewed-tomato",
+   "name": "Stewed tomatoes",
+   "foods": [
+    {
+     "code": "006680",
+     "grams": 150.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "carrot",
+   "name": "Carrot",
+   "foods": [
+    {
+     "code": "005150",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.352
+  },
+  {
+   "id": "cooked-carrots",
+   "name": "Cooked carrots",
+   "foods": [
+    {
+     "code": "005155",
+     "grams": 150.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "cucumber",
+   "name": "Cucumber",
+   "foods": [
+    {
+     "code": "005220",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "bell-pepper",
+   "name": "Bell pepper",
+   "foods": [
+    {
+     "code": "005630",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.482
+  },
+  {
+   "id": "cooked-pepper",
+   "name": "Cooked peppers",
+   "foods": [
+    {
+     "code": "005606",
+     "grams": 150.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "broccoli",
+   "name": "Broccoli",
+   "foods": [
+    {
+     "code": "005105",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.248
+  },
+  {
+   "id": "cauliflower",
+   "name": "Cauliflower",
+   "foods": [
+    {
+     "code": "005165",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "zucchini",
+   "name": "Courgette",
+   "foods": [
+    {
+     "code": "005752",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.457
+  },
+  {
+   "id": "eggplant",
+   "name": "Aubergine",
+   "foods": [
+    {
+     "code": "005506",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.586
+  },
+  {
+   "id": "ratatouille",
+   "name": "Ratatouille",
+   "foods": [
+    {
+     "code": "005506",
+     "grams": 60.0
+    },
+    {
+     "code": "005752",
+     "grams": 60.0
+    },
+    {
+     "code": "005606",
+     "grams": 40.0
+    },
+    {
+     "code": "006680",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "mixed-vegetables",
+   "name": "Mixed vegetables",
+   "foods": [
+    {
+     "code": "006990",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "green-beans",
+   "name": "Green beans",
+   "foods": [
+    {
+     "code": "004325",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.656
+  },
+  {
+   "id": "peas",
+   "name": "Peas",
+   "foods": [
+    {
+     "code": "004706",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.537
+  },
+  {
+   "id": "corn",
+   "name": "Sweet corn",
+   "foods": [
+    {
+     "code": "000070",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.469
+  },
+  {
+   "id": "mushrooms",
+   "name": "Mushrooms",
+   "foods": [
+    {
+     "code": "006006",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.537
+  },
+  {
+   "id": "onion",
+   "name": "Onion",
+   "foods": [
+    {
+     "code": "005300",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.508
+  },
+  {
+   "id": "leek",
+   "name": "Leek",
+   "foods": [
+    {
+     "code": "005655",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "fennel",
+   "name": "Fennel",
+   "foods": [
+    {
+     "code": "005320",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "celery",
+   "name": "Celery",
+   "foods": [
+    {
+     "code": "005680",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "beetroot",
+   "name": "Beetroot",
+   "foods": [
+    {
+     "code": "005065",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.633
+  },
+  {
+   "id": "radish",
+   "name": "Radish",
+   "foods": [
+    {
+     "code": "005670",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.314
+  },
+  {
+   "id": "red-cabbage",
+   "name": "Red cabbage",
+   "foods": [
+    {
+     "code": "005190",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "cabbage",
+   "name": "Cabbage",
+   "foods": [
+    {
+     "code": "005200",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.736
+  },
+  {
+   "id": "kohlrabi",
+   "name": "Kohlrabi",
+   "foods": [
+    {
+     "code": "005660",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "brussels-sprouts",
+   "name": "Brussels sprouts",
+   "foods": [
+    {
+     "code": "005175",
+     "grams": 120.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "asparagus",
+   "name": "Asparagus",
+   "foods": [
+    {
+     "code": "005045",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "artichoke",
+   "name": "Artichoke",
+   "foods": [
+    {
+     "code": "005125",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.41
+  },
+  {
+   "id": "avocado",
+   "name": "Avocado",
+   "foods": [
+    {
+     "code": "007490",
+     "grams": 70.0
+    }
+   ],
+   "share": 0.547
+  },
+  {
+   "id": "guacamole",
+   "name": "Guacamole",
+   "foods": [
+    {
+     "code": "007490",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.547
+  },
+  {
+   "id": "pumpkin",
+   "name": "Pumpkin",
+   "foods": [
+    {
+     "code": "005720",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.488
+  },
+  {
+   "id": "sprouts",
+   "name": "Sprouts",
+   "foods": [
+    {
+     "code": "005350",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.879
+  },
+  {
+   "id": "sweet-potato",
+   "name": "Sweet potato",
+   "foods": [
+    {
+     "code": "006515",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "potatoes",
+   "name": "Boiled potatoes",
+   "foods": [
+    {
+     "code": "006515",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "roast-potatoes",
+   "name": "Roast potatoes",
+   "foods": [
+    {
+     "code": "006511",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.469
+  },
+  {
+   "id": "fries",
+   "name": "French fries",
+   "foods": [
+    {
+     "code": "119080",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "mashed-potatoes",
+   "name": "Mashed potatoes",
+   "foods": [
+    {
+     "code": "006515",
+     "grams": 150.0
+    },
+    {
+     "code": "135010",
+     "grams": 30.0
+    },
+    {
+     "code": "190010",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "potato-gratin",
+   "name": "Potato gratin",
+   "foods": [
+    {
+     "code": "006515",
+     "grams": 150.0
+    },
+    {
+     "code": "140400",
+     "grams": 30.0
+    },
+    {
+     "code": "162420",
+     "grams": 15.0
+    }
+   ],
+   "share": 0.65
+  },
+  {
+   "id": "potato-salad",
+   "name": "Potato salad",
+   "foods": [
+    {
+     "code": "006515",
+     "grams": 150.0
+    },
+    {
+     "code": "502760",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.822
+  },
+  {
+   "id": "crisps",
+   "name": "Crisps",
+   "foods": [
+    {
+     "code": "006570",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "popcorn",
+   "name": "Popcorn",
+   "foods": [
+    {
+     "code": "501200",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.633
+  },
+  {
+   "id": "black-olives",
+   "name": "Black olives",
+   "foods": [
+    {
+     "code": "008810",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "green-olives",
+   "name": "Green olives",
+   "foods": [
+    {
+     "code": "008820",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.41
+  },
+  {
+   "id": "hummus",
+   "name": "Hummus",
+   "foods": [
+    {
+     "code": "004010",
+     "grams": 60.0
+    },
+    {
+     "code": "009210",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "falafel",
+   "name": "Falafel",
+   "foods": [
+    {
+     "code": "004005",
+     "grams": 80.0
+    },
+    {
+     "code": "009799",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "tofu",
+   "name": "Tofu",
+   "foods": [],
+   "share": 0.43
+  },
+  {
+   "id": "lentils",
+   "name": "Lentils",
+   "foods": [
+    {
+     "code": "004505",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.588
+  },
+  {
+   "id": "chickpeas",
+   "name": "Chickpeas",
+   "foods": [
+    {
+     "code": "004010",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "beans",
+   "name": "Beans",
+   "foods": [
+    {
+     "code": "004105",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.514
+  },
+  {
+   "id": "quinoa",
+   "name": "Quinoa",
+   "foods": [
+    {
+     "code": "000097",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.305
+  },
+  {
+   "id": "couscous",
+   "name": "Couscous",
+   "foods": [
+    {
+     "code": "000046",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "grains",
+   "name": "Wheat or spelt grains",
+   "foods": [
+    {
+     "code": "000025",
+     "grams": 150.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "rice",
+   "name": "Rice",
+   "foods": [
+    {
+     "code": "000105",
+     "grams": 180.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "brown-rice",
+   "name": "Brown rice",
+   "foods": [
+    {
+     "code": "000115",
+     "grams": 180.0
+    }
+   ],
+   "share": 0.412
+  },
+  {
+   "id": "fried-rice",
+   "name": "Fried rice",
+   "foods": [
+    {
+     "code": "000105",
+     "grams": 180.0
+    },
+    {
+     "code": "181117",
+     "grams": 30.0
+    },
+    {
+     "code": "006990",
+     "grams": 40.0
+    },
+    {
+     "code": "009799",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "risotto",
+   "name": "Risotto",
+   "foods": [
+    {
+     "code": "000105",
+     "grams": 200.0
+    },
+    {
+     "code": "190010",
+     "grams": 10.0
+    },
+    {
+     "code": "166000",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.443
+  },
+  {
+   "id": "polenta",
+   "name": "Polenta",
+   "foods": [
+    {
+     "code": "000076",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.602
+  },
+  {
+   "id": "porridge",
+   "name": "Porridge",
+   "foods": [
+    {
+     "code": "003030",
+     "grams": 40.0
+    },
+    {
+     "code": "135020",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "pasta",
+   "name": "Pasta",
+   "foods": [
+    {
+     "code": "000805",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "wholemeal-pasta",
+   "name": "Wholemeal pasta",
+   "foods": [
+    {
+     "code": "000855",
+     "grams": 180.0
+    }
+   ],
+   "share": 0.633
+  },
+  {
+   "id": "egg-pasta",
+   "name": "Egg pasta or noodles",
+   "foods": [
+    {
+     "code": "000871",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.609
+  },
+  {
+   "id": "rice-noodles",
+   "name": "Rice noodles",
+   "foods": [
+    {
+     "code": "000105",
+     "grams": 180.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "ravioli",
+   "name": "Ravioli or tortellini",
+   "foods": [
+    {
+     "code": "000876",
+     "grams": 175.0
+    }
+   ],
+   "share": 0.486
+  },
+  {
+   "id": "gnocchi",
+   "name": "Potato gnocchi",
+   "foods": [
+    {
+     "code": "006591",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "lasagne",
+   "name": "Lasagne",
+   "foods": [
+    {
+     "code": "000871",
+     "grams": 100.0
+    },
+    {
+     "code": "101521",
+     "grams": 50.0
+    },
+    {
+     "code": "006670",
+     "grams": 60.0
+    },
+    {
+     "code": "135020",
+     "grams": 40.0
+    },
+    {
+     "code": "166000",
+     "grams": 10.0
+    },
+    {
+     "code": "190010",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "vegetable-lasagne",
+   "name": "Vegetable lasagne",
+   "foods": [
+    {
+     "code": "000871",
+     "grams": 100.0
+    },
+    {
+     "code": "006990",
+     "grams": 100.0
+    },
+    {
+     "code": "135020",
+     "grams": 40.0
+    },
+    {
+     "code": "166000",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "tomato-sauce",
+   "name": "Tomato sauce",
+   "foods": [
+    {
+     "code": "006670",
+     "grams": 80.0
+    },
+    {
+     "code": "009210",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "bolognese",
+   "name": "Bolognese sauce",
+   "foods": [
+    {
+     "code": "101521",
+     "grams": 50.0
+    },
+    {
+     "code": "006670",
+     "grams": 60.0
+    },
+    {
+     "code": "009210",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "pesto",
+   "name": "Pesto",
+   "foods": [
+    {
+     "code": "009210",
+     "grams": 10.0
+    },
+    {
+     "code": "006800",
+     "grams": 5.0
+    },
+    {
+     "code": "166000",
+     "grams": 5.0
+    },
+    {
+     "code": "008590",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.393
+  },
+  {
+   "id": "carbonara",
+   "name": "Carbonara sauce",
+   "foods": [
+    {
+     "code": "181100",
+     "grams": 30.0
+    },
+    {
+     "code": "110310",
+     "grams": 25.0
+    },
+    {
+     "code": "166060",
+     "grams": 10.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "pizza",
+   "name": "Pizza margherita",
+   "foods": [
+    {
+     "code": "000720",
+     "grams": 250.0
+    }
+   ],
+   "share": 0.422
+  },
+  {
+   "id": "pizza-vegetables",
+   "name": "Vegetable pizza",
+   "foods": [
+    {
+     "code": "000720",
+     "grams": 250.0
+    },
+    {
+     "code": "006990",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.66
+  },
+  {
+   "id": "pizza-ham",
+   "name": "Ham pizza",
+   "foods": [
+    {
+     "code": "000720",
+     "grams": 250.0
+    },
+    {
+     "code": "110400",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.658
+  },
+  {
+   "id": "pizza-pepperoni",
+   "name": "Pepperoni pizza",
+   "foods": [
+    {
+     "code": "000720",
+     "grams": 150.0
+    },
+    {
+     "code": "110640",
+     "grams": 20.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "tarte-flambee",
+   "name": "Tarte flambée",
+   "foods": [
+    {
+     "code": "000700",
+     "grams": 200.0
+    },
+    {
+     "code": "110310",
+     "grams": 30.0
+    },
+    {
+     "code": "140400",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "sandwich",
+   "name": "Sandwich",
+   "foods": [
+    {
+     "code": "000530",
+     "grams": 80.0
+    },
+    {
+     "code": "110400",
+     "grams": 30.0
+    },
+    {
+     "code": "162420",
+     "grams": 20.0
+    },
+    {
+     "code": "190010",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.254
+  },
+  {
+   "id": "quiche",
+   "name": "Quiche or savoury pie",
+   "foods": [
+    {
+     "code": "000220",
+     "grams": 40.0
+    },
+    {
+     "code": "190010",
+     "grams": 20.0
+    },
+    {
+     "code": "181100",
+     "grams": 30.0
+    },
+    {
+     "code": "135020",
+     "grams": 30.0
+    },
+    {
+     "code": "162420",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "vegetable-soup",
+   "name": "Vegetable soup",
+   "foods": [
+    {
+     "code": "905010",
+     "grams": 300.0
+    }
+   ],
+   "share": 0.531
+  },
+  {
+   "id": "pumpkin-soup",
+   "name": "Pumpkin soup",
+   "foods": [
+    {
+     "code": "005720",
+     "grams": 250.0
+    },
+    {
+     "code": "140400",
+     "grams": 20.0
+    },
+    {
+     "code": "009210",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "tomato-soup",
+   "name": "Tomato soup",
+   "foods": [
+    {
+     "code": "900410",
+     "grams": 300.0
+    }
+   ],
+   "share": 0.352
+  },
+  {
+   "id": "lentil-soup",
+   "name": "Lentil soup",
+   "foods": [
+    {
+     "code": "004505",
+     "grams": 200.0
+    },
+    {
+     "code": "009210",
+     "grams": 5.0
+    }
+   ],
+   "share": 0.451
+  },
+  {
+   "id": "broth",
+   "name": "Broth",
+   "foods": [],
+   "share": 0.43
+  },
+  {
+   "id": "chicken-curry",
+   "name": "Chicken curry",
+   "foods": [
+    {
+     "code": "106213",
+     "grams": 120.0
+    },
+    {
+     "code": "140400",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.602
+  },
+  {
+   "id": "vegetable-curry",
+   "name": "Vegetable curry",
+   "foods": [
+    {
+     "code": "006990",
+     "grams": 150.0
+    },
+    {
+     "code": "140400",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.512
+  },
+  {
+   "id": "apple",
+   "name": "Apple",
+   "foods": [
+    {
+     "code": "007120",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.375
+  },
+  {
+   "id": "apple-sauce",
+   "name": "Apple sauce",
+   "foods": [
+    {
+     "code": "007110",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.352
+  },
+  {
+   "id": "banana",
+   "name": "Banana",
+   "foods": [
+    {
+     "code": "007510",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "pear",
+   "name": "Pear",
+   "foods": [
+    {
+     "code": "007260",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "orange",
+   "name": "Orange",
+   "foods": [
+    {
+     "code": "008000",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "mandarin",
+   "name": "Mandarin",
+   "foods": [
+    {
+     "code": "008060",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.375
+  },
+  {
+   "id": "kiwi",
+   "name": "Kiwi",
+   "foods": [
+    {
+     "code": "007570",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.438
+  },
+  {
+   "id": "grapes",
+   "name": "Grapes",
+   "foods": [
+    {
+     "code": "007380",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "strawberries",
+   "name": "Strawberries",
+   "foods": [
+    {
+     "code": "007730",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "blueberries",
+   "name": "Blueberries",
+   "foods": [
+    {
+     "code": "007760",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.469
+  },
+  {
+   "id": "raspberries",
+   "name": "Raspberries",
+   "foods": [
+    {
+     "code": "007740",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "blackberries",
+   "name": "Blackberries",
+   "foods": [
+    {
+     "code": "007750",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.488
+  },
+  {
+   "id": "berries",
+   "name": "Mixed berries",
+   "foods": [
+    {
+     "code": "007760",
+     "grams": 60.0
+    },
+    {
+     "code": "007740",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "apricot",
+   "name": "Apricots",
+   "foods": [
+    {
+     "code": "007000",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "peach",
+   "name": "Peach",
+   "foods": [
+    {
+     "code": "007290",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "plum",
+   "name": "Plums",
+   "foods": [
+    {
+     "code": "007340",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "cherries",
+   "name": "Cherries",
+   "foods": [
+    {
+     "code": "007710",
+     "grams": 120.0
+    }
+   ],
+   "share": 0.492
+  },
+  {
+   "id": "mango",
+   "name": "Mango",
+   "foods": [
+    {
+     "code": "007590",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "pineapple",
+   "name": "Pineapple",
+   "foods": [
+    {
+     "code": "007460",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.537
+  },
+  {
+   "id": "watermelon",
+   "name": "Watermelon",
+   "foods": [
+    {
+     "code": "007040",
+     "grams": 250.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "melon",
+   "name": "Melon",
+   "foods": [
+    {
+     "code": "007230",
+     "grams": 200.0
+    }
+   ],
+   "share": 0.508
+  },
+  {
+   "id": "lemon",
+   "name": "Lemon",
+   "foods": [],
+   "share": 0.312
+  },
+  {
+   "id": "grapefruit",
+   "name": "Grapefruit",
+   "foods": [
+    {
+     "code": "008070",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.559
+  },
+  {
+   "id": "pomegranate",
+   "name": "Pomegranate",
+   "foods": [
+    {
+     "code": "007100",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "figs",
+   "name": "Figs",
+   "foods": [
+    {
+     "code": "007050",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "kaki",
+   "name": "Persimmon",
+   "foods": [
+    {
+     "code": "007090",
+     "grams": 150.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "dates",
+   "name": "Dates",
+   "foods": [
+    {
+     "code": "007630",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "dried-fruit",
+   "name": "Dried fruit",
+   "foods": [
+    {
+     "code": "007410",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "fruit-salad",
+   "name": "Fruit salad",
+   "foods": [
+    {
+     "code": "007120",
+     "grams": 50.0
+    },
+    {
+     "code": "007510",
+     "grams": 50.0
+    },
+    {
+     "code": "007730",
+     "grams": 50.0
+    },
+    {
+     "code": "008000",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "coconut",
+   "name": "Coconut",
+   "foods": [
+    {
+     "code": "007520",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.645
+  },
+  {
+   "id": "almonds",
+   "name": "Almonds",
+   "foods": [
+    {
+     "code": "008540",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "walnuts",
+   "name": "Walnuts",
+   "foods": [
+    {
+     "code": "008560",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "hazelnuts",
+   "name": "Hazelnuts",
+   "foods": [
+    {
+     "code": "008550",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.389
+  },
+  {
+   "id": "cashews",
+   "name": "Cashews",
+   "foods": [
+    {
+     "code": "008610",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "peanuts",
+   "name": "Peanuts",
+   "foods": [
+    {
+     "code": "008500",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "pistachios",
+   "name": "Pistachios",
+   "foods": [
+    {
+     "code": "008600",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.422
+  },
+  {
+   "id": "pecans",
+   "name": "Pecans",
+   "foods": [
+    {
+     "code": "008580",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "pine-nuts",
+   "name": "Pine nuts",
+   "foods": [
+    {
+     "code": "008590",
+     "grams": 10.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "mixed-nuts",
+   "name": "Mixed nuts",
+   "foods": [
+    {
+     "code": "008560",
+     "grams": 15.0
+    },
+    {
+     "code": "008540",
+     "grams": 15.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "chestnuts",
+   "name": "Chestnuts",
+   "foods": [
+    {
+     "code": "008521",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.562
+  },
+  {
+   "id": "seeds",
+   "name": "Seeds",
+   "foods": [],
+   "share": 0.352
+  },
+  {
+   "id": "muesli",
+   "name": "Muesli",
+   "foods": [
+    {
+     "code": "003040",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "bircher-muesli",
+   "name": "Bircher muesli",
+   "foods": [
+    {
+     "code": "003040",
+     "grams": 40.0
+    },
+    {
+     "code": "150010",
+     "grams": 100.0
+    },
+    {
+     "code": "007120",
+     "grams": 50.0
+    }
+   ],
+   "share": 0.473
+  },
+  {
+   "id": "oat-flakes",
+   "name": "Oat flakes",
+   "foods": [
+    {
+     "code": "003030",
+     "grams": 40.0
+    }
+   ],
+   "share": 0.469
+  },
+  {
+   "id": "corn-flakes",
+   "name": "Corn flakes",
+   "foods": [
+    {
+     "code": "003020",
+     "grams": 30.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "dark-chocolate",
+   "name": "Dark chocolate",
+   "foods": [
+    {
+     "code": "203020",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.316
+  },
+  {
+   "id": "milk-chocolate",
+   "name": "Milk chocolate",
+   "foods": [
+    {
+     "code": "203010",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.293
+  },
+  {
+   "id": "nut-chocolate",
+   "name": "Chocolate with hazelnuts",
+   "foods": [
+    {
+     "code": "203030",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.213
+  },
+  {
+   "id": "chocolate-cake",
+   "name": "Chocolate cake",
+   "foods": [
+    {
+     "code": "208500",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "sponge-cake",
+   "name": "Cake",
+   "foods": [
+    {
+     "code": "209010",
+     "grams": 80.0
+    }
+   ],
+   "share": 0.211
+  },
+  {
+   "id": "fruit-tart",
+   "name": "Fruit tart",
+   "foods": [
+    {
+     "code": "208510",
+     "grams": 100.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "black-forest-cake",
+   "name": "Black Forest cake",
+   "foods": [
+    {
+     "code": "209010",
+     "grams": 80.0
+    },
+    {
+     "code": "140300",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.516
+  },
+  {
+   "id": "cheesecake",
+   "name": "Cheesecake",
+   "foods": [
+    {
+     "code": "000900",
+     "grams": 20.0
+    },
+    {
+     "code": "162050",
+     "grams": 60.0
+    },
+    {
+     "code": "201500",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.469
+  },
+  {
+   "id": "tiramisu",
+   "name": "Tiramisù",
+   "foods": [
+    {
+     "code": "215000",
+     "grams": 30.0
+    },
+    {
+     "code": "164800",
+     "grams": 50.0
+    },
+    {
+     "code": "181100",
+     "grams": 20.0
+    },
+    {
+     "code": "201500",
+     "grams": 10.0
+    },
+    {
+     "code": "508010",
+     "grams": 2.0
+    }
+   ],
+   "share": 0.387
+  },
+  {
+   "id": "biscuits",
+   "name": "Biscuits",
+   "foods": [
+    {
+     "code": "000900",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.43
+  },
+  {
+   "id": "doughnut",
+   "name": "Doughnut",
+   "foods": [
+    {
+     "code": "210060",
+     "grams": 60.0
+    }
+   ],
+   "share": 0.117
+  },
+  {
+   "id": "creamy-dessert",
+   "name": "Pudding or mousse",
+   "foods": [
+    {
+     "code": "140300",
+     "grams": 40.0
+    },
+    {
+     "code": "135010",
+     "grams": 60.0
+    },
+    {
+     "code": "201500",
+     "grams": 12.0
+    }
+   ],
+   "share": 0.391
+  },
+  {
+   "id": "sweets",
+   "name": "Sweets",
+   "foods": [
+    {
+     "code": "202010",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.352
+  },
+  {
+   "id": "chocolate-beans",
+   "name": "Chocolate beans",
+   "foods": [
+    {
+     "code": "202030",
+     "grams": 30.0
+    }
+   ],
+   "share": 0.229
+  },
+  {
+   "id": "mayonnaise",
+   "name": "Mayonnaise",
+   "foods": [
+    {
+     "code": "502760",
+     "grams": 15.0
+    }
+   ],
+   "share": 0.281
+  },
+  {
+   "id": "ketchup",
+   "name": "Ketchup",
+   "foods": [
+    {
+     "code": "502260",
+     "grams": 20.0
+    }
+   ],
+   "share": 0.281
+  },
+  {
+   "id": "mustard",
+   "name": "Mustard",
+   "foods": [],
+   "share": null
+  },
+  {
+   "id": "dressing",
+   "name": "Oil or dressing",
+   "foods": [
+    {
+     "code": "009210",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.352
+  },
+  {
+   "id": "soy-sauce",
+   "name": "Soy sauce",
+   "foods": [
+    {
+     "code": "509020",
+     "grams": 10.0
+    }
+   ],
+   "share": 0.188
+  },
+  {
+   "id": "tzatziki",
+   "name": "Tzatziki",
+   "foods": [
+    {
+     "code": "151000",
+     "grams": 60.0
+    },
+    {
+     "code": "005220",
+     "grams": 20.0
+    }
+   ],
+   "share": null
+  },
+  {
+   "id": "other-sauce",
+   "name": "Sauce",
+   "foods": [],
+   "share": 0.246
+  },
+  {
+   "id": "herbs",
+   "name": "Herbs",
+   "foods": [],
+   "share": 0.391
+  },
+  {
+   "id": "veggie-burger",
+   "name": "Veggie burger",
+   "foods": [],
+   "share": 0.562
+  },
+  {
+   "id": "spring-roll",
+   "name": "Spring roll",
+   "foods": [],
+   "share": 0.352
+  },
+  {
+   "id": "other-dish",
+   "name": "Other dish",
+   "foods": [],
+   "share": 0.352
+  }
+ ],
+ "evaluation": {
+  "mfr": {
+   "photos": 3791,
+   "single_food_photos": 2397,
+   "top1": 0.821,
+   "top3": 0.947,
+   "precision": 0.709,
+   "recall": 0.664
+  },
+  "n5k": {
+   "photos": 357,
+   "single_food_photos": 125,
+   "top1": 0.832,
+   "top3": 0.912,
+   "precision": 0.707,
+   "recall": 0.642
+  },
+  "oi": {
+   "photos": 290,
+   "single_food_photos": 202,
+   "top1": 0.45,
+   "top3": 0.634,
+   "precision": 0.402,
+   "recall": 0.383
+  },
+  "coco": {
+   "photos": 269,
+   "single_food_photos": 208,
+   "top1": 0.692,
+   "top3": 0.827,
+   "precision": 0.503,
+   "recall": 0.659
+  },
+  "all": {
+   "photos": 4707,
+   "single_food_photos": 2932,
+   "top1": 0.787,
+   "top3": 0.916,
+   "precision": 0.678,
+   "recall": 0.645
+  },
+  "patches": {
+   "patches": 124934,
+   "accuracy": 0.724
+  },
+  "weights": {
+   "foods": 446,
+   "median_error_usual_portion": 0.76,
+   "median_error_scaled": 0.624
+  },
+  "quantized": {
+   "photos": 500,
+   "top1_full": 0.8,
+   "top1_8bit": 0.792
+  }
+ }
+}

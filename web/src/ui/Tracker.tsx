@@ -205,6 +205,7 @@ export const Tracker = () => {
         <Fab label="Log food or weight" actions={[
           { label: `Search food for ${meal.name}`, short: 'Search', icon: Icons.search, onSelect: () => navigate(pickLink(meal.name)) },
           { label: `Scan a barcode for ${meal.name}`, short: 'Scan', icon: Icons.scan, onSelect: () => navigate(pickLink(meal.name, '&scan=1')) },
+          { label: `Photo of ${meal.name}`, short: 'Photo', icon: Icons.camera, onSelect: () => navigate(pickLink(meal.name).replace('/food/pick', '/food/photo')) },
           { label: 'Log weight', short: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
         ]} />
       )}

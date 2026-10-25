@@ -30,12 +30,25 @@ export default defineConfig(({ mode }) => {
           // Receives files shared to the app from Android's share sheet; loaded before Workbox's routes.
           importScripts: ['/share-target.js'],
           // The "mc-" SQLite builds are only for encrypted databases, which the app does not use.
-          globIgnores: ['**/mc-wa-sqlite*'],
+          // The photo food recogniser (its engine and model, about 40 MB) is fetched the first time
+          // someone logs a photo, not at install.
+          globIgnores: ['**/mc-wa-sqlite*', '**/ort-wasm*'],
           runtimeCaching: [
             {
               urlPattern: ({ url }) => url.pathname.startsWith('/catalog/'),
               handler: 'CacheFirst',
               options: { cacheName: 'catalog', expiration: { maxEntries: 20 } },
+            },
+            {
+              // The model's address carries its version, and Vite's names carry a hash, so a cached copy is never stale.
+              urlPattern: ({ url }) => url.pathname.endsWith('.onnx') || /\/ort-wasm[^/]*\.wasm$/.test(url.pathname),
+              handler: 'CacheFirst',
+              options: { cacheName: 'food-recognizer', expiration: { maxEntries: 4 } },
+            },
+            {
+              urlPattern: ({ url }) => url.pathname === '/models/food-classes.json',
+              handler: 'NetworkFirst',
+              options: { cacheName: 'food-recognizer-classes', expiration: { maxEntries: 1 } },
             },
           ],
         },

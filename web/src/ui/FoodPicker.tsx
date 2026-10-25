@@ -202,6 +202,9 @@ export const FoodPicker = () => {
         <input className="field grow" type="search" value={query} placeholder="Search, e.g. pasta, mela, or type a barcode"
           aria-label="Search foods" onChange={(e) => { setQuery(e.target.value); setNotFound(null); }} />
         <button className="btn secondary" onClick={() => setDialog({ kind: 'scan' })}>Scan</button>
+        {date && !forPlan && (
+          <button className="btn secondary" onClick={() => navigate(`/food/photo?date=${date}&meal=${encodeURIComponent(meal)}`, { replace: true })}>Photo</button>
+        )}
       </div>
       {notFound && <p className="muted" role="alert">{notFound}</p>}
 

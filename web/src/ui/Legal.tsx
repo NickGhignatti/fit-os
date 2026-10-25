@@ -61,6 +61,10 @@ export const PrivacyPolicy = () => (
       to another device, as described below. Clearing your browser’s site data deletes it, so use <em>Export backup</em> in your
       profile to keep a copy.
     </p>
+    <p>
+      A photo you take to log a meal is looked at by the food recogniser on your device, then forgotten: it is not
+      stored and not sent anywhere. Only the foods you choose to log are kept.
+    </p>
 
     <h2>4. Information that leaves your device only when you act</h2>
     <h3>Sending an item to another device</h3>
@@ -171,6 +175,13 @@ export const TermsOfService = () => (
       Food data comes from the CREA food composition tables (Italy) and from Open Food Facts, made available under the
       Open Database Licence; exercise descriptions and photos come from free-exercise-db (public domain). Such data may
       be incomplete or wrong; check labels and instructions yourself.
+    </p>
+    <p>
+      The photo food recogniser runs on your device and is built on DINOv2 (Meta, Apache License 2.0), run by ONNX
+      Runtime (Microsoft, MIT Licence). It learned from the MyFoodRepo Food Recognition Benchmark (AIcrowd and EPFL,
+      CC BY 4.0), Nutrition5k (Google, CC BY 4.0), Open Images V7 (Google; labels CC BY 4.0, photos CC BY 2.0) and
+      COCO 2017 (annotations CC BY 4.0, only photos under open licences). Its guesses, and the weights it suggests, can
+      be wrong: check them before logging.
     </p>
 
     <h2>6. No warranty</h2>

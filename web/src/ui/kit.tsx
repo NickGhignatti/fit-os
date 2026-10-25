@@ -109,6 +109,7 @@ export const Icons = {
   plus: <Glyph d="M12 5v14M5 12h14" />,
   search: <Glyph d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4" />,
   scan: <Glyph d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 8v8M12 8v8M16 8v8" />,
+  camera: <Glyph d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
   weight: <Glyph d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 10a4 4 0 0 1 8 0zM12 10l1.5-2.5" />,
   receive: <Glyph d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 6v7M9.5 10.5 12 13l2.5-2.5M11 18h2" />,
   download: <Glyph d="M12 3v12M7 10l5 5 5-5M5 21h14" />,

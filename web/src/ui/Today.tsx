@@ -241,6 +241,7 @@ export const Today = () => {
       <Fab label="Log food or weight" actions={[
         { label: 'Search food', short: 'Food', icon: Icons.search, onSelect: () => navigate(foodLink()) },
         { label: 'Scan a barcode', short: 'Scan', icon: Icons.scan, onSelect: () => navigate(foodLink('&scan=1')) },
+        { label: 'Photo of a meal', short: 'Photo', icon: Icons.camera, onSelect: () => navigate(foodLink().replace('/food/pick', '/food/photo')) },
         { label: 'Weight', icon: Icons.weight, onSelect: () => setWeighing(true) },
       ]} />
       {weighing && <WeightDialog date={date} onClose={() => setWeighing(false)} />}
