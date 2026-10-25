@@ -16,3 +16,6 @@ captures/
 
 # Python bytecode
 __pycache__/
+
+# Personal Claude Code settings
+.claude/settings.local.json
