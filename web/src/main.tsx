@@ -7,6 +7,7 @@ import { PowerSyncDatabase } from '@powersync/web';
 import { registerSW } from 'virtual:pwa-register';
 import { createContainer } from './app/container';
 import { ContainerProvider } from './app/hooks';
+import { hideSplash } from './app/splash';
 import { copyLegacyData } from './data/legacy';
 import { AppSchema } from './data/schema';
 import { Store } from './data/store';
@@ -33,15 +34,18 @@ registerSW({
 // file is the real safety net. Failure is harmless.
 void navigator.storage?.persist?.().catch(() => undefined);
 
-const render = () => createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ContainerProvider container={container}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ContainerProvider>
-  </StrictMode>,
-);
+const render = () => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ContainerProvider container={container}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ContainerProvider>
+    </StrictMode>,
+  );
+  hideSplash();
+};
 
 // Data from before SQLite is copied over first, so the screens open on all of it. A failed copy
 // is retried on the next start; the app opens anyway.

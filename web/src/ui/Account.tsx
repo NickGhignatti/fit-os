@@ -157,28 +157,9 @@ const Row = ({ icon, title, line, onClick }: { icon: ReactNode; title: string; l
   </button>
 );
 
-/** Whether the account card was left open; it starts folded. */
-const OPEN_KEY = 'tracker-account-open';
-
-const readOpen = (): boolean => {
-  try {
-    return localStorage.getItem(OPEN_KEY) === '1';
-  } catch {
-    return false;
-  }
-};
-
-const writeOpen = (open: boolean) => {
-  try {
-    localStorage.setItem(OPEN_KEY, open ? '1' : '0');
-  } catch {
-    // Private mode: it starts folded next time.
-  }
-};
-
 /**
  * The account card on the Profile screen: who you are on top, and what an account can do folded
- * away below it. Hidden in builds without accounts.
+ * away below it, folded again each time the screen opens. Hidden in builds without accounts.
  */
 export const AccountSection = () => {
   const { community } = useContainer();
@@ -186,14 +167,11 @@ export const AccountSection = () => {
   const navigate = useNavigate();
   const auth = useAuth();
   const [dialog, setDialog] = useState<'signIn' | 'profile' | 'plans' | 'device' | 'delete' | null>(null);
-  const [open, setOpen] = useState(readOpen);
+  const [open, setOpen] = useState(false);
   const panel = useId();
   if (!community || !auth) return null;
 
-  const toggle = () => {
-    setOpen(!open);
-    writeOpen(!open);
-  };
+  const toggle = () => setOpen(!open);
 
   return (
     <>

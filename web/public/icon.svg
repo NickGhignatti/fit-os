@@ -1,4 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#15803d"/>
-  <path d="M120 270l92 92 180-200" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Tracker: a barbell shaped like a T, inside the progress ring of the Today screen. -->
+  <rect width="512" height="512" rx="112" fill="#111315"/>
+  <circle cx="256" cy="256" r="156" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="34"/>
+  <path d="M256 100A156 156 0 1 1 120.9 178" fill="none" stroke="#22c55e" stroke-width="34" stroke-linecap="round"/>
+  <path d="M196 212H316M256 212V338" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round"/>
+  <rect x="172" y="174" width="22" height="76" rx="8" fill="#fff"/>
+  <rect x="154" y="188" width="14" height="48" rx="6" fill="#fff"/>
+  <rect x="318" y="174" width="22" height="76" rx="8" fill="#fff"/>
+  <rect x="344" y="188" width="14" height="48" rx="6" fill="#fff"/>
 </svg>

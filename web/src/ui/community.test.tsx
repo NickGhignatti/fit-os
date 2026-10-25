@@ -114,8 +114,7 @@ describe('signing in with Google', () => {
 });
 
 describe('the account card', () => {
-  it('starts folded to who you are, unfolds to what an account can do, and stays as it was left', async () => {
-    localStorage.clear();
+  it('starts folded to who you are, unfolds to what an account can do, and is folded again next time', async () => {
     const user = userEvent.setup();
     const fake = new FakeCommunity();
     fake.nextUser = 'nick';
@@ -134,9 +133,8 @@ describe('the account card', () => {
     }
     cleanup();
 
-    renderApp('/profile', makeDevice(null, fake)); // later, still open
-    expect(await screen.findByRole('button', { name: 'Account options' })).toHaveAttribute('aria-expanded', 'true');
-    await user.click(screen.getByRole('button', { name: 'Account options' }));
+    renderApp('/profile', makeDevice(null, fake)); // later, folded again
+    expect(await screen.findByRole('button', { name: 'Account options' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
   });
 });
