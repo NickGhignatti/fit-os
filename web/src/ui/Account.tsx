@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContainer, useStream } from '../app/hooks';
 import type { Account, AuthState, ProfileEdit, PublicPlanSummary } from '../community/ports';
@@ -157,14 +157,43 @@ const Row = ({ icon, title, line, onClick }: { icon: ReactNode; title: string; l
   </button>
 );
 
-/** The account card on the Profile screen. Hidden in builds without accounts. */
+/** Whether the account card was left open; it starts folded. */
+const OPEN_KEY = 'tracker-account-open';
+
+const readOpen = (): boolean => {
+  try {
+    return localStorage.getItem(OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const writeOpen = (open: boolean) => {
+  try {
+    localStorage.setItem(OPEN_KEY, open ? '1' : '0');
+  } catch {
+    // Private mode: it starts folded next time.
+  }
+};
+
+/**
+ * The account card on the Profile screen: who you are on top, and what an account can do folded
+ * away below it. Hidden in builds without accounts.
+ */
 export const AccountSection = () => {
   const { community } = useContainer();
   const toast = useToast();
   const navigate = useNavigate();
   const auth = useAuth();
   const [dialog, setDialog] = useState<'signIn' | 'profile' | 'plans' | 'device' | 'delete' | null>(null);
+  const [open, setOpen] = useState(readOpen);
+  const panel = useId();
   if (!community || !auth) return null;
+
+  const toggle = () => {
+    setOpen(!open);
+    writeOpen(!open);
+  };
 
   return (
     <>
@@ -173,30 +202,47 @@ export const AccountSection = () => {
         {auth.status === 'loading' && <p className="muted" role="status">Checking sign-in…</p>}
         {auth.status === 'signedOut' && (
           <div className="stack">
-            <p className="muted">
-              Sign in to publish your plans and to move everything to a new phone. Not needed to use the app or to copy plans.
-            </p>
+            <button className="account-hero" aria-expanded={open} aria-controls={panel} aria-label="Account options" onClick={toggle}>
+              <span className="avatar small" aria-hidden="true">{Icons.person}</span>
+              <span className="grow">
+                <span className="hero-title">Not signed in</span>
+                <span className="hero-line muted">Publish plans, move to a new phone</span>
+              </span>
+              <span className="chevron" aria-hidden="true">{Icons.chevron}</span>
+            </button>
             <GoogleButton onClick={() => setDialog('signIn')} />
-            <Row icon={Icons.community} title="Community plans" line="Workouts and diets shared by others" onClick={() => navigate('/community')} />
-            <Row icon={Icons.receive} title="Get data from another device" line="On a new phone, after signing in" onClick={() => navigate('/link')} />
+            {open && (
+              <div id={panel} className="stack">
+                <p className="small muted">
+                  Sign in to publish your plans and to move everything to a new phone. Not needed to use the app or to copy plans.
+                </p>
+                <Row icon={Icons.community} title="Community plans" line="Workouts and diets shared by others" onClick={() => navigate('/community')} />
+                <Row icon={Icons.receive} title="Get data from another device" line="On a new phone, after signing in" onClick={() => navigate('/link')} />
+              </div>
+            )}
           </div>
         )}
         {auth.status === 'signedIn' && (
           <div className="stack">
-            <button className="profile-hero account-hero" aria-label="Edit public profile" onClick={() => setDialog('profile')}>
+            <button className="account-hero" aria-expanded={open} aria-controls={panel} aria-label="Account options" onClick={toggle}>
               <span className="avatar small" aria-hidden="true">{auth.account.handle.charAt(0).toUpperCase()}</span>
               <span className="grow">
                 <span className="hero-title">@{auth.account.handle}</span>
                 <span className="hero-line muted">{auth.account.displayName || 'Your public profile'}</span>
               </span>
-              <span className="muted hero-chevron" aria-hidden="true">›</span>
+              <span className="chevron" aria-hidden="true">{Icons.chevron}</span>
             </button>
-            <Row icon={Icons.device} title="Add a device" line="Copy everything to your new phone" onClick={() => setDialog('device')} />
-            <Row icon={Icons.receive} title="Get data from another device" line="On the new phone" onClick={() => navigate('/link')} />
-            <Row icon={Icons.community} title="Community plans" line="Workouts and diets shared by others" onClick={() => navigate('/community')} />
-            <Row icon={Icons.list} title="My published plans" line="See or unpublish what you shared" onClick={() => setDialog('plans')} />
-            <Row icon={Icons.signOut} title="Sign out" line="Your data stays on this device" onClick={() => void community.auth.signOut()} />
-            <button className="link danger-text account-delete" onClick={() => setDialog('delete')}>Delete account</button>
+            {open && (
+              <div id={panel} className="stack">
+                <Row icon={Icons.person} title="Edit public profile" line="Your handle and name" onClick={() => setDialog('profile')} />
+                <Row icon={Icons.device} title="Add a device" line="Copy everything to your new phone" onClick={() => setDialog('device')} />
+                <Row icon={Icons.receive} title="Get data from another device" line="On the new phone" onClick={() => navigate('/link')} />
+                <Row icon={Icons.community} title="Community plans" line="Workouts and diets shared by others" onClick={() => navigate('/community')} />
+                <Row icon={Icons.list} title="My published plans" line="See or unpublish what you shared" onClick={() => setDialog('plans')} />
+                <Row icon={Icons.signOut} title="Sign out" line="Your data stays on this device" onClick={() => void community.auth.signOut()} />
+                <button className="link danger-text account-delete" onClick={() => setDialog('delete')}>Delete account</button>
+              </div>
+            )}
           </div>
         )}
       </section>

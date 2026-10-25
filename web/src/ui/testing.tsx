@@ -1,4 +1,4 @@
-import { configure, render } from '@testing-library/react';
+import { configure, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MemoryRouter } from 'react-router-dom';
@@ -46,3 +46,9 @@ export const renderApp = (route = '/', device: Container = makeDevice()) => ({
     </ContainerProvider>,
   ),
 });
+
+/** Unfolds the account card on Profile, unless an earlier test left it open. */
+export const openAccount = async (user: { click: (element: Element) => Promise<void> }) => {
+  const toggle = await screen.findByRole('button', { name: 'Account options' });
+  if (toggle.getAttribute('aria-expanded') !== 'true') await user.click(toggle);
+};

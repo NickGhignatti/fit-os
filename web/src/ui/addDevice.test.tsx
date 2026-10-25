@@ -9,7 +9,7 @@ import { FakeCommunity } from '../community/fake';
 import { Tables } from '../data/schema';
 import { newTrainingPlan } from '../domain/edit';
 import { InMemoryDeviceLinks } from '../transfer/deviceLink';
-import { makeDevice, renderApp } from './testing';
+import { makeDevice, openAccount, renderApp } from './testing';
 
 // jsdom lacks WebCrypto and Blob streams, which the encryption needs; Node has both.
 Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
@@ -35,7 +35,8 @@ const codeFromOldPhone = async (user: ReturnType<typeof userEvent.setup>, server
   await old.repos.trainingPlans.save(plan);
   await old.repos.profile.setWeight('2026-10-20', 80);
   renderApp('/profile', old);
-  await user.click(await screen.findByRole('button', { name: 'Add a device' }));
+  await openAccount(user);
+    await user.click(await screen.findByRole('button', { name: 'Add a device' }));
   const dialog = await screen.findByRole('dialog', { name: 'Add a device' });
   expect(dialog).toHaveTextContent(/encrypted here first/);
   await user.click(within(dialog).getByRole('button', { name: 'Create code' }));
@@ -78,6 +79,7 @@ describe('adding a device', () => {
     await fake.signInWithGoogle();
     const fresh = makeDevice(null, fake);
     renderApp('/profile', fresh);
+    await openAccount(user);
     await user.click(await screen.findByRole('button', { name: 'Get data from another device' }));
     await user.type(await screen.findByLabelText('Device code'), code);
     await user.click(screen.getByRole('button', { name: 'Get data' }));

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { FakeCommunity } from '../community/fake';
 import { newDietPlan, newTrainingPlan, addMeal } from '../domain/edit';
 import { CONTACT_EMAIL } from './Legal';
-import { makeDevice, renderApp } from './testing';
+import { makeDevice, openAccount, renderApp } from './testing';
 
 afterEach(cleanup);
 
@@ -50,6 +50,7 @@ describe('signing in with Google', () => {
     renderApp('/profile', makeDevice(null, fake));
 
     const account = await screen.findByRole('region', { name: 'Account' });
+    await openAccount(user);
     expect(account).toHaveTextContent('Not needed to use the app');
     await user.click(within(account).getByRole('button', { name: /Sign in with Google/ }));
 
@@ -73,6 +74,7 @@ describe('signing in with Google', () => {
     const user = userEvent.setup();
     renderApp('/profile', makeDevice(null, new FakeCommunity()));
     await signIn(user);
+    await openAccount(user);
     await user.click(await screen.findByRole('button', { name: 'Sign out' }));
     expect(await screen.findByRole('button', { name: /Sign in with Google/ })).toBeInTheDocument();
   });
@@ -87,6 +89,7 @@ describe('signing in with Google', () => {
     renderApp('/profile', makeDevice(null, fake));
     await signIn(user);
 
+    await openAccount(user);
     await user.click(await screen.findByRole('button', { name: 'Edit public profile' }));
     const form = await dialog('Public profile');
     const handle = within(form).getByLabelText('Handle');
@@ -107,6 +110,34 @@ describe('signing in with Google', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('@alice_fit')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
+  });
+});
+
+describe('the account card', () => {
+  it('starts folded to who you are, unfolds to what an account can do, and stays as it was left', async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    const fake = new FakeCommunity();
+    fake.nextUser = 'nick';
+    await fake.signInWithGoogle();
+    renderApp('/profile', makeDevice(null, fake));
+
+    const toggle = await screen.findByRole('button', { name: 'Account options' });
+    expect(toggle).toHaveTextContent('@nick');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: 'Add a device' })).not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    for (const name of ['Edit public profile', 'Add a device', 'Get data from another device', 'Community plans', 'My published plans', 'Sign out', 'Delete account']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument();
+    }
+    cleanup();
+
+    renderApp('/profile', makeDevice(null, fake)); // later, still open
+    expect(await screen.findByRole('button', { name: 'Account options' })).toHaveAttribute('aria-expanded', 'true');
+    await user.click(screen.getByRole('button', { name: 'Account options' }));
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
   });
 });
 
@@ -149,6 +180,7 @@ describe('publishing', () => {
     await signIn(user);
     await fake.publish({ kind: 'diet', title: 'My cut', description: '', payload: {} });
 
+    await openAccount(user);
     await user.click(await screen.findByRole('button', { name: 'My published plans' }));
     const list = await dialog('My published plans');
     expect(await within(list).findByText('My cut')).toBeInTheDocument();
@@ -277,6 +309,7 @@ describe('deleting the account', () => {
     await signIn(user);
     await fake.publish({ kind: 'training', title: 'Mine', description: '', payload: {} });
 
+    await openAccount(user);
     await user.click(await screen.findByRole('button', { name: 'Delete account' }));
     const confirm = await dialog('Delete your account?');
     expect(confirm).toHaveTextContent(/permanently removes your account, your public profile, the plans you published/);
@@ -295,6 +328,7 @@ describe('deleting the account', () => {
     await device.repos.trainingPlans.save(newTrainingPlan('Local plan', 'daily'));
     renderApp('/profile', device);
     await signIn(user);
+    await openAccount(user);
     await user.click(await screen.findByRole('button', { name: 'Delete account' }));
     await user.click(within(await dialog('Delete your account?')).getByRole('button', { name: 'Delete account' }));
     await screen.findByText('Account deleted');
