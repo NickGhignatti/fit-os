@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { LinkScreen } from '../ui/AddDevice';
+import { CommunityPlanScreen, CommunityScreen } from '../ui/Community';
 import { Day } from '../ui/Day';
 import { DietPlanScreen, Food } from '../ui/Diet';
 import { ExerciseDetail, ExercisePicker } from '../ui/Exercises';
@@ -81,6 +83,9 @@ export const App = () => {
               <Route path="/food/pick" element={<FoodPicker />} />
               <Route path="/food/photo" element={<PhotoFoods />} />
               <Route path="/import" element={<ImportShared />} />
+              <Route path="/link" element={<LinkScreen />} />
+              <Route path="/community" element={<CommunityScreen />} />
+              <Route path="/community/:id" element={<CommunityPlanScreen />} />
               <Route path="/tracker" element={<Tracker />} />
               <Route path="/profile" element={<ProfileScreen />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />

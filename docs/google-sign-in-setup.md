@@ -1,13 +1,34 @@
-# Setting up Google sign-in and the community
+# Setting up Supabase, Google sign-in, the community and "Add a device"
 
 The code is finished; these steps connect it to your own Google and Supabase accounts. None of the
 values below go in the repository: the Google client secret lives only in the Supabase dashboard.
 
-## 1. Create the community tables (Supabase)
+## 0. A Supabase project, and the app pointed at it
 
-Open **SQL Editor**, paste `supabase/migrations/20261018000000_community.sql`, and run it. (The
-`transfers` migration from before must already be applied.) It creates `profiles`, `public_plans`,
-`plan_reports` and `delete_my_account()`, and turns on the access rules.
+1. <https://supabase.com/dashboard> → **New project** (free plan, region `eu-central-1` or the
+   closest to you). Keep the database password somewhere safe; the app never needs it.
+2. **Project Settings → API Keys**: copy the **Project URL** and the **publishable** key
+   (`sb_publishable_…`). Never use the secret key in the app.
+3. In the repository root, create `.env` (git ignores it) from `web/.env.example`:
+
+   ```
+   SUPABASE_URL=https://<project-ref>.supabase.co
+   SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
+   ```
+
+   Every build after this (`npm run deploy` in `web/`) has sending, accounts and the community on.
+   Without `.env` the app still works, with those features hidden.
+
+## 1. Create the tables (Supabase)
+
+Open **SQL Editor** and run these files from `supabase/migrations/`, one after the other, in this
+order:
+
+1. `20261017000000_transfers.sql`: "Send with a code" (one item, no account).
+2. `20261018000000_community.sql`: `profiles`, `public_plans`, `plan_reports` and
+   `delete_my_account()`, with their access rules.
+3. `20261025000000_device_links.sql`: "Add a device" (everything, to another device of the same
+   account, encrypted, deleted once taken or after 30 minutes).
 
 ## 2. Google Cloud: the consent screen and the client
 
@@ -36,13 +57,18 @@ Open **SQL Editor**, paste `supabase/migrations/20261018000000_community.sql`, a
 1. **Authentication → Providers → Google**: enable, paste the Client ID and Client secret, save.
 2. **Authentication → URL Configuration**
    - **Site URL**: `https://<your-site>`
-   - **Redirect URLs**: add `https://<your-site>/profile` and `http://localhost:4173/profile`.
+   - **Redirect URLs**: add `https://<your-site>/**` and `http://localhost:4173/**` (sign-in returns
+     to the page it started from: Profile, a plan, or the "Get your data" page).
 
 ## 4. Try it
 
 Open the site, go to **Profile → Account → Sign in with Google**, tick the agreement, and sign in.
-You should come back to Profile showing `@user_xxxxxxxx`. Publish a plan from a workout page, then
-look at it in **Community**.
+You should come back to Profile showing `@user_xxxxxxxx`. Publish a plan from a workout page (the
+share button), then look at it in **Community**.
+
+Then try **Add a device**: on the phone with your data, Profile → Account → Add a device → Create
+code. On the other device, scan the QR with the camera (or open Profile → Get data from another
+device), sign in with the same Google account, and everything arrives.
 
 ## Looking after the community
 

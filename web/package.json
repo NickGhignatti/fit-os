@@ -33,6 +33,7 @@
   "dependencies": {
     "@powersync/common": "2.3.1",
     "@powersync/web": "2.4.2",
+    "@supabase/auth-js": "^2.118.0",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "dexie": "^4.0.10",

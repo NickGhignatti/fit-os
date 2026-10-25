@@ -7,6 +7,7 @@ import { portionNutrients, portionOf } from '../domain/nutrition';
 import { daysOf, type PlanDay } from '../domain/plan';
 import { copyDietDay } from '../domain/useCases';
 import { dayName, formatGrams, formatKcal, parseNumber, shortDayName, today } from './format';
+import { CommunityButton } from './Community';
 import { useToast } from './hooks';
 import { MacroLine } from './Tracker';
 import { ActionMenu, Carousel, ConfirmDialog, Empty, Fab, Icons, Loading, MacroChips, Modal, PageHeader, type FabAction } from './kit';
@@ -34,7 +35,7 @@ export const Food = () => {
   const [weighing, setWeighing] = useState(false);
   return (
     <>
-      <PageHeader title="Diet" />
+      <PageHeader title="Diet" actions={<CommunityButton label="Community diets" />} />
       <h2>Body</h2>
       <BodyBoard />
       <h2>Your diets</h2>

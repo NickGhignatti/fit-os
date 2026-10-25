@@ -7,6 +7,9 @@ import { readFileContents } from '../data/importFile';
 import { importEnvelope } from '../data/importItem';
 import { normalizeCode } from '../transfer/code';
 import { envelopeFile, receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
+import type { DietPlan } from '../domain/diet';
+import type { TrainingPlan } from '../domain/trainingPlan';
+import { PublishDialog } from './Community';
 import { useToast } from './hooks';
 import { ConfirmDialog, Empty, Icons, Modal, PageHeader, type FabAction } from './kit';
 import { ScannerDialog } from './Scanner';
@@ -21,7 +24,7 @@ const KIND_LABEL: Record<TransferKind, string> = {
   training_plan: 'workout plan', diet_plan: 'diet', workout: 'workout', food_log_day: 'food log',
 };
 
-const QrImage = ({ text }: { text: string }) => {
+export const QrImage = ({ text, alt = 'QR code of the code below' }: { text: string; alt?: string }) => {
   const [url, setUrl] = useState<string>();
   useEffect(() => {
     let current = true;
@@ -30,7 +33,7 @@ const QrImage = ({ text }: { text: string }) => {
       current = false;
     };
   }, [text]);
-  return url ? <img src={url} width={240} height={240} alt="QR code of the transfer code" style={{ display: 'block', margin: '0 auto' }} /> : null;
+  return url ? <img src={url} width={240} height={240} alt={alt} style={{ display: 'block', margin: '0 auto' }} /> : null;
 };
 
 const SendDialog = ({ kind, data, onClose }: { kind: TransferKind; data: unknown; onClose: () => void }) => {
@@ -233,9 +236,10 @@ export const useShareFile = () => {
  * file" (anyone can import it) and, when sending is set up, "Send with a code" to your own other device.
  */
 export const ShareButton = ({ kind, data, title, label }: { kind: TransferKind; data: unknown; title: string; label?: string }) => {
-  const { transfer } = useContainer();
+  const { transfer, community } = useContainer();
   const share = useShareFile();
-  const [open, setOpen] = useState<'menu' | 'code' | null>(null);
+  const [open, setOpen] = useState<'menu' | 'code' | 'publish' | null>(null);
+  const publishable = community && (kind === 'training_plan' || kind === 'diet_plan');
   return (
     <>
       {label
@@ -252,10 +256,18 @@ export const ShareButton = ({ kind, data, title, label }: { kind: TransferKind; 
                 {Icons.receive}<span className="grow">Send with a code<br /><span className="small muted">To your other device, once</span></span>
               </button>
             )}
+            {publishable && (
+              <button className="menu-item with-icon" onClick={() => setOpen('publish')}>
+                {Icons.community}<span className="grow">Publish to community<br /><span className="small muted">Anyone can find and copy it</span></span>
+              </button>
+            )}
           </div>
         </Modal>
       )}
       {open === 'code' && <SendDialog kind={kind} data={data} onClose={() => setOpen(null)} />}
+      {open === 'publish' && (
+        <PublishDialog kind={kind === 'training_plan' ? 'training' : 'diet'} plan={data as TrainingPlan | DietPlan} onClose={() => setOpen(null)} />
+      )}
     </>
   );
 };

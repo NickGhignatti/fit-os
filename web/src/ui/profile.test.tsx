@@ -25,10 +25,9 @@ describe('legal pages', () => {
     renderApp('/privacy', makeDevice());
     expect(await screen.findByRole('heading', { name: 'Privacy Policy' })).toBeInTheDocument();
     const page = document.querySelector('.legal')!;
-    for (const topic of ['Who is responsible', 'stay on your device', 'Open Food Facts', 'Cloudflare', 'Supabase', 'jsDelivr', 'Your rights', 'Children', 'Cookies']) {
+    for (const topic of ['Who is responsible', 'stay on your device', 'Signing in with Google', 'Adding a device', 'within 30 minutes', 'Open Food Facts', 'Cloudflare', 'Supabase', 'jsDelivr', 'Your rights', 'Children', 'Cookies']) {
       expect(page.textContent).toContain(topic);
     }
-    expect(page.textContent).not.toMatch(/Sign in with Google|publish/i);
     expect(within(page as HTMLElement).getAllByRole('link', { name: CONTACT_EMAIL })[0]).toHaveAttribute('href', `mailto:${CONTACT_EMAIL}`);
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
   });

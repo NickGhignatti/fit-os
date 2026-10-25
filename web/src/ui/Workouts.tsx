@@ -5,6 +5,7 @@ import { newTrainingPlan } from '../domain/edit';
 import { weekdayOf, type LocalDate } from '../domain/plan';
 import { sessionOn, sessionOnDay, trainingDays, type TrainingPlan } from '../domain/trainingPlan';
 import { observeTrainingWeeks, startPlannedSession, type TrainingWeek } from '../domain/useCases';
+import { CommunityButton } from './Community';
 import { ExerciseBrowser } from './Exercises';
 import { WEEKDAYS, dateTitle, setSummary, shortDayName, today } from './format';
 import { Carousel, Empty, Fab, Icons, Loading, Modal, PageHeader, PlayIcon, Segmented } from './kit';
@@ -121,11 +122,12 @@ export const Workouts = () => {
 
   return (
     <>
-      <PageHeader title="Workouts" actions={
+      <PageHeader title="Workouts" actions={<>
+        <CommunityButton label="Community workouts" />
         <button className="icon-btn count-btn" aria-label="All workouts" onClick={() => setListing(true)}>
           {Icons.list}{plans && plans.length > 0 && <span className="count" aria-hidden="true">{plans.length}</span>}
         </button>
-      } />
+      </>} />
       <Segmented<Tab> label="Workouts" value={tab} onChange={(t) => setParams(t === 'plans' ? {} : { tab: t }, { replace: true })}
         options={[{ value: 'plans', label: 'This week' }, { value: 'library', label: 'Library' }, { value: 'records', label: 'Records' }]} />
       {tab === 'library' ? (

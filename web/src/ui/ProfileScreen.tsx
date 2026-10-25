@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useContainer, useStream } from '../app/hooks';
 import { exportBackup } from '../data/backup';
 import { ACTIVITY_FACTOR, PACE_KG_PER_WEEK, ageOn, type ActivityLevel, type GoalPace, type Profile, type Sex } from '../domain/profile';
+import { AccountSection } from './Account';
 import { Calendar } from './Calendar';
 import { ACTIVITY_LABEL, PACE_LABEL, SEX_LABEL, formatKg, parseNumber, today } from './format';
 import { Icons, Loading, Modal, PageHeader, type FabAction } from './kit';
@@ -112,6 +113,8 @@ export const ProfileScreen = () => {
         </span>
         <span className="muted hero-chevron" aria-hidden="true">›</span>
       </button>
+
+      <AccountSection />
 
       <h2>Calendar</h2>
       <Calendar />
