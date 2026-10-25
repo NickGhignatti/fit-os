@@ -29,6 +29,8 @@ order:
    `delete_my_account()`, with their access rules.
 3. `20261025000000_device_links.sql`: "Add a device" (everything, to another device of the same
    account, encrypted, deleted once taken or after 30 minutes).
+4. `20261025000100_backfill_profiles.sql`: a public profile for accounts that signed in before
+   step 2 (without it they show "@…" and cannot save a handle). Harmless to run again.
 
 ## 2. Google Cloud: the consent screen and the client
 
