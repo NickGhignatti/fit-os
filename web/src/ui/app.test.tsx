@@ -10,6 +10,7 @@ import { weekdayOf } from '../domain/plan';
 import { InMemoryTransferGateway } from '../transfer/gateway';
 import { envelopeFile } from '../transfer/transfer';
 import { WEEKDAYS, today } from './format';
+import { restQuoteFor } from './restDay';
 import { makeDevice, renderApp } from './testing';
 import { Tables } from '../data/schema';
 
@@ -81,12 +82,12 @@ describe('choosing the meal for food from the +', () => {
 });
 
 describe('what Today shows', () => {
-  it('leaves out training and meals on a day with nothing planned', async () => {
+  it('shows a rest day and leaves out meals on a day with nothing planned', async () => {
     const device = makeDevice();
     await device.repos.trainingPlans.save({ ...newTrainingPlan('Rest', 'weekly'), isActive: true }); // no session on any day
     renderApp('/', device);
     await screen.findByRole('region', { name: 'Energy consumed' });
-    expect(screen.queryByRole('heading', { name: 'Training' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Rest day' })).getByText(restQuoteFor(today()))).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Meals' })).not.toBeInTheDocument();
     cleanup();
 

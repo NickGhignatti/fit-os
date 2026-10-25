@@ -10,6 +10,7 @@ import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
 import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing } from './kit';
+import { restQuoteFor } from './restDay';
 import { mealNamesOf } from './Tracker';
 import { WeightDialog, metricWidgets } from './Weight';
 import { WidgetBoard } from './Widgets';
@@ -125,7 +126,7 @@ export const Today = () => {
   const day = `/day/${date}`;
   const unfinished = agenda.workouts.filter((w) => totalSetsOf(w) === 0 || doneSetsOf(w) < totalSetsOf(w));
   const nothingToDo = agenda.pendingSessions.length === 0 && unfinished.length === 0;
-  // A section shows only on a day it has something for: no rest-day or no-plan filler.
+  // A section shows only on a day it has something for, except training: a day without it is a rest day.
   const trainsToday = weeks.some((w) => w.todaySets !== null) || agenda.workouts.length > 0;
   const eatsByPlan = calories.hasDietPlan && calories.meals.length > 0;
   const loggedMeals = calories.meals.filter((m) => m.entries.length > 0).length;
@@ -175,6 +176,16 @@ export const Today = () => {
     </>
   );
 
+  const restDay = (
+    <>
+      <h2>Training</h2>
+      <section className="card rest-day" aria-label="Rest day">
+        <div className="eyebrow">Rest day</div>
+        <p className="rest-quote">{restQuoteFor(date)}</p>
+      </section>
+    </>
+  );
+
   const meals = (
     <>
       <div className="section-head">
@@ -217,7 +228,7 @@ export const Today = () => {
             </EnergyCard>
           ),
         },
-        { id: 'training', title: 'Training', description: 'The sessions left to do today', sizes: ['full'], render: () => (trainsToday ? training : null) },
+        { id: 'training', title: 'Training', description: 'The sessions left to do today, or a rest-day note', sizes: ['full'], render: () => (trainsToday ? training : restDay) },
         {
           id: 'progress', title: 'Training progress', description: "Today's sets and this week's sessions, as rings", sizes: ['full'],
           render: () => (trainsToday && weeks.length > 0 ? <TrainingProgress weeks={weeks} /> : null),

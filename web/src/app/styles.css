@@ -478,6 +478,8 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 .play:active { transform: scale(0.94); }
 
 .today-done { display: flex; align-items: center; gap: 12px; color: var(--ink-secondary); }
+.rest-day .eyebrow { color: var(--accent); }
+.rest-quote { margin: 6px 0 0; font-size: 17px; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; }
 .done-mark {
   flex: none; display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent);
