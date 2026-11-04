@@ -1,8 +1,29 @@
 /// <reference types="vitest" />
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { manifest } from './pwa-manifest';
+import { specFiles } from './src/data/planSpec';
+
+/**
+ * Publishes how to write a training plan (/llms.txt and its JSON Schema) next to the app. They are
+ * generated from the importer's own schema at build time rather than kept in public/, so they can
+ * never describe a format the app no longer accepts. The dev server serves them too.
+ */
+const planSpec = (): Plugin => ({
+  name: 'fit-os-plan-spec',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      const file = specFiles()[(req.url ?? '').split('?')[0]!.replace(/^\//, '')];
+      if (file === undefined) return next();
+      res.setHeader('Content-Type', req.url!.endsWith('.json') ? 'application/json' : 'text/plain; charset=utf-8');
+      res.end(file);
+    });
+  },
+  generateBundle() {
+    for (const [fileName, source] of Object.entries(specFiles())) this.emitFile({ type: 'asset', fileName, source });
+  },
+});
 
 /**
  * Configuration comes from the repo-root `.env` (git-ignored). Only the two public values below
@@ -18,6 +39,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      planSpec(),
       VitePWA({
         registerType: 'autoUpdate',
         // src/main.tsx registers the service worker itself, to look for updates while the app is open.

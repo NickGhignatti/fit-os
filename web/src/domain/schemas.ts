@@ -44,16 +44,30 @@ const byDay = <T extends z.ZodTypeAny>(item: T) =>
 const rest = z.number().int().nonnegative().max(3_600).nullable().default(null);
 /** Seconds each rep of a timed set lasts; files from before timed sets existed have none. */
 const seconds = z.number().int().positive().max(86_400).nullable().default(null);
-const plannedSet = z.object({ id, reps: z.number().int().positive().max(10_000), weight, seconds });
-const plannedExercise = z.object({
-  id,
-  name: text(120),
-  notes: text(2_000),
-  sets: z.array(plannedSet).max(100),
-  catalogId: text(120).nullable(),
-  restSeconds: rest,
-  restAfterSeconds: rest,
-});
+
+/**
+ * The fields of a planned set and exercise, shared by the stored and the authored plan below so
+ * that both check every value the same way. The descriptions travel into the published JSON
+ * Schema and the AI prompt (see data/planSpec.ts): what a field means is written once, here.
+ */
+const setFields = {
+  reps: z.number().int().positive().max(10_000)
+    .describe('Repetitions in the set. For a timed hold use 1 and put the hold time in seconds.'),
+  weight: weight.describe('Extra load in kg (a barbell, dumbbells, a weighted vest). null for bodyweight.'),
+  seconds: seconds.describe(
+    'Seconds each rep lasts, for timed sets only: a 45 s plank is reps 1, seconds 45; five 5 s isometric pushes are reps 5, seconds 5. null for ordinary sets.',
+  ),
+};
+const exerciseFields = {
+  name: text(120).min(1).describe('The exercise name. A name that matches an exercise of the app catalogue exactly links its photos and instructions.'),
+  notes: text(2_000).describe('Coaching cues, tempo, progression: anything the athlete should read while training.'),
+  catalogId: text(120).nullable().describe('Id of the exercise in the app catalogue, or null. Leave null when unsure: the app links exact catalogue names itself.'),
+  restSeconds: rest.describe('Seconds of rest after each set. null for the app default (90 s).'),
+  restAfterSeconds: rest.describe('Seconds of rest after the exercise, before the next one. null for the app default (120 s).'),
+};
+
+const plannedSet = z.object({ id, ...setFields });
+const plannedExercise = z.object({ id, ...exerciseFields, name: text(120), sets: z.array(plannedSet).max(100) });
 
 export const trainingPlanSchema: Schema<TrainingPlan> = z.object({
   id,
@@ -62,6 +76,50 @@ export const trainingPlanSchema: Schema<TrainingPlan> = z.object({
   isActive: z.boolean(),
   sessions: byDay(plannedExercise),
 });
+
+/**
+ * A training plan as a person or an AI writes it, for importing. Same values, same limits as the
+ * stored plan, but the bookkeeping may be left out: ids (an import gives everything fresh ones
+ * anyway), notes, the catalogue link, the load, the rests, the active flag and the recurrence,
+ * which is read from the days used. A plan the app wrote itself always passes, even an empty one
+ * or one with an exercise left without sets: only days that contradict the recurrence are refused.
+ */
+const authoredId = z.string().max(64).optional().default('').describe('Optional: the app assigns its own ids on import.');
+
+const authoredSet = z.object({ id: authoredId, ...setFields, weight: setFields.weight.default(null) });
+
+const authoredExercise = z.object({
+  id: authoredId,
+  ...exerciseFields,
+  notes: exerciseFields.notes.default(''),
+  catalogId: exerciseFields.catalogId.default(null),
+  sets: z.array(authoredSet).max(100).describe('The sets, in order. Each one can differ (a pyramid, a back-off set).'),
+});
+
+const DAYS_DESCRIPTION =
+  'Exercises per day. Weekly plans use "1" (Monday) to "7" (Sunday) and leave rest days out; a daily plan (the same session every day) uses only "0".';
+
+export const authoredTrainingPlanSchema: Schema<TrainingPlan> = z
+  .object({
+    id: authoredId,
+    name: text(80).min(1).describe('The plan name, as the athlete will see it.'),
+    recurrence: recurrence.optional().describe('"weekly" (a session per weekday) or "daily". Optional: read from the days used.'),
+    isActive: z.boolean().default(false).describe('Optional and ignored: imported plans start inactive, the athlete turns them on.'),
+    sessions: byDay(authoredExercise).describe(DAYS_DESCRIPTION),
+  })
+  .transform((plan) => ({ ...plan, recurrence: plan.recurrence ?? (0 in plan.sessions ? 'daily' as const : 'weekly' as const) }))
+  .superRefine((plan, ctx) => {
+    const days = Object.keys(plan.sessions).map(Number);
+    if (plan.recurrence === 'daily' ? days.some((d) => d !== 0) : days.includes(0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sessions'],
+        message: plan.recurrence === 'daily'
+          ? 'a daily plan has only day "0"; use "weekly" with days "1"-"7" for a session per weekday'
+          : 'a weekly plan uses days "1" (Monday) to "7" (Sunday); "0" is only for daily plans',
+      });
+    }
+  });
 
 const plannedFood = z.object({ id, name: text(200), quantity: text(200), portion: portion.nullable() });
 const meal = z.object({ id, name: text(80), time: text(20), foods: z.array(plannedFood).max(200) });

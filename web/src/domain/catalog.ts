@@ -89,6 +89,33 @@ export interface CustomExerciseRepository {
   delete(id: string): Promise<void>;
 }
 
+/** Finds the catalogue id of an exercise named [name]; null when no exercise has that name. */
+export type ExerciseLinker = (name: string) => Promise<string | null>;
+
+/** A name with only its letters and digits, lower case and without accents: "Pull-ups" and "pullups" meet. */
+const compactName = (name: string): string =>
+  name.normalize('NFD').replace(/\p{Mn}+/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+
+/**
+ * Links plans written elsewhere (by hand, by an AI) to the catalogue: an exercise whose name is a
+ * catalogue name, give or take case, accents, spaces and punctuation, gets that exercise's id, so
+ * it shows its photos and instructions. Your own exercises win over the bundled ones of the same
+ * name. A fuzzier match is left out on purpose: linking the wrong exercise is worse than none.
+ * The catalogue is read once per linker, on first use.
+ */
+export const catalogLinker = (exercises: ExerciseCatalogRepository): ExerciseLinker => {
+  let byName: Promise<ReadonlyMap<string, string>> | null = null;
+  const index = async () => {
+    const map = new Map<string, string>();
+    for (const e of await exercises.search('', noFilter)) { // yours first, then the bundled ones
+      const key = compactName(e.name);
+      if (!map.has(key)) map.set(key, e.id);
+    }
+    return map;
+  };
+  return async (name) => (await (byName ??= index())).get(compactName(name)) ?? null;
+};
+
 export interface ExerciseCatalogRepository {
   /** Exercises passing [filter] and matching [query] (all of them for a blank query), best first. */
   search(query: string, filter: ExerciseFilter): Promise<ExerciseInfo[]>;
