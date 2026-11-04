@@ -2,7 +2,7 @@ import type { Equipment, ExerciseCategory, ExerciseLevel, Muscle } from '../doma
 import type { Nutrients } from '../domain/nutrition';
 import { addDays, weekdayOf, type LocalDate, type PlanDay } from '../domain/plan';
 import type { ActivityLevel, GoalPace, Sex } from '../domain/profile';
-import { oneRepMax, type PersonalRecord, type PrMetric } from '../domain/records';
+import { oneRepMax, type ProgressEntry, type Metric } from '../domain/progress';
 
 /** Today in the device's timezone, "2026-10-17". */
 export const today = (now: Date = new Date()): LocalDate => {
@@ -147,18 +147,22 @@ export const parseDuration = (text: string): number | null => {
 export const formatDistance = (metres: number): string =>
   metres >= 1000 ? `${trim(metres / 1000, 2)} km` : `${trim(metres, 0)} m`;
 
-export const METRIC_LABEL: Record<PrMetric, string> = { weight: 'Weight', reps: 'Reps', time: 'Time', distance: 'Distance' };
+export const METRIC_LABEL: Record<Metric, string> = {
+  weight: 'Weight', reps: 'Reps', length: 'Jump / length', hold: 'Hold', time: 'Time', distance: 'Distance',
+};
 
-/** "100 kg × 5", "25 reps", "21:45", "5.2 km". */
-export const describeRecord = (r: PersonalRecord): string => {
-  switch (r.metric) {
-    case 'weight': return r.reps && r.reps > 1 ? `${formatKg(r.value)} × ${r.reps}` : formatKg(r.value);
-    case 'reps': return `${r.value} ${r.value === 1 ? 'rep' : 'reps'}`;
-    case 'time': return formatDuration(r.value);
-    case 'distance': return formatDistance(r.value);
+/** "100 kg × 5", "25 reps", "62 cm", "1m 30s" held, "21:45", "5.2 km". */
+export const describeEntry = (e: ProgressEntry): string => {
+  switch (e.metric) {
+    case 'weight': return e.reps && e.reps > 1 ? `${formatKg(e.value)} × ${e.reps}` : formatKg(e.value);
+    case 'reps': return `${e.value} ${e.value === 1 ? 'rep' : 'reps'}`;
+    case 'length': return `${trim(e.value)} cm`;
+    case 'hold': return formatSeconds(e.value);
+    case 'time': return formatDuration(e.value);
+    case 'distance': return formatDistance(e.value);
   }
 };
 
 /** For lifts of several reps, the one-rep max they imply; otherwise null. */
-export const impliedOneRepMax = (r: PersonalRecord): string | null =>
+export const impliedOneRepMax = (r: ProgressEntry): string | null =>
   r.metric === 'weight' && r.reps && r.reps > 1 ? `≈ ${formatKg(oneRepMax(r.value, r.reps))} 1RM` : null;

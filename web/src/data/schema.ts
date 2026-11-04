@@ -4,7 +4,7 @@ import type { DietPlan } from '../domain/diet';
 import type { FoodLogDay } from '../domain/foodLog';
 import type { FoodItem } from '../domain/nutrition';
 import type { Profile, WeightEntry } from '../domain/profile';
-import type { PersonalRecord } from '../domain/records';
+import type { ProgressEntry } from '../domain/progress';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { Workout } from '../domain/workout';
 
@@ -70,8 +70,10 @@ export const Tables = {
   profile: { name: 'profile', id: (_profile: Profile) => 'me', columns: none } satisfies DocTable<Profile>,
   // Packaged products seen before, so they can be found offline. Local only, never exported.
   savedProducts: { name: 'saved_products', id: (f) => f.id, columns: none } satisfies DocTable<FoodItem>,
-  records: {
+  // Progress entries keep the table name they had when the feature was called "records", so the
+  // data already on devices stays where it is.
+  progress: {
     name: 'records', id: (r) => r.id, columns: (r) => ({ exercise_key: r.exerciseKey, date: r.date }),
-  } satisfies DocTable<PersonalRecord>,
+  } satisfies DocTable<ProgressEntry>,
   customExercises: { name: 'custom_exercises', id: (e) => e.id, columns: (e) => ({ name: e.name }) } satisfies DocTable<CustomExercise>,
 } as const;

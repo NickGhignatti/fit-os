@@ -25,7 +25,7 @@ export const REST_QUOTES: readonly string[] = [
   'Drink water, eat well, put your feet up. That is training too.',
   'A bow that is always drawn loses its spring.',
   'Rest now, and come back hungry.',
-  'Your next personal record starts with tonight’s sleep.',
+  'Your next personal best starts with tonight’s sleep.',
   'Doing nothing today is doing something for tomorrow.',
   'Muscle is built from food and rest. You already did the hard part.',
   'Listen to your body today. It has been listening to you all week.',

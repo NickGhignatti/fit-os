@@ -185,9 +185,25 @@ export const useReceiveAction = (): [FabAction, ReactNode] => {
 };
 
 
+/** How a file handed out is named and typed. */
+export interface FileFormat {
+  readonly extension: string;
+  readonly type: string;
+}
+
+/**
+ * Items and backups. The content is JSON, but Chrome on Android shares only a short list of file
+ * types (images, PDF, plain text…), and .json is not on it: a .json file makes share() fail. So
+ * the file is plain text, and the app tells what it holds from the content, not the name.
+ */
+export const FITOS_FILE: FileFormat = { extension: 'fitos.txt', type: 'text/plain' };
+
+/** A table for spreadsheets. Where a browser cannot share it, it is downloaded instead. */
+export const CSV_FILE: FileFormat = { extension: 'csv', type: 'text/csv' };
+
 /** Saves [text] as a file through the browser's download. */
-const download = (name: string, text: string) => {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+const download = (name: string, text: string, type: string) => {
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const link = Object.assign(document.createElement('a'), { href: url, download: name });
   document.body.append(link);
   link.click();
@@ -195,12 +211,9 @@ const download = (name: string, text: string) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-/**
- * The file's name. The content is JSON, but Chrome on Android shares only a short list of file
- * types (images, PDF, plain text…), and .json is not on it: a .json file makes share() fail. So
- * the file is plain text, and the app tells what it holds from the content, not the name.
- */
-const fileName = (title: string) => `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}.fitos.txt`;
+/** The file's name: [title] made safe for any file system, with the format's extension. */
+const fileName = (title: string, format: FileFormat) =>
+  `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item'}.${format.extension}`;
 
 export type ShareOutcome = 'shared' | 'cancelled' | 'downloaded';
 
@@ -208,9 +221,9 @@ export type ShareOutcome = 'shared' | 'cancelled' | 'downloaded';
  * Hands [text] to the phone's share sheet as a file (to a chat, mail, drive, Files…). Where the
  * browser cannot share it, the file is downloaded instead, and the caller says where it went.
  */
-export const shareFile = async (title: string, text: string): Promise<ShareOutcome> => {
-  const name = fileName(title);
-  const file = typeof File === 'undefined' ? null : new File([text], name, { type: 'text/plain' });
+export const shareFile = async (title: string, text: string, format: FileFormat = FITOS_FILE): Promise<ShareOutcome> => {
+  const name = fileName(title, format);
+  const file = typeof File === 'undefined' ? null : new File([text], name, { type: format.type });
   if (file && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title });
@@ -219,15 +232,15 @@ export const shareFile = async (title: string, text: string): Promise<ShareOutco
       if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'; // the sheet was closed
     }
   }
-  download(name, text);
+  download(name, text, format.type);
   return 'downloaded';
 };
 
 /** Shares a file and, when it was downloaded instead, says where to find it. */
 export const useShareFile = () => {
   const toast = useToast();
-  return (title: string, text: string) => shareFile(title, text).then((outcome) => {
-    if (outcome === 'downloaded') toast(`Saved to Downloads as ${fileName(title)}`);
+  return (title: string, text: string, format: FileFormat = FITOS_FILE) => shareFile(title, text, format).then((outcome) => {
+    if (outcome === 'downloaded') toast(`Saved to Downloads as ${fileName(title, format)}`);
   });
 };
 

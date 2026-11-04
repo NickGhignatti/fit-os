@@ -4,7 +4,7 @@ import type { DietPlan } from '../domain/diet';
 import type { FoodLogDay } from '../domain/foodLog';
 import type { FoodItem } from '../domain/nutrition';
 import type { Profile, WeightEntry } from '../domain/profile';
-import type { PersonalRecord } from '../domain/records';
+import type { ProgressEntry } from '../domain/progress';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { Workout } from '../domain/workout';
 
@@ -34,7 +34,7 @@ export class TrackerDb extends Dexie {
   weightEntries!: EntityTable<WeightEntry, 'id'>;
   profile!: EntityTable<ProfileRow, 'key'>;
   savedProducts!: EntityTable<FoodItem, 'id'>;
-  records!: EntityTable<PersonalRecord, 'id'>;
+  records!: EntityTable<ProgressEntry, 'id'>;
   customExercises!: EntityTable<CustomExercise, 'id'>;
 
   constructor(name = 'tracker') {

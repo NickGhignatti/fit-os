@@ -10,7 +10,7 @@ import { ExerciseBrowser } from './Exercises';
 import { WEEKDAYS, dateTitle, setSummary, shortDayName, today } from './format';
 import { Carousel, Empty, Fab, Icons, Loading, Modal, PageHeader, PlayIcon, Segmented } from './kit';
 import { PlanRows, TRAINING_TEXTS, usePlanCreation } from './Plans';
-import { RecordsTab } from './Records';
+import { ProgressTab } from './Progress';
 import { useImportFileAction, useReceiveAction } from './Transfer';
 
 export const trainingSummary = (plan: TrainingPlan): string => {
@@ -23,7 +23,7 @@ export const trainingSummary = (plan: TrainingPlan): string => {
   return days.map(shortDayName).join(' · ');
 };
 
-type Tab = 'plans' | 'library' | 'records';
+type Tab = 'plans' | 'library' | 'progress';
 
 /** Exercises a week card shows before the rest fold away behind its dots. */
 const SHOWN_ROWS = 4;
@@ -106,7 +106,8 @@ const WeekCarousel = ({ weeks, date }: { weeks: readonly TrainingWeek[]; date: L
 export const Workouts = () => {
   const [params, setParams] = useSearchParams();
   const requested = params.get('tab');
-  const tab: Tab = requested === 'library' || requested === 'records' ? requested : 'plans';
+  // "records" is the tab's old name, kept so saved links still open it.
+  const tab: Tab = requested === 'library' || requested === 'progress' ? requested : requested === 'records' ? 'progress' : 'plans';
   const date = today();
   const { repos } = useContainer();
   const plans = useStream((c) => c.repos.trainingPlans.observePlans());
@@ -129,11 +130,11 @@ export const Workouts = () => {
         </button>
       </>} />
       <Segmented<Tab> label="Workouts" value={tab} onChange={(t) => setParams(t === 'plans' ? {} : { tab: t }, { replace: true })}
-        options={[{ value: 'plans', label: 'This week' }, { value: 'library', label: 'Library' }, { value: 'records', label: 'Records' }]} />
+        options={[{ value: 'plans', label: 'This week' }, { value: 'library', label: 'Library' }, { value: 'progress', label: 'Progress' }]} />
       {tab === 'library' ? (
         <ExerciseBrowser />
-      ) : tab === 'records' ? (
-        <RecordsTab />
+      ) : tab === 'progress' ? (
+        <ProgressTab />
       ) : weeks === undefined ? (
         <Loading />
       ) : weeks.length === 0 ? (

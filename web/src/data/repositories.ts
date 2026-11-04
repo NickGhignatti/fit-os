@@ -10,7 +10,7 @@ import type {
   DietPlanRepository,
   FavoriteFoodRepository,
   FoodLogRepository,
-  PersonalRecordRepository,
+  ProgressRepository,
   PlanRepository,
   ProfileRepository,
   Stream,
@@ -18,7 +18,7 @@ import type {
   TransactionRunner,
   WorkoutRepository,
 } from '../domain/repositories';
-import { newestFirst, type PersonalRecord } from '../domain/records';
+import { newestFirst, type ProgressEntry } from '../domain/progress';
 import { rank } from '../domain/textSearch';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { DaySummary, Workout } from '../domain/workout';
@@ -283,30 +283,30 @@ export class SqlProfileRepository implements ProfileRepository {
   }
 }
 
-export class SqlPersonalRecords implements PersonalRecordRepository {
+export class SqlProgress implements ProgressRepository {
   constructor(private readonly store: Store) {}
 
   private of = async (docs: Docs, exerciseKey: string) =>
-    newestFirst(await docs.list(Tables.records, 'exercise_key = ?', [exerciseKey]));
+    newestFirst(await docs.list(Tables.progress, 'exercise_key = ?', [exerciseKey]));
 
-  observeAll(): Stream<PersonalRecord[]> {
-    return this.store.live(['records'], async (docs) => newestFirst(await docs.list(Tables.records)));
+  observeAll(): Stream<ProgressEntry[]> {
+    return this.store.live([Tables.progress.name], async (docs) => newestFirst(await docs.list(Tables.progress)));
   }
 
-  observeFor(exerciseKey: string): Stream<PersonalRecord[]> {
-    return this.store.live(['records'], (docs) => this.of(docs, exerciseKey));
+  observeFor(exerciseKey: string): Stream<ProgressEntry[]> {
+    return this.store.live([Tables.progress.name], (docs) => this.of(docs, exerciseKey));
   }
 
-  getFor(exerciseKey: string): Promise<PersonalRecord[]> {
+  getFor(exerciseKey: string): Promise<ProgressEntry[]> {
     return this.of(this.store.docs, exerciseKey);
   }
 
-  save(record: PersonalRecord): Promise<void> {
-    return this.store.docs.put(Tables.records, record);
+  save(entry: ProgressEntry): Promise<void> {
+    return this.store.docs.put(Tables.progress, entry);
   }
 
   delete(id: string): Promise<void> {
-    return this.store.docs.delete(Tables.records, id);
+    return this.store.docs.delete(Tables.progress, id);
   }
 }
 

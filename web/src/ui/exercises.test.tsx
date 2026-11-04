@@ -171,7 +171,7 @@ describe("an exercise's own page", () => {
 
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     const confirm = await dialog('Delete exercise?');
-    expect(confirm).toHaveTextContent(/keep its name, and its records stay/);
+    expect(confirm).toHaveTextContent(/keep its name, and its progress stays/);
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     await waitFor(async () => expect(await device.store.direct.count('custom_exercises')).toBe(0));
@@ -189,24 +189,24 @@ describe("an exercise's own page", () => {
   });
 });
 
-describe('records for your own exercises', () => {
-  it('line up with the exercise, so the page and the record share a history', async () => {
+describe('progress for your own exercises', () => {
+  it('line up with the exercise, so the page and its progress share a history', async () => {
     const user = userEvent.setup();
     const device = makeDevice();
     const sandbag = { id: customExerciseId('rec'), name: 'Sandbag carry', muscle: null, equipment: null, notes: '' };
     await device.repos.customExercises.save(sandbag);
-    renderApp('/workouts?tab=records', device);
+    renderApp('/workouts?tab=progress', device);
 
-    await user.click(await screen.findByRole('button', { name: 'Add a record' }));
-    await user.click(await screen.findByRole('button', { name: 'Add record' }));
-    const form = await dialog('Add personal record');
+    await user.click(await screen.findByRole('button', { name: 'Progress actions' }));
+    await user.click(await screen.findByRole('button', { name: 'Log progress' }));
+    const form = await dialog('Log progress');
     await user.type(within(form).getByLabelText('Exercise'), 'sandbag');
     await user.click(await within(form).findByRole('button', { name: 'Sandbag carry' }));
     await user.type(within(form).getByLabelText('Weight (kg)'), '40');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await waitFor(async () => expect(await device.store.direct.count('records')).toBe(1));
-    const [record] = await device.store.direct.list(Tables.records);
-    expect(record).toMatchObject({ catalogId: sandbag.id, exerciseKey: sandbag.id, value: 40 });
+    const [entry] = await device.store.direct.list(Tables.progress);
+    expect(entry).toMatchObject({ catalogId: sandbag.id, exerciseKey: sandbag.id, value: 40 });
   });
 });
