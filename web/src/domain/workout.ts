@@ -8,6 +8,13 @@ export interface ExerciseSet {
   readonly plannedWeight: number | null;
   readonly actualReps: number | null;
   readonly actualWeight: number | null;
+  /**
+   * For a timed set, how long each rep lasts, in seconds: a 45 s hold is 1 rep of 45 s, five 5 s
+   * pushes are 5 reps of 5 s. Null for an ordinary set. Sets saved before timed sets existed have
+   * none stored, hence optional: read them through [plannedSecondsOf] and [actualSecondsOf].
+   */
+  readonly plannedSeconds?: number | null;
+  readonly actualSeconds?: number | null;
   readonly done: boolean;
   /** A word on how the set went; empty when there is none. */
   readonly note: string;
@@ -78,9 +85,19 @@ export const stopped = (s: Stopwatch, now: number): Stopwatch =>
   s.runningSince === null ? s : { elapsedMs: elapsedOn(s, now), runningSince: null };
 export const ZERO: Stopwatch = { elapsedMs: 0, runningSince: null };
 
+/** Seconds each planned rep lasts; null for an untimed set, or one saved before timed sets existed. */
+export const plannedSecondsOf = (s: { readonly plannedSeconds?: number | null }): number | null => s.plannedSeconds ?? null;
+
+/** Seconds each rep actually lasted; null when not logged, or saved before timed sets existed. */
+export const actualSecondsOf = (s: { readonly actualSeconds?: number | null }): number | null => s.actualSeconds ?? null;
+
 /** True when the set was completed with different numbers than planned. */
 export const deviatesFromPlan = (s: ExerciseSet): boolean =>
-  s.done && ((s.actualReps ?? s.plannedReps) !== s.plannedReps || s.actualWeight !== s.plannedWeight);
+  s.done && (
+    (s.actualReps ?? s.plannedReps) !== s.plannedReps
+    || s.actualWeight !== s.plannedWeight
+    || (actualSecondsOf(s) ?? plannedSecondsOf(s)) !== plannedSecondsOf(s)
+  );
 
 /**
  * A completed set always has actual values: any left blank default to the plan, so the common
@@ -91,6 +108,7 @@ export const markedDone = (s: ExerciseSet): ExerciseSet => ({
   done: true,
   actualReps: s.actualReps ?? s.plannedReps,
   actualWeight: s.actualWeight ?? s.plannedWeight,
+  actualSeconds: actualSecondsOf(s) ?? plannedSecondsOf(s),
 });
 
 /** Un-marking keeps any logged values, so re-marking restores them. */
@@ -133,7 +151,15 @@ export const summarize = (date: LocalDate, workouts: readonly Workout[]): DaySum
 export interface SetPlan {
   readonly reps: number;
   readonly weight: number | null;
+  /**
+   * Seconds each rep lasts for a timed set (a hold, a timed push); null or absent for an ordinary
+   * set. Optional because sets saved before timed sets existed have none: read it through [secondsOf].
+   */
+  readonly seconds?: number | null;
 }
+
+/** Seconds of a planned set; sets saved before timed sets existed have none stored. */
+export const secondsOf = (s: { readonly seconds?: number | null }): number | null => s.seconds ?? null;
 
 export interface ExercisePlan {
   readonly name: string;
@@ -144,10 +170,11 @@ export interface ExercisePlan {
   readonly restAfterSeconds?: number | null;
 }
 
-export const setPlan = (reps: number, weight: number | null): SetPlan => {
+export const setPlan = (reps: number, weight: number | null, seconds: number | null = null): SetPlan => {
   if (!(reps > 0)) throw new Error(`reps must be positive, was ${reps}`);
   if (weight !== null && weight < 0) throw new Error(`weight must not be negative, was ${weight}`);
-  return { reps, weight };
+  if (seconds !== null && !(seconds > 0)) throw new Error(`seconds must be positive, was ${seconds}`);
+  return { reps, weight, seconds };
 };
 
 const DEFAULT_REPS = 10;
@@ -158,7 +185,7 @@ export const setFollowing = (last: SetPlan | null): SetPlan => last ?? setPlan(D
 export const exerciseToPlan = (e: Exercise): ExercisePlan => ({
   name: e.name,
   notes: e.notes,
-  sets: e.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })),
+  sets: e.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight, seconds: plannedSecondsOf(s) })),
   catalogId: e.catalogId,
   restSeconds: e.restSeconds ?? null,
   restAfterSeconds: e.restAfterSeconds ?? null,

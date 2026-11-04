@@ -86,6 +86,16 @@ describe('starting a planned session', () => {
     expect(workouts[0]).toMatchObject({ title: 'Strength', planId: plan.id });
   });
 
+  it('turns timed sets of the plan into timed sets of the workout', async () => {
+    const r = repos();
+    const plank = { name: 'Plank', notes: '', catalogId: null, sets: [{ reps: 1, weight: null, seconds: 45 }] };
+    const plan = { ...addPlannedExercise(newTrainingPlan('Core', 'weekly'), 1, plank), isActive: true };
+    await r.trainingPlans.save(plan);
+    await startPlannedSession(r, MONDAY, plan.id);
+    const [w] = await r.workouts.getWorkouts(MONDAY);
+    expect(w?.exercises[0]?.sets[0]).toMatchObject({ plannedReps: 1, plannedSeconds: 45, actualSeconds: null });
+  });
+
   it('does nothing on a rest day or for a plan that is gone', async () => {
     const r = repos();
     expect(await startPlannedSession(r, MONDAY, 'missing')).toBeNull();

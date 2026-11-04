@@ -42,7 +42,9 @@ const byDay = <T extends z.ZodTypeAny>(item: T) =>
 
 /** Seconds of rest after a set; files from before rest times existed have none. */
 const rest = z.number().int().nonnegative().max(3_600).nullable().default(null);
-const plannedSet = z.object({ id, reps: z.number().int().positive().max(10_000), weight });
+/** Seconds each rep of a timed set lasts; files from before timed sets existed have none. */
+const seconds = z.number().int().positive().max(86_400).nullable().default(null);
+const plannedSet = z.object({ id, reps: z.number().int().positive().max(10_000), weight, seconds });
 const plannedExercise = z.object({
   id,
   name: text(120),
@@ -78,6 +80,8 @@ const exerciseSet = z.object({
   plannedWeight: weight,
   actualReps: z.number().int().nonnegative().max(10_000).nullable(),
   actualWeight: weight,
+  plannedSeconds: seconds,
+  actualSeconds: seconds,
   done: z.boolean(),
   note: text(500).default(''),
 });

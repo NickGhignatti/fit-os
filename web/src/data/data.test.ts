@@ -47,7 +47,7 @@ const plan = (over: Partial<TrainingPlan> = {}): TrainingPlan => ({
   name: 'Strength',
   recurrence: 'weekly',
   isActive: false,
-  sessions: { 1: [{ id: newId(), name: 'Squat', notes: '', catalogId: null, restSeconds: null, restAfterSeconds: null, sets: [{ id: newId(), reps: 5, weight: 100 }] }] },
+  sessions: { 1: [{ id: newId(), name: 'Squat', notes: '', catalogId: null, restSeconds: null, restAfterSeconds: null, sets: [{ id: newId(), reps: 5, weight: 100, seconds: null }] }] },
   ...over,
 });
 
@@ -66,7 +66,7 @@ const workout = (over: Partial<Workout> = {}): Workout => ({
       catalogId: null,
       restSeconds: null,
       restAfterSeconds: null,
-      sets: [{ id: newId(), plannedReps: 8, plannedWeight: 60, actualReps: 8, actualWeight: 60, done: true, note: '' }],
+      sets: [{ id: newId(), plannedReps: 8, plannedWeight: 60, plannedSeconds: null, actualReps: 8, actualWeight: 60, actualSeconds: null, done: true, note: '' }],
     },
   ],
   ...over,
@@ -302,11 +302,22 @@ describe('importing a received item', () => {
     expect(day.entries[1]?.id).not.toBe('theirs');
   });
 
+  it('keeps the seconds of timed sets, and reads plans from before timed sets as untimed', async () => {
+    const plank = { id: newId(), name: 'Plank', notes: '', catalogId: null, restSeconds: null, restAfterSeconds: null, sets: [{ id: newId(), reps: 1, weight: null, seconds: 45 }] };
+    await importEnvelope(db, { v: 1, kind: 'training_plan', data: plan({ name: 'Timed', sessions: { 1: [plank] } }), sentAt: 'x' });
+    const legacySquat = { ...plan().sessions[1]![0]!, sets: [{ id: newId(), reps: 5, weight: 100 }] }; // no "seconds" key, as before
+    await importEnvelope(db, { v: 1, kind: 'training_plan', data: plan({ name: 'Old', sessions: { 1: [legacySquat] } }), sentAt: 'x' });
+    const byName = Object.fromEntries((await db.direct.list(Tables.trainingPlans)).map((p) => [p.name, p]));
+    expect(byName.Timed?.sessions[1]?.[0]?.sets[0]).toMatchObject({ reps: 1, weight: null, seconds: 45 });
+    expect(byName.Old?.sessions[1]?.[0]?.sets[0]).toMatchObject({ reps: 5, weight: 100, seconds: null });
+  });
+
   it('rejects malformed or hostile items without storing anything', async () => {
     const bad = [
       { kind: 'workout', data: { id: 'x' } },
       { kind: 'training_plan', data: { ...plan(), name: 'x'.repeat(500) } },
       { kind: 'training_plan', data: { ...plan(), sessions: { 9: [] } } },
+      { kind: 'training_plan', data: plan({ sessions: { 1: [{ ...plan().sessions[1]![0]!, sets: [{ id: 'x', reps: 1, weight: null, seconds: 0 }] }] } }) },
       { kind: 'diet_plan', data: 'nope' },
       { kind: 'food_log_day', data: { date: 'yesterday', entries: [] } },
     ] as const;

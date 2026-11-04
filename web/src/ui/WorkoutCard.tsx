@@ -10,10 +10,10 @@ import {
   addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedSession, toggleSetDone,
 } from '../domain/useCases';
 import {
-  deviatesFromPlan, doneSets, doneSetsOf, isExerciseDone, markedDone, restAfterOf, restOf, totalSetsOf,
-  type Exercise, type ExerciseSet, type Workout,
+  actualSecondsOf, deviatesFromPlan, doneSets, doneSetsOf, isExerciseDone, markedDone, plannedSecondsOf, restAfterOf, restOf,
+  totalSetsOf, type Exercise, type ExerciseSet, type Workout,
 } from '../domain/workout';
-import { formatKg, formatRest, formatWeight, parseNumber, relativeDay, setSummary, today } from './format';
+import { formatKg, formatRest, formatWeight, parseNumber, relativeDay, setSummary, setWork, today } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog, SwipeToComplete } from './kit';
 import { PrPrompt } from './Records';
@@ -44,19 +44,23 @@ const SetDialog = ({ number, set, onSave, onDelete, onClose }: {
   const [plannedWeight, setPlannedWeight] = useState(numberText(set.plannedWeight));
   const [actualReps, setActualReps] = useState(numberText(set.actualReps));
   const [actualWeight, setActualWeight] = useState(numberText(set.actualWeight));
+  const [plannedSeconds, setPlannedSeconds] = useState(numberText(plannedSecondsOf(set)));
+  const [actualSeconds, setActualSeconds] = useState(numberText(actualSecondsOf(set)));
   const [note, setNote] = useState(set.note ?? '');
   const [done, setDone] = useState(set.done);
 
   const reps = parseNumber(plannedReps);
-  const valid = reps !== null && reps > 0 && Number.isInteger(reps);
+  const optionalInt = (text: string) => { const n = parseNumber(text); return n === null ? null : Math.round(n); };
+  /** Seconds may be left empty (an untimed set); typed, they must be a positive count. */
+  const secondsOk = (text: string) => text.trim() === '' || (optionalInt(text) ?? 0) > 0;
+  const valid = reps !== null && reps > 0 && Number.isInteger(reps) && secondsOk(plannedSeconds) && secondsOk(actualSeconds);
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!valid) return;
-    const optionalInt = (text: string) => { const n = parseNumber(text); return n === null ? null : Math.round(n); };
     onSave({
       ...set, done, note: note.trim(),
-      plannedReps: reps, plannedWeight: parseNumber(plannedWeight),
-      actualReps: optionalInt(actualReps), actualWeight: parseNumber(actualWeight),
+      plannedReps: reps, plannedWeight: parseNumber(plannedWeight), plannedSeconds: optionalInt(plannedSeconds),
+      actualReps: optionalInt(actualReps), actualWeight: parseNumber(actualWeight), actualSeconds: optionalInt(actualSeconds),
     });
     onClose();
   };
@@ -68,9 +72,10 @@ const SetDialog = ({ number, set, onSave, onDelete, onClose }: {
     <Modal title={`Set ${number}`} onClose={onClose}>
       <form className="stack" onSubmit={submit}>
         <p className="small muted">Planned</p>
-        <div className="row">{field('Reps', plannedReps, setPlannedReps)}{field('kg', plannedWeight, setPlannedWeight)}</div>
+        <div className="row">{field('Reps', plannedReps, setPlannedReps)}{field('Seconds', plannedSeconds, setPlannedSeconds)}{field('kg', plannedWeight, setPlannedWeight)}</div>
         <p className="small muted">Actually done</p>
-        <div className="row">{field('Reps', actualReps, setActualReps)}{field('kg', actualWeight, setActualWeight)}</div>
+        <div className="row">{field('Reps', actualReps, setActualReps)}{field('Seconds', actualSeconds, setActualSeconds)}{field('kg', actualWeight, setActualWeight)}</div>
+        <p className="small muted">Seconds are for timed sets: a 45 s hold is 1 rep of 45 seconds. Leave them empty otherwise.</p>
         <label className="stack"><span className="small muted">Note</span>
           <textarea className="field" rows={2} maxLength={500} value={note} placeholder="How did it go? Grip, tempo, a niggle…"
             onChange={(e) => setNote(e.target.value)} /></label>
@@ -143,10 +148,15 @@ const SetRow = ({ set, number, onToggle, onEdit }: { set: ExerciseSet; number: n
     <button className="set-main" onClick={onEdit}>
       <span className="set-label">Set {number}</span>{' '}
       <span className="set-vals">
-        <span className="set-val"><b>{set.plannedReps}</b> reps</span>{' '}
+        <span className="set-val">
+          {plannedSecondsOf(set) === null ? <><b>{set.plannedReps}</b> reps</> : <b>{setWork({ reps: set.plannedReps, seconds: plannedSecondsOf(set) })}</b>}
+        </span>{' '}
         <span className="set-val">{set.plannedWeight === null ? 'bodyweight' : <><b>{formatWeight(set.plannedWeight)}</b> kg</>}</span>
         {deviatesFromPlan(set) && (
-          <span className="chip carbs">Did {set.actualReps ?? set.plannedReps}{set.actualWeight !== null ? ` × ${formatKg(set.actualWeight)}` : ''}</span>
+          <span className="chip carbs">
+            Did {setWork({ reps: set.actualReps ?? set.plannedReps, seconds: actualSecondsOf(set) ?? plannedSecondsOf(set) })}
+            {set.actualWeight !== null ? ` × ${formatKg(set.actualWeight)}` : ''}
+          </span>
         )}
       </span>{' '}
       <span className={`set-note ${set.note ? '' : 'blank'}`}>{set.note || 'Add a note'}</span>
@@ -312,7 +322,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
                 ? <Link className="title" to={`/exercises/${encodeURIComponent(exercise.catalogId)}`}>{exercise.name}</Link>
                 : <span className="title">{exercise.name}</span>}
               <div className="small muted">
-                {doneSets(exercise)}/{exercise.sets.length} sets · {setSummary(exercise.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })))}
+                {doneSets(exercise)}/{exercise.sets.length} sets · {setSummary(exercise.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight, seconds: plannedSecondsOf(s) })))}
               </div>
               {restLine(exercise) && <div className="exercise-rest">Rest {restLine(exercise)}</div>}
               {exercise.notes && <div className="exercise-notes">{exercise.notes}</div>}
@@ -336,7 +346,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
           {done.length === 0 ? <p className="muted">None left here: they're all back in the list.</p> : done.map((exercise) => (
             <section key={exercise.id} className="completed-exercise" aria-label={exercise.name}>
               <div className="title">{exercise.name}</div>
-              <div className="small muted">{setSummary(exercise.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })))}</div>
+              <div className="small muted">{setSummary(exercise.sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight, seconds: plannedSecondsOf(s) })))}</div>
               {setRows(exercise)}
             </section>
           ))}

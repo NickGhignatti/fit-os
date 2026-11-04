@@ -1,5 +1,5 @@
 import { addDays, daysOf, planDayOn, type LocalDate, type PlanDay, type Recurrence } from './plan';
-import type { ExercisePlan, SetPlan, Workout } from './workout';
+import { secondsOf, type ExercisePlan, type SetPlan, type Workout } from './workout';
 
 /** An exercise stored in a plan; unlike [ExercisePlan] it has ids, so it can be edited in place. */
 export interface PlannedSet {
@@ -7,6 +7,8 @@ export interface PlannedSet {
   readonly reps: number;
   /** Kilograms; null means bodyweight / not applicable. */
   readonly weight: number | null;
+  /** Seconds each rep lasts for a timed set; see [SetPlan.seconds]. Read it through [secondsOf]. */
+  readonly seconds?: number | null;
 }
 
 export interface PlannedExercise {
@@ -53,7 +55,7 @@ export const nextSessionFrom = (plan: TrainingPlan, date: LocalDate): readonly P
 export const trainingDays = (plan: TrainingPlan): PlanDay[] =>
   daysOf(plan.recurrence).filter((d) => sessionOnDay(plan, d).length > 0);
 
-const setToPlan = (s: PlannedSet): SetPlan => ({ reps: s.reps, weight: s.weight });
+const setToPlan = (s: PlannedSet): SetPlan => ({ reps: s.reps, weight: s.weight, seconds: secondsOf(s) });
 
 export const plannedToPlan = (e: PlannedExercise): ExercisePlan => ({
   name: e.name,

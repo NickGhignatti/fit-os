@@ -180,14 +180,18 @@ const AddExerciseDialog = ({ name, catalogId, onSubmit, onClose }: {
   const [title, setTitle] = useState(name);
   const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('10');
+  const [seconds, setSeconds] = useState('');
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [rest, setRest] = useState(DEFAULT_REST);
   const [restAfter, setRestAfter] = useState(DEFAULT_REST_AFTER);
   const n = parseNumber(sets);
   const r = parseNumber(reps);
+  const sec = parseNumber(seconds);
   const w = parseNumber(weight);
-  const valid = title.trim() !== '' && n !== null && n >= 1 && n <= 50 && Number.isInteger(n) && r !== null && r >= 1 && Number.isInteger(r) && (weight.trim() === '' || (w !== null && w >= 0));
+  const valid = title.trim() !== '' && n !== null && n >= 1 && n <= 50 && Number.isInteger(n) && r !== null && r >= 1 && Number.isInteger(r)
+    && (seconds.trim() === '' || (sec !== null && sec >= 1 && Number.isInteger(sec)))
+    && (weight.trim() === '' || (w !== null && w >= 0));
 
   const input = (label: string, value: string, set: (v: string) => void, mode: 'text' | 'decimal' = 'decimal') => (
     <label className="stack grow"><span className="small muted">{label}</span>
@@ -198,12 +202,12 @@ const AddExerciseDialog = ({ name, catalogId, onSubmit, onClose }: {
       <form className="stack" onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
-        onSubmit({ name: title.trim(), notes: notes.trim(), catalogId, restSeconds: rest, restAfterSeconds: restAfter, sets: Array.from({ length: n }, () => ({ reps: r, weight: w })) });
+        onSubmit({ name: title.trim(), notes: notes.trim(), catalogId, restSeconds: rest, restAfterSeconds: restAfter, sets: Array.from({ length: n }, () => ({ reps: r, weight: w, seconds: sec })) });
         onClose();
       }}>
         {input('Exercise', title, setTitle, 'text')}
-        <div className="row">{input('Sets', sets, setSets)}{input('Reps', reps, setReps)}{input('kg', weight, setWeight)}</div>
-        <p className="small muted">For a bodyweight move, kg is the extra load (a vest, a belt); leave it empty for none. You can tweak single sets later.</p>
+        <div className="row">{input('Sets', sets, setSets)}{input('Reps', reps, setReps)}{input('Seconds', seconds, setSeconds)}{input('kg', weight, setWeight)}</div>
+        <p className="small muted">For a bodyweight move, kg is the extra load (a vest, a belt); leave it empty for none. Seconds are for timed sets: a 45 s hold is 1 rep of 45 seconds. You can tweak single sets later.</p>
         {input('Notes (optional)', notes, setNotes, 'text')}
         <RestPicker label="Rest between sets" value={rest} onChange={setRest} />
         <RestPicker label="Rest after the exercise" value={restAfter} onChange={setRestAfter} />
