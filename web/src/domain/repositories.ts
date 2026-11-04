@@ -3,7 +3,7 @@ import type { FoodLogDay } from './foodLog';
 import type { FoodItem, Nutrients } from './nutrition';
 import type { LocalDate } from './plan';
 import type { BodyComposition, Profile, WeightEntry } from './profile';
-import type { PersonalRecord } from './records';
+import type { ProgressEntry } from './progress';
 import type { TrainingPlan } from './trainingPlan';
 import type { DaySummary, Workout } from './workout';
 
@@ -93,15 +93,15 @@ export interface ProfileRepository {
   deleteWeight(id: string): Promise<void>;
 }
 
-/** Personal records: measurements of exercises over time. */
-export interface PersonalRecordRepository {
-  /** Every record, newest first. */
-  observeAll(): Stream<PersonalRecord[]>;
-  /** The records of one exercise, newest first. */
-  observeFor(exerciseKey: string): Stream<PersonalRecord[]>;
-  getFor(exerciseKey: string): Promise<PersonalRecord[]>;
-  /** Creates the record, or replaces the stored one with the same id. */
-  save(record: PersonalRecord): Promise<void>;
+/** Progress: measurements of exercises over time. */
+export interface ProgressRepository {
+  /** Every entry, newest first. */
+  observeAll(): Stream<ProgressEntry[]>;
+  /** The entries of one exercise, newest first. */
+  observeFor(exerciseKey: string): Stream<ProgressEntry[]>;
+  getFor(exerciseKey: string): Promise<ProgressEntry[]>;
+  /** Creates the entry, or replaces the stored one with the same id. */
+  save(record: ProgressEntry): Promise<void>;
   delete(id: string): Promise<void>;
 }
 

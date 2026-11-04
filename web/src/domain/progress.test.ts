@@ -5,15 +5,16 @@ import { Tables } from '../data/schema';
 import type { Store } from '../data/store';
 import { copyLegacyData } from '../data/legacy';
 import { testStore } from '../data/testStore';
-import { SqlPersonalRecords } from '../data/repositories';
-import { formatDistance, formatDuration, parseDuration, describeRecord, impliedOneRepMax } from '../ui/format';
+import { progressCsv } from '../data/progressExport';
+import { SqlProgress } from '../data/repositories';
+import { formatDistance, formatDuration, parseDuration, describeEntry, impliedOneRepMax } from '../ui/format';
 import {
-  beatsBest, bestOf, exerciseKey, groupByExercise, isBetter, newestFirst, oneRepMax, type PersonalRecord,
-} from './records';
-import { personalRecordSchema } from './schemas';
+  beatsBest, bestOf, exerciseKey, groupByExercise, isBetter, newestFirst, oneRepMax, type ProgressEntry,
+} from './progress';
+import { progressEntrySchema } from './schemas';
 
 let counter = 0;
-const rec = (over: Partial<PersonalRecord> = {}): PersonalRecord => ({
+const rec = (over: Partial<ProgressEntry> = {}): ProgressEntry => ({
   id: `r${++counter}`, exerciseKey: 'name:squat', exerciseName: 'Squat', catalogId: null,
   metric: 'weight', value: 100, reps: 5, date: '2026-10-01', note: '', ...over,
 });
@@ -31,6 +32,12 @@ describe('what counts as better', () => {
     expect(isBetter(rec({ value: 100, reps: 5 }), rec({ value: 105, reps: 1 }))).toBe(true); // 116.7 > 105
     expect(isBetter(rec({ value: 105, reps: 1 }), rec({ value: 100, reps: 5 }))).toBe(false);
     expect(isBetter(rec({ value: 100, reps: 5 }), rec({ value: 100, reps: 5 }))).toBe(false); // equal is not better
+  });
+
+  it('treats a higher jump and a longer hold as better', () => {
+    expect(isBetter(rec({ metric: 'length', value: 64, reps: null }), rec({ metric: 'length', value: 62, reps: null }))).toBe(true);
+    expect(isBetter(rec({ metric: 'hold', value: 50, reps: null }), rec({ metric: 'hold', value: 45, reps: null }))).toBe(true);
+    expect(isBetter(rec({ metric: 'hold', value: 40, reps: null }), rec({ metric: 'hold', value: 45, reps: null }))).toBe(false);
   });
 
   it('treats more reps and more distance as better, and a shorter time as better', () => {
@@ -75,12 +82,12 @@ describe('exercises', () => {
     ]);
     expect(groups.map((g) => g.exerciseName)).toEqual(['Run', 'Squat']);
     const squat = groups[1]!;
-    expect(squat.records.map((r) => r.date)).toEqual(['2026-03-01', '2026-02-01', '2026-01-01']);
+    expect(squat.entries.map((e) => e.date)).toEqual(['2026-03-01', '2026-02-01', '2026-01-01']);
     expect(squat.bests.map((b) => [b.metric, b.value])).toEqual([['weight', 110], ['reps', 12]]);
   });
 
   it('sort newest first', () => {
-    expect(newestFirst([rec({ id: 'a', date: '2026-01-01' }), rec({ id: 'b', date: '2026-02-01' })]).map((r) => r.id)).toEqual(['b', 'a']);
+    expect(newestFirst([rec({ id: 'a', date: '2026-01-01' }), rec({ id: 'b', date: '2026-02-01' })]).map((e) => e.id)).toEqual(['b', 'a']);
   });
 });
 
@@ -91,11 +98,14 @@ describe('showing a measurement', () => {
     expect(formatDuration(59)).toBe('0:59');
     expect(formatDistance(800)).toBe('800 m');
     expect(formatDistance(5200)).toBe('5.2 km');
-    expect(describeRecord(rec({ value: 100, reps: 5 }))).toBe('100 kg × 5');
-    expect(describeRecord(rec({ value: 140, reps: 1 }))).toBe('140 kg');
-    expect(describeRecord(rec({ metric: 'reps', value: 1, reps: null }))).toBe('1 rep');
+    expect(describeEntry(rec({ value: 100, reps: 5 }))).toBe('100 kg × 5');
+    expect(describeEntry(rec({ value: 140, reps: 1 }))).toBe('140 kg');
+    expect(describeEntry(rec({ metric: 'reps', value: 1, reps: null }))).toBe('1 rep');
     expect(impliedOneRepMax(rec({ value: 100, reps: 5 }))).toBe('≈ 116.67 kg 1RM');
     expect(impliedOneRepMax(rec({ value: 140, reps: 1 }))).toBeNull();
+    expect(describeEntry(rec({ metric: 'length', value: 62.5, reps: null }))).toBe('62.5 cm');
+    expect(describeEntry(rec({ metric: 'hold', value: 45, reps: null }))).toBe('45 s');
+    expect(describeEntry(rec({ metric: 'hold', value: 90, reps: null }))).toBe('1m 30s');
   });
 
   it('reads times the way people type them', () => {
@@ -109,46 +119,48 @@ describe('showing a measurement', () => {
 describe('validation', () => {
   const ok = { id: 'x', exerciseKey: 'k', exerciseName: 'Squat', catalogId: null, metric: 'weight', value: 100, reps: 5, date: '2026-10-01', note: '' };
 
-  it('accepts well-formed records and insists a lift has reps and the rest do not', () => {
-    expect(personalRecordSchema.safeParse(ok).success).toBe(true);
-    expect(personalRecordSchema.safeParse({ ...ok, reps: null }).success).toBe(false); // a lift without reps
-    expect(personalRecordSchema.safeParse({ ...ok, metric: 'time' }).success).toBe(false); // time with reps
-    expect(personalRecordSchema.safeParse({ ...ok, metric: 'time', reps: null }).success).toBe(true);
+  it('accepts well-formed entries and insists a lift has reps and the rest do not', () => {
+    expect(progressEntrySchema.safeParse(ok).success).toBe(true);
+    expect(progressEntrySchema.safeParse({ ...ok, reps: null }).success).toBe(false); // a lift without reps
+    expect(progressEntrySchema.safeParse({ ...ok, metric: 'time' }).success).toBe(false); // time with reps
+    expect(progressEntrySchema.safeParse({ ...ok, metric: 'time', reps: null }).success).toBe(true);
+    expect(progressEntrySchema.safeParse({ ...ok, metric: 'length', value: 62, reps: null }).success).toBe(true);
+    expect(progressEntrySchema.safeParse({ ...ok, metric: 'hold', value: 45, reps: null }).success).toBe(true);
   });
 
   it('rejects nonsense and hostile values', () => {
     for (const bad of [{ value: 0 }, { value: -5 }, { value: 1e12 }, { reps: 0 }, { reps: 2.5 }, { date: 'yesterday' }, { metric: 'speed' }, { note: 'x'.repeat(501) }, { exerciseName: '' }]) {
-      expect(personalRecordSchema.safeParse({ ...ok, ...bad }).success, JSON.stringify(bad)).toBe(false);
+      expect(progressEntrySchema.safeParse({ ...ok, ...bad }).success, JSON.stringify(bad)).toBe(false);
     }
   });
 });
 
 describe('storage', () => {
-  it('keeps records per exercise, newest first, and observes changes', async () => {
+  it('keeps entries per exercise, newest first, and observes changes', async () => {
     const db = testStore();
-    const repo = new SqlPersonalRecords(db);
+    const repo = new SqlProgress(db);
     await repo.save(rec({ id: 'a', exerciseKey: 'squat', date: '2026-01-01' }));
     await repo.save(rec({ id: 'b', exerciseKey: 'squat', date: '2026-03-01' }));
     await repo.save(rec({ id: 'c', exerciseKey: 'bench', date: '2026-02-01' }));
 
-    expect((await repo.getFor('squat')).map((r) => r.id)).toEqual(['b', 'a']);
-    const seen = new Promise<PersonalRecord[]>((resolve) => {
+    expect((await repo.getFor('squat')).map((e) => e.id)).toEqual(['b', 'a']);
+    const seen = new Promise<ProgressEntry[]>((resolve) => {
       const stop = repo.observeFor('bench').subscribe((v) => { if (v.length === 0) { stop(); resolve(v); } });
     });
     await repo.delete('c');
     expect(await seen).toEqual([]);
   });
 
-  it('go through a backup, and a backup written before records existed still loads', async () => {
+  it('go through a backup under their old key, and a backup written before they existed still loads', async () => {
     const source = testStore();
-    await new SqlPersonalRecords(source).save(rec({ id: 'keep', value: 120, reps: 3 }));
+    await new SqlProgress(source).save(rec({ id: 'keep', value: 120, reps: 3 }));
     const file = JSON.stringify(await exportBackup(source));
     const parsed = parseBackup(file);
     if (!parsed.ok) throw new Error(parsed.error);
 
     const target = testStore();
     await restoreBackup(target, parsed.backup);
-    expect((await target.direct.list(Tables.records)).map((r) => r.id)).toEqual(['keep']);
+    expect((await target.direct.list(Tables.progress)).map((r) => r.id)).toEqual(['keep']);
 
     const legacy = JSON.parse(file) as { data: Record<string, unknown> };
     delete legacy.data.records;
@@ -167,7 +179,34 @@ describe('storage', () => {
     const upgraded = testStore();
     await copyLegacyData(upgraded, name); // what the app does on its first start with SQLite
     expect(await upgraded.direct.count('weight_entries')).toBe(1);
-    await upgraded.docs.put(Tables.records, rec({ id: 'new' }));
-    expect(await upgraded.direct.count('records')).toBe(1);
+    await upgraded.docs.put(Tables.progress, rec({ id: 'new' }));
+    expect(await upgraded.direct.count('records')).toBe(1); // the table keeps its old name
+  });
+});
+
+describe('exporting as CSV', () => {
+  it('writes one row per entry, oldest first, with values in plain units', () => {
+    const csv = progressCsv([
+      rec({ id: 'b', date: '2026-02-01', exerciseName: 'Vertical jump', metric: 'length', value: 64, reps: null }),
+      rec({ id: 'a', date: '2026-01-01', exerciseName: 'Squat', value: 100, reps: 5, note: 'easy' }),
+      rec({ id: 'c', date: '2026-03-01', exerciseName: 'Plank', metric: 'hold', value: 90, reps: null }),
+    ]);
+    expect(csv.startsWith('﻿')).toBe(true); // so Excel reads accents as UTF-8
+    expect(csv.slice(1).split('\r\n')).toEqual([
+      'date,exercise,measurement,value,unit,reps,estimated_1rm_kg,note',
+      '2026-01-01,Squat,weight,100,kg,5,116.67,easy',
+      '2026-02-01,Vertical jump,length,64,cm,,,',
+      '2026-03-01,Plank,hold,90,s,,,',
+      '',
+    ]);
+  });
+
+  it('quotes what needs quoting, and never lets a cell run as a formula', () => {
+    const [, line] = progressCsv([rec({ exerciseName: 'Squat, "high bar"', note: '=HYPERLINK("x")' })]).slice(1).split('\r\n');
+    expect(line).toBe(`2026-10-01,"Squat, ""high bar""",weight,100,kg,5,116.67,"'=HYPERLINK(""x"")"`);
+  });
+
+  it('is just the header when there is nothing to export', () => {
+    expect(progressCsv([]).slice(1)).toBe('date,exercise,measurement,value,unit,reps,estimated_1rm_kg,note\r\n');
   });
 });

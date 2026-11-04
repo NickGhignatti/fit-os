@@ -4,7 +4,7 @@ import type { DietPlan } from './diet';
 import type { FoodLogDay } from './foodLog';
 import type { FoodItem } from './nutrition';
 import { BODY_MEASURES, MAX_MEALS, type BodyMeasure, type Profile, type WeightEntry } from './profile';
-import type { PersonalRecord } from './records';
+import { METRICS, type ProgressEntry } from './progress';
 import type { TrainingPlan } from './trainingPlan';
 import type { Workout } from './workout';
 
@@ -128,13 +128,13 @@ export const weightEntrySchema: Schema<WeightEntry> = z.object({
   id, date, kg: z.number().finite().positive().max(1000), body: bodyComposition.optional(),
 });
 
-export const personalRecordSchema: Schema<PersonalRecord> = z
+export const progressEntrySchema: Schema<ProgressEntry> = z
   .object({
     id,
     exerciseKey: text(200).min(1),
     exerciseName: text(120).min(1),
     catalogId: text(120).nullable(),
-    metric: z.enum(['weight', 'reps', 'time', 'distance']),
+    metric: z.enum(METRICS),
     value: z.number().finite().positive().max(10_000_000),
     reps: z.number().int().min(1).max(1_000).nullable(),
     date,

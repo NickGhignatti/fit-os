@@ -4,7 +4,7 @@ import {
   SqlCustomFoodRepository,
   SqlFavoriteFoodRepository,
   SqlFoodLogRepository,
-  SqlPersonalRecords,
+  SqlProgress,
   SqlProfileRepository,
   SqlTransactionRunner,
   SqlWorkoutRepository,
@@ -30,7 +30,7 @@ export interface Container {
     readonly customFoods: SqlCustomFoodRepository;
     readonly favorites: SqlFavoriteFoodRepository;
     readonly profile: SqlProfileRepository;
-    readonly records: SqlPersonalRecords;
+    readonly progress: SqlProgress;
     readonly transaction: SqlTransactionRunner;
     readonly exercises: ExerciseLibrary;
     readonly customExercises: SqlCustomExercises;
@@ -59,7 +59,7 @@ export const createContainer = (config: AppConfig, store: Store): Container => {
     customFoods: new SqlCustomFoodRepository(store),
     favorites: new SqlFavoriteFoodRepository(store),
     profile: new SqlProfileRepository(store),
-    records: new SqlPersonalRecords(store),
+    progress: new SqlProgress(store),
     transaction: new SqlTransactionRunner(store),
     exercises: new ExerciseLibrary(new StaticExerciseCatalog(), customExercises),
     customExercises,

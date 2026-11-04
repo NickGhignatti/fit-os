@@ -14,7 +14,7 @@ import {
 } from './format';
 import { useAsync, useToast } from './hooks';
 import { ConfirmDialog, Empty, Icons, Loading, Modal, PageHeader, useDebounced } from './kit';
-import { ExerciseRecordsSection } from './Records';
+import { ExerciseProgressSection } from './Progress';
 import { RestPicker } from './WorkoutCard';
 
 /** Makes up an exercise, or edits one. Only the name is needed; it is kept on this device. */
@@ -327,7 +327,7 @@ export const ExerciseDetail = () => {
               <button className="btn danger" onClick={() => setDialog('delete')}>Delete</button>
             </div>
           )}
-          <ExerciseRecordsSection name={exercise.name} catalogId={exercise.id} />
+          <ExerciseProgressSection name={exercise.name} catalogId={exercise.id} />
           {exercise.custom
             ? <p className="small muted">Saved on this device only.</p>
             : <p className="small muted">Exercises and photos: free-exercise-db (public domain).</p>}
@@ -339,7 +339,7 @@ export const ExerciseDetail = () => {
       {dialog === 'delete' && found?.own && (
         <ConfirmDialog
           title="Delete exercise?"
-          message={`“${found.own.name}” will be removed from your exercises. Plans and workouts that used it keep its name, and its records stay.`}
+          message={`“${found.own.name}” will be removed from your exercises. Plans and workouts that used it keep its name, and its progress stays.`}
           onClose={() => setDialog(null)}
           onConfirm={() => void repos.customExercises.delete(found.own!.id).then(() => navigate('/workouts?tab=library', { replace: true }))}
         />

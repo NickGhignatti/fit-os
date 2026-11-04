@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { LinkScreen } from '../ui/AddDevice';
 import { CommunityPlanScreen, CommunityScreen } from '../ui/Community';
 import { Day } from '../ui/Day';
@@ -10,7 +10,7 @@ import { ToastProvider } from '../ui/hooks';
 import { PrivacyPolicy, TermsOfService } from '../ui/Legal';
 import { PhotoFoods } from '../ui/PhotoFoods';
 import { ProfileScreen } from '../ui/ProfileScreen';
-import { RecordsScreen } from '../ui/Records';
+import { ProgressScreen } from '../ui/Progress';
 import { Today } from '../ui/Today';
 import { Tracker } from '../ui/Tracker';
 import { TrainingPlanScreen } from '../ui/TrainingPlanScreen';
@@ -61,6 +61,12 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
   }
 }
 
+/** Progress used to be called records: links saved back then lead to the same page. */
+const OldProgressLink = () => {
+  const { key = '' } = useParams();
+  return <Navigate to={`/progress/${encodeURIComponent(key)}`} replace />;
+};
+
 export const App = () => {
   // The tab bar belongs to the top-level screens; detail screens have a back button instead.
   const { pathname } = useLocation();
@@ -75,7 +81,8 @@ export const App = () => {
               <Route path="/day/:date" element={<Day />} />
               <Route path="/workouts" element={<Workouts />} />
               <Route path="/workouts/plan/:id" element={<TrainingPlanScreen />} />
-              <Route path="/records/:key" element={<RecordsScreen />} />
+              <Route path="/progress/:key" element={<ProgressScreen />} />
+              <Route path="/records/:key" element={<OldProgressLink />} />
               <Route path="/exercises/pick" element={<ExercisePicker />} />
               <Route path="/exercises/:id" element={<ExerciseDetail />} />
               <Route path="/food" element={<Food />} />

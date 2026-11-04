@@ -32,7 +32,7 @@ export const copyLegacyData = async (store: Store, name = 'tracker'): Promise<vo
           await docs.put(Tables.profile, rest);
         }
         await copy(Tables.savedProducts, await old.savedProducts.toArray());
-        await copy(Tables.records, await old.records.toArray());
+        await copy(Tables.progress, await old.records.toArray());
         await copy(Tables.customExercises, await old.customExercises.toArray());
       });
     } finally {

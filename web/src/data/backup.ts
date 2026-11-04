@@ -5,7 +5,7 @@ import {
   dietPlanSchema,
   foodItemSchema,
   foodLogDaySchema,
-  personalRecordSchema,
+  progressEntrySchema,
   profileSchema,
   trainingPlanSchema,
   weightEntrySchema,
@@ -35,8 +35,9 @@ const backupSchema = z.object({
     favorites: z.array(z.object({ food: foodItemSchema, addedAt: z.number().finite() })).max(10_000),
     weights: z.array(weightEntrySchema).max(20_000),
     profile: profileSchema.nullable(),
-    // Added later: backups written before have no records.
-    records: z.array(personalRecordSchema).max(50_000).default([]),
+    // Progress entries. The key keeps its old name, "records", so backup files stay readable both
+    // ways; it was added later, so backups written before have none.
+    records: z.array(progressEntrySchema).max(50_000).default([]),
     customExercises: z.array(customExerciseSchema).max(5_000).default([]),
   }),
 });
@@ -58,7 +59,7 @@ export const exportBackup = async (store: Store, now: () => Date = () => new Dat
       favorites: await docs.list(Tables.favoriteFoods),
       weights: await docs.list(Tables.weightEntries),
       profile: (await readProfile(docs)) ?? null,
-      records: await docs.list(Tables.records),
+      records: await docs.list(Tables.progress),
       customExercises: await docs.list(Tables.customExercises),
     },
   };
@@ -103,7 +104,7 @@ export const restoreBackup = (store: Store, { data }: Backup): Promise<void> =>
     await putAll(Tables.favoriteFoods, data.favorites);
     await restoreWeights(store, data.weights);
     if (data.profile) await docs.put(Tables.profile, data.profile);
-    await putAll(Tables.records, data.records);
+    await putAll(Tables.progress, data.records);
     await putAll(Tables.customExercises, data.customExercises);
   });
 

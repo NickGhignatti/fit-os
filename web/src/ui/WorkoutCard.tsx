@@ -4,7 +4,7 @@ import { useContainer } from '../app/hooks';
 import { deleteExercise, deleteSet, renameWorkout, updateExercise, type ExerciseDetails } from '../domain/edit';
 import { newId } from '../domain/id';
 import type { LocalDate } from '../domain/plan';
-import { beatsBest, exerciseKey, type PersonalRecord } from '../domain/records';
+import { beatsBest, exerciseKey, type ProgressEntry } from '../domain/progress';
 import type { PendingSession } from '../domain/trainingPlan';
 import {
   addSetLikeLast, copyWorkoutTo, logSet, saveWorkoutAsPlan, startPlannedSession, toggleSetDone,
@@ -16,7 +16,7 @@ import {
 import { formatKg, formatRest, formatWeight, parseNumber, relativeDay, setSummary, setWork, today } from './format';
 import { useToast } from './hooks';
 import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog, SwipeToComplete } from './kit';
-import { PrPrompt } from './Records';
+import { NewBestPrompt } from './Progress';
 import { BETWEEN_EXERCISES, RestTimer, SessionClock, restFor, useRest } from './Timers';
 import { ShareButton } from './Transfer';
 
@@ -188,7 +188,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const close = () => setDialog(null);
   const save = (w: Workout) => void repos.workouts.save(w);
-  const [pr, setPr] = useState<PersonalRecord | null>(null);
+  const [newBest, setNewBest] = useState<ProgressEntry | null>(null);
   const [rest, setRest] = useRest(workout.id);
   const [offer, setOffer] = useState<Offer | null>(null);
   const [shownDone, setShownDone] = useState<ReadonlySet<string>>(new Set());
@@ -197,16 +197,22 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
   const done = workout.exercises.filter(isExerciseDone);
   const left = workout.exercises.filter((e) => !isExerciseDone(e));
 
-  /** After a set is done: if it beats a stored personal record, offer to save it. */
-  const checkForPr = async (exercise: Exercise, set: ExerciseSet) => {
+  /**
+   * After a set is done: if it beats the best logged for its exercise, offer to save it to progress.
+   * A timed set is measured by how long it was held, a loaded one by its weight, any other by reps.
+   */
+  const checkForBest = async (exercise: Exercise, set: ExerciseSet) => {
     const reps = set.actualReps ?? set.plannedReps;
     const weight = set.actualWeight ?? set.plannedWeight;
-    const candidate: PersonalRecord = {
+    const seconds = actualSecondsOf(set) ?? plannedSecondsOf(set);
+    const measured = seconds !== null ? { metric: 'hold' as const, value: seconds, reps: null }
+      : weight !== null && weight > 0 ? { metric: 'weight' as const, value: weight, reps }
+      : { metric: 'reps' as const, value: reps, reps: null };
+    const candidate: ProgressEntry = {
       id: newId(), exerciseKey: exerciseKey(exercise.name, exercise.catalogId), exerciseName: exercise.name, catalogId: exercise.catalogId,
-      ...(weight !== null && weight > 0 ? { metric: 'weight' as const, value: weight, reps } : { metric: 'reps' as const, value: reps, reps: null }),
-      date: workout.date, note: '',
+      ...measured, date: workout.date, note: '',
     };
-    if (reps > 0 && beatsBest(candidate, await repos.records.getFor(candidate.exerciseKey))) setPr(candidate);
+    if (reps > 0 && beatsBest(candidate, await repos.progress.getFor(candidate.exerciseKey))) setNewBest(candidate);
   };
 
   /** An exercise just got its last set: offer the rest before the next one, if any is left. */
@@ -223,7 +229,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
       if (rest?.at === set.id) setRest(null);
       return;
     }
-    void checkForPr(exercise, markedDone(set));
+    void checkForBest(exercise, markedDone(set));
     if (exercise.sets.every((s) => s.done || s.id === set.id)) {
       finished(exercise);
     } else if (restOf(exercise) > 0) {
@@ -339,7 +345,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
       ))}
       {left.length > 0 && <p className="swipe-hint">Swipe a set sideways when it's done.</p>}
 
-      {pr && <PrPrompt record={pr} onClose={() => setPr(null)} />}
+      {newBest && <NewBestPrompt entry={newBest} onClose={() => setNewBest(null)} />}
 
       {dialog?.kind === 'completed' && (
         <Modal title="Completed exercises" onClose={close}>
@@ -377,7 +383,7 @@ export const WorkoutCard = ({ workout }: { workout: Workout }) => {
       )}
       {dialog?.kind === 'editSet' && (
         <SetDialog number={dialog.number} set={dialog.set} onClose={close}
-          onSave={(s) => void logSet(repos, workout.id, s).then(() => (s.done ? checkForPr(dialog.exercise, s) : undefined))}
+          onSave={(s) => void logSet(repos, workout.id, s).then(() => (s.done ? checkForBest(dialog.exercise, s) : undefined))}
           onDelete={() => save(deleteSet(workout, dialog.set.id))} />
       )}
     </section>
