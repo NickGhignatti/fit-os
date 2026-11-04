@@ -5,7 +5,7 @@ import type { TransferGateway } from './gateway';
 /** What can be sent to another device. */
 export type TransferKind = 'training_plan' | 'diet_plan' | 'workout' | 'food_log_day';
 
-const KINDS: readonly TransferKind[] = ['training_plan', 'diet_plan', 'workout', 'food_log_day'];
+export const TRANSFER_KINDS: readonly TransferKind[] = ['training_plan', 'diet_plan', 'workout', 'food_log_day'];
 const VERSION = 1;
 const DEFAULT_TTL_MINUTES = 60;
 
@@ -62,7 +62,7 @@ export const envelopeFile = (kind: TransferKind, data: unknown, now: () => Date 
 export const parseEnvelope = (text: string): Envelope | null => {
   try {
     const value = JSON.parse(text) as Partial<Envelope>;
-    return value.v === VERSION && KINDS.includes(value.kind as TransferKind) && typeof value.sentAt === 'string'
+    return value.v === VERSION && TRANSFER_KINDS.includes(value.kind as TransferKind) && typeof value.sentAt === 'string'
       ? (value as Envelope)
       : null;
   } catch {

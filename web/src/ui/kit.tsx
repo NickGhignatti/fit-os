@@ -123,6 +123,8 @@ export const Icons = {
   device: <Glyph d="M7 2h8a2 2 0 0 1 2 2v6M11 22H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2M10 18h1M18 14v8M14 18h8" />,
   signOut: <Glyph d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />,
   copy: <Glyph d="M9 9h11v11H9zM5 15H4V4h11v1" />,
+  /** Sparkles: things made with an AI. */
+  ai: <Glyph d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9zM18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" />,
   meal: <Glyph d="M7 2v8a3 3 0 0 0 3 3v9M7 2v6M4 2v6a3 3 0 0 0 3 3M17 2c-2 2-3 5-3 8s1 4 3 4v8" />,
   workout: <Glyph d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />,
   chevron: <Glyph d="M6 9l6 6 6-6" />,

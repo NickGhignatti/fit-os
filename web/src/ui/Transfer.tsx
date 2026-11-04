@@ -5,6 +5,8 @@ import { useContainer } from '../app/hooks';
 import { restoreBackup, type Backup } from '../data/backup';
 import { readFileContents } from '../data/importFile';
 import { importEnvelope } from '../data/importItem';
+import { fixPrompt } from '../data/importProblems';
+import { catalogLinker } from '../domain/catalog';
 import { normalizeCode } from '../transfer/code';
 import { envelopeFile, receiveTransfer, sendTransfer, type SentTransfer, type TransferKind } from '../transfer/transfer';
 import type { DietPlan } from '../domain/diet';
@@ -301,21 +303,44 @@ const SCREEN_OF: Record<TransferKind | 'backup', string> = {
  * look at the result, or null when nothing was imported.
  */
 export const useFileImport = (onDone: (screen: string | null) => void = () => {}): [(text: string) => Promise<void>, ReactNode] => {
-  const { store } = useContainer();
+  const { store, repos } = useContainer();
   const toast = useToast();
   const [backup, setBackup] = useState<Backup | null>(null);
+  const [problems, setProblems] = useState<readonly string[] | null>(null);
   const importText = async (text: string) => {
     const contents = readFileContents(text);
     if (contents.kind === 'backup') return setBackup(contents.backup);
-    const imported = contents.kind === 'item' ? await importEnvelope(store, contents.envelope) : { status: 'invalid' as const };
-    toast(imported.status === 'imported' ? `Imported ${KIND_LABEL[imported.kind]} “${imported.title}”` : "That file can't be imported.");
-    onDone(imported.status === 'imported' ? SCREEN_OF[imported.kind] : null);
+    if (contents.kind === 'unknown') {
+      toast("That file can't be imported.");
+      return onDone(null);
+    }
+    const imported = await importEnvelope(store, contents.envelope, { linkExercise: catalogLinker(repos.exercises) });
+    if (imported.status === 'invalid') return setProblems(imported.problems);
+    const ignored = imported.ignored.length === 0 ? '' : ` (${imported.ignored.length} unknown ${imported.ignored.length === 1 ? 'field' : 'fields'} left out)`;
+    toast(`Imported ${KIND_LABEL[imported.kind]} “${imported.title}”${ignored}`);
+    onDone(SCREEN_OF[imported.kind]);
   };
-  const dialog = backup && (
-    <ConfirmDialog title="Import this backup?" confirmLabel="Import" danger={false}
-      message={`It contains ${summarize(backup)}. Items with the same id are replaced; everything else on this device is kept.`}
-      onClose={() => { setBackup(null); onDone(null); }}
-      onConfirm={() => void restoreBackup(store, backup).then(() => { toast('Backup imported'); onDone(SCREEN_OF.backup); })} />
+  const dialog = (
+    <>
+      {backup && (
+        <ConfirmDialog title="Import this backup?" confirmLabel="Import" danger={false}
+          message={`It contains ${summarize(backup)}. Items with the same id are replaced; everything else on this device is kept.`}
+          onClose={() => { setBackup(null); onDone(null); }}
+          onConfirm={() => void restoreBackup(store, backup).then(() => { toast('Backup imported'); onDone(SCREEN_OF.backup); })} />
+      )}
+      {problems && (
+        <Modal title="Can't import this file" onClose={() => { setProblems(null); onDone(null); }}>
+          <p className="muted">Nothing was imported. What needs fixing:</p>
+          <ul className="small" role="alert" style={{ paddingLeft: 18 }}>{problems.map((p, i) => <li key={i}>{p}</li>)}</ul>
+          <div className="actions">
+            <button className="btn secondary" onClick={() => void navigator.clipboard?.writeText(fixPrompt(problems)).then(() => toast('Copied, worded for the AI that wrote it'), () => undefined)}>
+              Copy for the AI
+            </button>
+            <button className="btn" onClick={() => { setProblems(null); onDone(null); }}>Close</button>
+          </div>
+        </Modal>
+      )}
+    </>
   );
   return [importText, dialog];
 };

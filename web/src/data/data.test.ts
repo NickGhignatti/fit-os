@@ -268,8 +268,10 @@ describe('importing a received item', () => {
     const received = await receiveTransfer(gateway, code);
     if (received.status !== 'ok') throw new Error(received.status);
 
-    expect(await importEnvelope(db, received.envelope)).toEqual({ status: 'imported', kind: 'training_plan', title: 'Strength' });
+    const imported = await importEnvelope(db, received.envelope);
+    expect(imported).toMatchObject({ status: 'imported', kind: 'training_plan', title: 'Strength', ignored: [] });
     const [copy] = await db.direct.list(Tables.trainingPlans);
+    expect(imported.status === 'imported' && imported.id).toBe(copy?.id);
     expect(copy?.isActive).toBe(false);
     expect(copy?.id).not.toBe(original.id);
     expect(copy?.sessions[1]?.[0]?.id).not.toBe(original.sessions[1]?.[0]?.id);
@@ -322,7 +324,7 @@ describe('importing a received item', () => {
       { kind: 'food_log_day', data: { date: 'yesterday', entries: [] } },
     ] as const;
     for (const { kind, data } of bad) {
-      expect(await importEnvelope(db, { v: 1, kind, data, sentAt: 'x' })).toEqual({ status: 'invalid' });
+      expect(await importEnvelope(db, { v: 1, kind, data, sentAt: 'x' })).toMatchObject({ status: 'invalid', problems: expect.arrayContaining([expect.any(String)]) });
     }
     expect(await db.direct.count('training_plans') + (await db.direct.count('workouts')) + (await db.direct.count('diet_plans'))).toBe(0);
   });

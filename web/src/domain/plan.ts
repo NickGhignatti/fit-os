@@ -11,6 +11,9 @@ export const EVERY_DAY: PlanDay = 0;
 
 export type Recurrence = 'daily' | 'weekly';
 
+/** Weekday names, Monday first: index [day - 1] for a [Weekday]. */
+export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+
 const MS_PER_DAY = 86_400_000;
 
 const toUtc = (date: LocalDate): number => Date.parse(`${date}T00:00:00Z`);

@@ -1,6 +1,6 @@
 import type { Equipment, ExerciseCategory, ExerciseLevel, Muscle } from '../domain/catalog';
 import type { Nutrients } from '../domain/nutrition';
-import { addDays, weekdayOf, type LocalDate, type PlanDay } from '../domain/plan';
+import { WEEKDAYS, addDays, weekdayOf, type LocalDate, type PlanDay } from '../domain/plan';
 import type { ActivityLevel, GoalPace, Sex } from '../domain/profile';
 import { oneRepMax, type ProgressEntry, type Metric } from '../domain/progress';
 
@@ -67,7 +67,7 @@ export const elapsedTime = (ms: number): string => {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 };
 
-export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+export { WEEKDAYS };
 
 export const dayName = (day: PlanDay): string => (day === 0 ? 'Every day' : WEEKDAYS[day - 1]!);
 export const shortDayName = (day: PlanDay): string => (day === 0 ? 'Daily' : WEEKDAYS[day - 1]!.slice(0, 3));

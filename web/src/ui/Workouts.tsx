@@ -11,6 +11,7 @@ import { WEEKDAYS, dateTitle, setSummary, shortDayName, today } from './format';
 import { Carousel, Empty, Fab, Icons, Loading, Modal, PageHeader, PlayIcon, Segmented } from './kit';
 import { PlanRows, TRAINING_TEXTS, usePlanCreation } from './Plans';
 import { ProgressTab } from './Progress';
+import { useCreateWithAiAction } from './AiPlan';
 import { useImportFileAction, useReceiveAction } from './Transfer';
 
 export const trainingSummary = (plan: TrainingPlan): string => {
@@ -117,6 +118,7 @@ export const Workouts = () => {
   const [create, creating] = usePlanCreation({ repo: repos.trainingPlans, texts: TRAINING_TEXTS, icon: Icons.workout, create: newTrainingPlan, href });
   const [importFile, importing] = useImportFileAction();
   const [receive, receiving] = useReceiveAction();
+  const [withAi, writingWithAi] = useCreateWithAiAction();
   const week = (weeks ?? []).reduce((n, w) => ({ done: n.done + w.completedCount, total: n.total + w.days.length }), { done: 0, total: 0 });
   // Active ones first, then by name: the list is mostly for switching plans on and off.
   const sorted = [...(plans ?? [])].sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name));
@@ -151,7 +153,7 @@ export const Workouts = () => {
           <WeekCarousel weeks={weeks} date={date} />
         </section>
       )}
-      {tab === 'plans' && <Fab label="Add a workout" actions={[create, importFile, receive]} />}
+      {tab === 'plans' && <Fab label="Add a workout" actions={[create, withAi, importFile, receive]} />}
       {listing && (
         <Modal title="Your workouts" onClose={() => setListing(false)}>
           {sorted.length === 0
@@ -162,6 +164,7 @@ export const Workouts = () => {
       {creating}
       {importing}
       {receiving}
+      {writingWithAi}
     </>
   );
 };
