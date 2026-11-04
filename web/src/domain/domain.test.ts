@@ -7,9 +7,12 @@ import { ageOn, defaultProfile } from './profile';
 import { rank } from './textSearch';
 import { nextSessionFrom, pendingSessionOn, trainingDays, type TrainingPlan } from './trainingPlan';
 import {
+  actualSecondsOf,
   deviatesFromPlan,
+  exerciseToPlan,
   isCompleted,
   markedDone,
+  plannedSecondsOf,
   setFollowing,
   setPlan,
   summarize,
@@ -75,8 +78,37 @@ describe('sets', () => {
   it('validates plans and repeats the last set', () => {
     expect(() => setPlan(0, null)).toThrow();
     expect(() => setPlan(5, -1)).toThrow();
-    expect(setFollowing(setPlan(5, 20))).toEqual({ reps: 5, weight: 20 });
-    expect(setFollowing(null)).toEqual({ reps: 10, weight: null });
+    expect(() => setPlan(1, null, 0)).toThrow();
+    expect(setFollowing(setPlan(5, 20))).toEqual({ reps: 5, weight: 20, seconds: null });
+    expect(setFollowing(setPlan(1, null, 45))).toEqual({ reps: 1, weight: null, seconds: 45 });
+    expect(setFollowing(null)).toEqual({ reps: 10, weight: null, seconds: null });
+  });
+});
+
+describe('timed sets', () => {
+  const hold = (over: Partial<ExerciseSet> = {}) => set({ plannedReps: 1, plannedWeight: null, plannedSeconds: 45, actualSeconds: null, ...over });
+
+  it('fill the planned seconds in when marked done, and keep logged ones', () => {
+    expect(markedDone(hold())).toMatchObject({ done: true, actualReps: 1, actualSeconds: 45 });
+    expect(markedDone(hold({ actualSeconds: 50 }))).toMatchObject({ actualSeconds: 50 });
+  });
+
+  it('count a different time as a deviation from the plan', () => {
+    expect(deviatesFromPlan(markedDone(hold()))).toBe(false);
+    expect(deviatesFromPlan(markedDone(hold({ actualSeconds: 30 })))).toBe(true);
+  });
+
+  it('read sets stored before timed sets existed as untimed', () => {
+    const legacy = set(); // no seconds keys at all, as in older saved workouts
+    expect(plannedSecondsOf(legacy)).toBeNull();
+    expect(actualSecondsOf(legacy)).toBeNull();
+    expect(markedDone(legacy).actualSeconds).toBeNull();
+    expect(deviatesFromPlan(markedDone(legacy))).toBe(false);
+  });
+
+  it('carry their seconds into a plan made from the workout', () => {
+    const exercise = { id: 'e', name: 'Plank', notes: '', catalogId: null, restSeconds: null, restAfterSeconds: null, sets: [hold()] };
+    expect(exerciseToPlan(exercise).sets).toEqual([{ reps: 1, weight: null, seconds: 45 }]);
   });
 });
 

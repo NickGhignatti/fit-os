@@ -3,7 +3,7 @@ import { newId } from './id';
 import type { Portion } from './nutrition';
 import type { LocalDate, PlanDay, Recurrence } from './plan';
 import type { PlannedExercise, PlannedSet, TrainingPlan } from './trainingPlan';
-import type { Exercise, ExercisePlan, ExerciseSet, SetPlan, Workout } from './workout';
+import { secondsOf, type Exercise, type ExercisePlan, type ExerciseSet, type SetPlan, type Workout } from './workout';
 
 /**
  * Edits are pure functions: they take an aggregate and return the changed one, never mutating.
@@ -18,6 +18,8 @@ const setFromPlan = (s: SetPlan): ExerciseSet => ({
   plannedWeight: s.weight,
   actualReps: null,
   actualWeight: null,
+  plannedSeconds: secondsOf(s),
+  actualSeconds: null,
   done: false,
   note: '',
 });
@@ -86,7 +88,7 @@ export const deleteSet = (w: Workout, setId: string): Workout => ({
 
 // ---- Training plans ---------------------------------------------------------
 
-const plannedSetFrom = (s: SetPlan): PlannedSet => ({ id: newId(), reps: s.reps, weight: s.weight });
+const plannedSetFrom = (s: SetPlan): PlannedSet => ({ id: newId(), reps: s.reps, weight: s.weight, seconds: secondsOf(s) });
 
 const plannedExerciseFrom = (p: ExercisePlan): PlannedExercise => ({
   id: newId(),
@@ -137,7 +139,7 @@ export const addPlannedSet = (plan: TrainingPlan, exerciseId: string, set: SetPl
 
 export const updatePlannedSet = (plan: TrainingPlan, setId: string, set: SetPlan): TrainingPlan =>
   mapSessions(plan, (list) =>
-    list.map((e) => ({ ...e, sets: e.sets.map((s) => (s.id === setId ? { ...s, reps: set.reps, weight: set.weight } : s)) })),
+    list.map((e) => ({ ...e, sets: e.sets.map((s) => (s.id === setId ? { ...s, reps: set.reps, weight: set.weight, seconds: secondsOf(set) } : s)) })),
   );
 
 export const deletePlannedSet = (plan: TrainingPlan, setId: string): TrainingPlan =>

@@ -5,24 +5,29 @@ import { deletePlannedExercise, deletePlannedSet, updatePlannedExercise, updateP
 import { daysOf } from '../domain/plan';
 import { sessionOnDay, type PlannedExercise, type PlannedSet, type TrainingPlan } from '../domain/trainingPlan';
 import { addPlannedSetLikeLast } from '../domain/useCases';
-import { dayName, formatKg, parseNumber, shortDayName, setSummary } from './format';
+import { secondsOf, type SetPlan } from '../domain/workout';
+import { dayName, formatKg, parseNumber, shortDayName, setSummary, setWork } from './format';
 import { ActionMenu, ConfirmDialog, Empty, Fab, Icons, Loading, Modal, PageHeader } from './kit';
 import { PlanMenu, TRAINING_TEXTS, usePlanDay } from './Plans';
 import { ShareButton } from './Transfer';
 import { ExerciseDialog, restLine } from './WorkoutCard';
 
 const PlannedSetDialog = ({ number, set, onSave, onDelete, onClose }: {
-  number: number; set: PlannedSet; onSave: (reps: number, weight: number | null) => void; onDelete: () => void; onClose: () => void;
+  number: number; set: PlannedSet; onSave: (set: SetPlan) => void; onDelete: () => void; onClose: () => void;
 }) => {
   const [reps, setReps] = useState(String(set.reps));
+  const [seconds, setSeconds] = useState(secondsOf(set) === null ? '' : String(secondsOf(set)));
   const [weight, setWeight] = useState(set.weight === null ? '' : String(set.weight));
   const r = parseNumber(reps);
+  const sec = parseNumber(seconds);
   const w = parseNumber(weight);
-  const valid = r !== null && r >= 1 && Number.isInteger(r) && (weight.trim() === '' || (w !== null && w >= 0));
+  const valid = r !== null && r >= 1 && Number.isInteger(r)
+    && (seconds.trim() === '' || (sec !== null && sec >= 1 && Number.isInteger(sec)))
+    && (weight.trim() === '' || (w !== null && w >= 0));
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!valid) return;
-    onSave(r, w);
+    onSave({ reps: r, weight: w, seconds: sec });
     onClose();
   };
   return (
@@ -31,10 +36,12 @@ const PlannedSetDialog = ({ number, set, onSave, onDelete, onClose }: {
         <div className="row">
           <label className="stack grow"><span className="small muted">Reps</span>
             <input className="field" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} /></label>
+          <label className="stack grow"><span className="small muted">Seconds</span>
+            <input className="field" inputMode="numeric" value={seconds} onChange={(e) => setSeconds(e.target.value)} /></label>
           <label className="stack grow"><span className="small muted">kg</span>
             <input className="field" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} /></label>
         </div>
-        <p className="small muted">Leave kg empty for bodyweight.</p>
+        <p className="small muted">Leave kg empty for bodyweight. Seconds are for timed sets: a 45 s hold is 1 rep of 45 seconds.</p>
         <div className="actions">
           <button type="button" className="btn danger" onClick={() => { onDelete(); onClose(); }}>Delete set</button>
           <button type="submit" className="btn" disabled={!valid}>Save</button>
@@ -98,7 +105,7 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
           {exercise.sets.map((set, index) => (
             <button key={set.id} className="list-item" onClick={() => setDialog({ kind: 'set', set, number: index + 1 })}>
               <span className="grow"><span className="title">Set {index + 1}</span>{' '}
-                <span className="muted">{set.reps}{set.weight !== null ? ` × ${formatKg(set.weight)}` : ''}</span></span>
+                <span className="muted">{setWork(set)}{set.weight !== null ? ` × ${formatKg(set.weight)}` : ''}</span></span>
               <span className="muted">›</span>
             </button>
           ))}
@@ -117,7 +124,7 @@ const PlanBody = ({ plan }: { plan: TrainingPlan }) => {
       )}
       {dialog?.kind === 'set' && (
         <PlannedSetDialog number={dialog.number} set={dialog.set} onClose={() => setDialog(null)}
-          onSave={(reps, weight) => save(updatePlannedSet(plan, dialog.set.id, { reps, weight }))}
+          onSave={(set) => save(updatePlannedSet(plan, dialog.set.id, set))}
           onDelete={() => save(deletePlannedSet(plan, dialog.set.id))} />
       )}
     </>

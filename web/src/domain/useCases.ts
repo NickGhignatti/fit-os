@@ -17,7 +17,7 @@ import type {
 } from './repositories';
 import { combine } from './stream';
 import { pendingSessionOn, sessionOn, type PendingSession, type TrainingPlan } from './trainingPlan';
-import { doneSetsOf, markedDone, setFollowing, toggledDone, totalSetsOf, started, stopped, stopwatchOf, withClock, workoutToPlan, ZERO, type ExerciseSet, type SetPlan, type Workout } from './workout';
+import { doneSetsOf, markedDone, plannedSecondsOf, secondsOf, setFollowing, toggledDone, totalSetsOf, started, stopped, stopwatchOf, withClock, workoutToPlan, ZERO, type ExerciseSet, type SetPlan, type Workout } from './workout';
 
 // ---- Observing --------------------------------------------------------------
 
@@ -210,16 +210,16 @@ export const setStopwatch = (deps: WorkoutDeps, workoutId: string, action: 'star
 export const logSet = (deps: WorkoutDeps, workoutId: string, set: ExerciseSet, now = Date.now()): Promise<boolean> =>
   editWorkout(deps, workoutId, (w) => withClock(updateSet(w, set.done ? markedDone(set) : set), now));
 
-const lastOf = (sets: readonly { reps: number; weight: number | null }[]): SetPlan | null => {
+const lastOf = (sets: readonly { reps: number; weight: number | null; seconds?: number | null }[]): SetPlan | null => {
   const last = sets.at(-1);
-  return last ? { reps: last.reps, weight: last.weight } : null;
+  return last ? { reps: last.reps, weight: last.weight, seconds: secondsOf(last) } : null;
 };
 
 /** Appends a set that repeats the last one: the usual "one more set" case. */
 export const addSetLikeLast = (deps: WorkoutDeps, workoutId: string, exerciseId: string): Promise<boolean> =>
   editWorkout(deps, workoutId, (w) => {
     const sets = w.exercises.find((e) => e.id === exerciseId)?.sets ?? [];
-    return addSet(w, exerciseId, setFollowing(lastOf(sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight })))));
+    return addSet(w, exerciseId, setFollowing(lastOf(sets.map((s) => ({ reps: s.plannedReps, weight: s.plannedWeight, seconds: plannedSecondsOf(s) })))));
   });
 
 /** Appends a set to a plan's exercise that repeats the last one. */

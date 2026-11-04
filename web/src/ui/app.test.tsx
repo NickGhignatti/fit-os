@@ -156,6 +156,25 @@ describe('a workout plan, from creation to a logged session', () => {
     expect(within(await dialog('Completed exercises')).getByText(/Did 4/)).toBeInTheDocument();
   });
 
+  it('plans a timed hold and logs how long it was actually held', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const plank = { name: 'Plank', notes: '', catalogId: null, sets: [{ reps: 1, weight: null, seconds: 45 }, { reps: 1, weight: null, seconds: 45 }] };
+    await device.repos.trainingPlans.save({ ...newTrainingPlan('Core', 'daily', { 0: [plank] }), isActive: true });
+    renderApp('/', device);
+
+    await user.click(await screen.findByRole('button', { name: 'Start Core' }));
+    expect(await screen.findByText(/2 × 45 s/)).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: /^Set 1 45 s/ }));
+    const editor = await dialog('Set 1');
+    await user.type(within(editor).getAllByLabelText('Seconds')[1]!, '60');
+    await user.click(within(editor).getByLabelText('Completed'));
+    await user.click(within(editor).getByRole('button', { name: 'Save' }));
+
+    await user.click(await screen.findByRole('button', { name: /1 set done · show/ }));
+    expect(await screen.findByText(/Did 1m/)).toBeInTheDocument();
+  });
+
   it('shows a deleted plan as gone instead of loading forever', async () => {
     const device = makeDevice();
     renderApp('/workouts/plan/missing', device);

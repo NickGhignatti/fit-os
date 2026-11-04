@@ -20,15 +20,30 @@ export const formatWeight = (n: number): string => trim(n, 2);
 export const formatMacros = (n: Nutrients): string =>
   `P ${Math.round(n.protein)} g · C ${Math.round(n.carbs)} g · F ${Math.round(n.fat)} g`;
 
-/** "3 × 10", "3 × 10 × 60 kg", or a list when the sets differ. */
-export const setSummary = (sets: readonly { reps: number; weight: number | null }[]): string => {
+/** A length of time held: "45 s", or "1m 30s" from a minute up. */
+export const formatSeconds = (seconds: number): string => (seconds < 60 ? `${seconds} s` : formatRest(seconds));
+
+/**
+ * The work of one set, without its load: "10" reps, "45 s" for a hold (1 rep of 45 s),
+ * "5 × 5 s" for timed reps. Sets saved before timed sets existed read as untimed.
+ */
+export const setWork = (s: { readonly reps: number; readonly seconds?: number | null }): string => {
+  const seconds = s.seconds ?? null;
+  if (seconds === null) return String(s.reps);
+  return s.reps === 1 ? formatSeconds(seconds) : `${s.reps} × ${formatSeconds(seconds)}`;
+};
+
+/** "3 × 10", "3 × 10 × 60 kg", "3 × 45 s", "4 × (5 × 5 s)", or a list when the sets differ. */
+export const setSummary = (sets: readonly { reps: number; weight: number | null; seconds?: number | null }[]): string => {
   const [first] = sets;
   if (!first) return 'no sets';
-  const same = sets.every((s) => s.reps === first.reps && s.weight === first.weight);
+  const same = sets.every((s) => s.reps === first.reps && s.weight === first.weight && (s.seconds ?? null) === (first.seconds ?? null));
   const weight = (w: number | null) => (w === null ? '' : ` × ${trim(w, 2)} kg`);
+  // Timed reps already hold a "×", so a count of them is bracketed to read unambiguously.
+  const counted = (s: typeof first) => ((s.seconds ?? null) !== null && s.reps > 1 ? `(${setWork(s)})` : setWork(s));
   return same
-    ? `${sets.length} × ${first.reps}${weight(first.weight)}`
-    : sets.map((s) => `${s.reps}${weight(s.weight)}`).join(' · ');
+    ? `${sets.length} × ${counted(first)}${weight(first.weight)}`
+    : sets.map((s) => `${setWork(s)}${weight(s.weight)}`).join(' · ');
 };
 
 /** A rest time: "Off", "45s", "2m", "1m 30s". */
