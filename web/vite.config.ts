@@ -4,6 +4,10 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { manifest } from './pwa-manifest';
 import { specFiles } from './src/data/planSpec';
+import { SPEC_PATHS } from './src/data/planSpecPaths';
+
+/** Escapes [text] for use inside a regular expression. */
+const literal = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * Publishes how to write a training plan (/llms.txt and its JSON Schema) next to the app. They are
@@ -57,6 +61,10 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           // Receives files shared to the app from Android's share sheet; loaded before Workbox's routes.
           importScripts: ['/share-target.js'],
+          // The worker answers every page the app opens with the app itself (deep links are
+          // client-side routes). The published files are not pages of the app: opening them, as
+          // the "Format reference" link does, must reach the real file.
+          navigateFallbackDenylist: Object.values(SPEC_PATHS).map((path) => new RegExp(`^/${literal(path)}$`)),
           // The "mc-" SQLite builds are only for encrypted databases, which the app does not use.
           // The photo food recogniser (its engine and model, about 40 MB) is fetched the first time
           // someone logs a photo, not at install.
