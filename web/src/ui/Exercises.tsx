@@ -13,9 +13,8 @@ import {
   CATEGORY_LABEL, EQUIPMENT_LABEL, LEVEL_LABEL, MUSCLE_LABEL, parseNumber,
 } from './format';
 import { useAsync, useToast } from './hooks';
-import { ConfirmDialog, Empty, Icons, Loading, Modal, PageHeader, useDebounced } from './kit';
+import { ConfirmDialog, Empty, Icons, Loading, Modal, PageHeader, RestPicker, useDebounced } from './kit';
 import { ExerciseProgressSection } from './Progress';
-import { RestPicker } from './WorkoutCard';
 
 /** Makes up an exercise, or edits one. Only the name is needed; it is kept on this device. */
 const CustomExerciseDialog = ({ initialName = '', exercise, onSaved, onClose }: {

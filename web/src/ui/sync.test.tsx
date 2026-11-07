@@ -82,9 +82,11 @@ describe('moving data between phones with a file', () => {
   });
 
   it('imports a file shared to the app from another app, then shows what it brought', async () => {
+    const user = userEvent.setup();
     const waiting = [{ name: 'strength.fitos.json', text: envelopeFile('training_plan', plan) }];
     const device = { ...makeDevice(), sharedFiles: { take: async () => waiting.shift() ?? null } };
     renderApp('/import', device);
+    await user.click(within(await screen.findByRole('dialog', { name: 'Review the plan' })).getByRole('button', { name: 'Import plan' }));
     expect(await screen.findByText('Imported workout plan “Strength”')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Workouts' })).toBeInTheDocument();
     expect((await device.store.direct.list(Tables.trainingPlans)).map((p) => p.name)).toEqual(['Strength']);

@@ -1,6 +1,7 @@
 import { Children, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Nutrients } from '../domain/nutrition';
+import { formatRest } from './format';
 
 /** A dialog that slides up on phones. Closes on Escape and on a tap outside. */
 export const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) => {
@@ -438,14 +439,15 @@ export const SwipeToComplete = ({ label, under = 'Done', onComplete, children }:
     if (sideways.current && Math.abs(dx) >= SWIPE_DONE_PX) {
       setLeaving(true);
       setDx(Math.sign(dx) * window.innerWidth);
-      setTimeout(onComplete, 180);
+      // The row may stay (a done set shown again, the completed list): bring it back, as it now is.
+      setTimeout(() => { onComplete(); setLeaving(false); setDx(0); }, 180);
     } else {
       setDx(0);
     }
     start.current = null;
     sideways.current = false;
   };
-  const ready = Math.abs(dx) >= SWIPE_DONE_PX;
+  const ready = Math.abs(dx) >= SWIPE_DONE_PX && !leaving;
   return (
     <div className={`swipe ${dx !== 0 ? 'moving' : ''} ${ready ? 'ready' : ''}`} aria-label={label} role="group">
       <div className={`swipe-under ${dx < 0 ? 'right' : ''}`} aria-hidden="true">{under === 'Done' ? Icons.check : Icons.reset}<span>{under}</span></div>
@@ -457,3 +459,22 @@ export const SwipeToComplete = ({ label, under = 'Done', onComplete, children }:
     </div>
   );
 };
+
+const REST_CHOICES = [0, 30, 45, 60, 90, 120, 180, 240, 300];
+
+/** The rest times to choose from; a time set elsewhere (say, an imported plan) joins them. */
+export const restChoices = (value: number | null): number[] =>
+  [...new Set(value === null ? REST_CHOICES : [...REST_CHOICES, value])].sort((a, b) => a - b);
+
+/** A rest time as a row of choices; [value] is null when none is picked (say, exercises that differ). */
+export const RestPicker = ({ label, value, onChange }: { label: string; value: number | null; onChange: (seconds: number) => void }) => (
+  <div className="stack">
+    <span className="small muted">{label}</span>
+    <div className="pills" role="radiogroup" aria-label={label}>
+      {restChoices(value).map((s) => (
+        <button key={s} type="button" role="radio" aria-checked={s === value} className={`pill ${s === value ? 'on' : ''}`}
+          onClick={() => onChange(s)}>{formatRest(s)}</button>
+      ))}
+    </div>
+  </div>
+);

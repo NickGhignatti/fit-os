@@ -15,7 +15,7 @@ import {
 } from '../domain/workout';
 import { formatKg, formatRest, formatWeight, parseNumber, relativeDay, setSummary, setWork, today } from './format';
 import { useToast } from './hooks';
-import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog, SwipeToComplete } from './kit';
+import { ActionMenu, ConfirmDialog, Icons, Modal, PlayIcon, ProgressBar, PromptDialog, RestPicker, SwipeToComplete } from './kit';
 import { NewBestPrompt } from './Progress';
 import { BETWEEN_EXERCISES, RestTimer, SessionClock, restFor, useRest } from './Timers';
 import { ShareButton } from './Transfer';
@@ -88,21 +88,6 @@ const SetDialog = ({ number, set, onSave, onDelete, onClose }: {
     </Modal>
   );
 };
-
-const REST_CHOICES = [0, 30, 45, 60, 90, 120, 180, 240, 300];
-
-/** A rest time as a row of choices; a time set elsewhere (say, an imported plan) joins them. */
-export const RestPicker = ({ label, value, onChange }: { label: string; value: number; onChange: (seconds: number) => void }) => (
-  <div className="stack">
-    <span className="small muted">{label}</span>
-    <div className="pills" role="radiogroup" aria-label={label}>
-      {[...new Set([...REST_CHOICES, value])].sort((a, b) => a - b).map((s) => (
-        <button key={s} type="button" role="radio" aria-checked={s === value} className={`pill ${s === value ? 'on' : ''}`}
-          onClick={() => onChange(s)}>{formatRest(s)}</button>
-      ))}
-    </div>
-  </div>
-);
 
 export const ExerciseDialog = ({ exercise, onSave, onClose }: {
   exercise: { name: string; notes: string; restSeconds?: number | null; restAfterSeconds?: number | null };

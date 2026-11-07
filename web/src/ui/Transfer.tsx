@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useContainer } from '../app/hooks';
 import { restoreBackup, type Backup } from '../data/backup';
 import { readFileContents } from '../data/importFile';
-import { importEnvelope } from '../data/importItem';
+import { importEnvelope, prepareTrainingPlan, storeTrainingPlan, type PlanPreparation } from '../data/importItem';
 import { fixPrompt } from '../data/importProblems';
 import { catalogLinker } from '../domain/catalog';
 import { normalizeCode } from '../transfer/code';
@@ -13,6 +13,7 @@ import type { DietPlan } from '../domain/diet';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import { PublishDialog } from './Community';
 import { useToast } from './hooks';
+import { PlanReview } from './PlanReview';
 import { ConfirmDialog, Empty, Icons, Modal, PageHeader, type FabAction } from './kit';
 import { ScannerDialog } from './Scanner';
 
@@ -307,12 +308,17 @@ export const useFileImport = (onDone: (screen: string | null) => void = () => {}
   const toast = useToast();
   const [backup, setBackup] = useState<Backup | null>(null);
   const [problems, setProblems] = useState<readonly string[] | null>(null);
+  const [review, setReview] = useState<Extract<PlanPreparation, { status: 'ready' }> | null>(null);
   const importText = async (text: string) => {
     const contents = readFileContents(text);
     if (contents.kind === 'backup') return setBackup(contents.backup);
     if (contents.kind === 'unknown') {
       toast("That file can't be imported.");
       return onDone(null);
+    }
+    if (contents.envelope.kind === 'training_plan') {
+      const prepared = await prepareTrainingPlan(contents.envelope.data, catalogLinker(repos.exercises));
+      return prepared.status === 'invalid' ? setProblems(prepared.problems) : setReview(prepared);
     }
     const imported = await importEnvelope(store, contents.envelope, { linkExercise: catalogLinker(repos.exercises) });
     if (imported.status === 'invalid') return setProblems(imported.problems);
@@ -327,6 +333,14 @@ export const useFileImport = (onDone: (screen: string | null) => void = () => {}
           message={`It contains ${summarize(backup)}. Items with the same id are replaced; everything else on this device is kept.`}
           onClose={() => { setBackup(null); onDone(null); }}
           onConfirm={() => void restoreBackup(store, backup).then(() => { toast('Backup imported'); onDone(SCREEN_OF.backup); })} />
+      )}
+      {review && (
+        <PlanReview initial={review.plan} ignored={review.ignored} onClose={() => { setReview(null); onDone(null); }}
+          onConfirm={(plan) => void storeTrainingPlan(store, plan).then(() => {
+            toast(`Imported ${KIND_LABEL.training_plan} “${plan.name}”`);
+            setReview(null);
+            onDone(SCREEN_OF.training_plan);
+          })} />
       )}
       {problems && (
         <Modal title="Can't import this file" onClose={() => { setProblems(null); onDone(null); }}>

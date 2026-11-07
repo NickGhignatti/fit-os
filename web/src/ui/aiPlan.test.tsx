@@ -55,7 +55,10 @@ describe('creating a plan with an AI', () => {
     expect(within(dialog).getByRole('link', { name: 'Format reference' })).toHaveAttribute('href', '/llms.txt');
 
     await paste(user, dialog, chatAnswer('[{"reps": 1, "seconds": 60}]'));
-    await user.click(within(dialog).getByRole('button', { name: 'Import plan' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Review plan' }));
+    expect(await device.store.direct.count('training_plans')).toBe(0); // nothing is kept before it is confirmed
+    const review = await screen.findByRole('dialog', { name: 'Review the plan' });
+    await user.click(within(review).getByRole('button', { name: 'Import plan' }));
 
     expect(await screen.findByRole('heading', { name: 'Jump Day' })).toBeInTheDocument();
     expect(screen.getByText('Imported workout plan “Jump Day”')).toBeInTheDocument();
@@ -72,7 +75,7 @@ describe('creating a plan with an AI', () => {
     const dialog = await openDialog(user);
 
     await paste(user, dialog, chatAnswer('[{"reps": 1, "seconds": 0}]'));
-    await user.click(within(dialog).getByRole('button', { name: 'Import plan' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Review plan' }));
     const alert = await within(dialog).findByRole('alert');
     expect(alert).toHaveTextContent('Monday › Wall sit › set 1 › seconds: Number must be greater than 0');
 
@@ -84,24 +87,53 @@ describe('creating a plan with an AI', () => {
 
     await paste(user, dialog, 'I could not write a plan, sorry.');
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument(); // a new answer clears the old verdict
-    await user.click(within(dialog).getByRole('button', { name: 'Import plan' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Review plan' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent("doesn't look like a workout plan");
   });
 
-  it('imports a plan with unknown fields but says which, so the AI can do better', async () => {
+  it('says which fields were not understood when the plan is reviewed, and keeps the rest', async () => {
     const user = userEvent.setup();
     renderApp('/workouts');
     const dialog = await openDialog(user);
 
     await paste(user, dialog, chatAnswer('[{"reps": 1, "duration": 60}]'));
-    await user.click(within(dialog).getByRole('button', { name: 'Import plan' }));
-    const status = await within(dialog).findByRole('status');
-    expect(status).toHaveTextContent('Monday › Wall sit › set 1 › duration');
-    await user.click(within(dialog).getByRole('button', { name: 'Copy for the AI' }));
-    expect(await navigator.clipboard.readText()).toContain('ignored fields it does not know');
+    await user.click(within(dialog).getByRole('button', { name: 'Review plan' }));
+    const review = await screen.findByRole('dialog', { name: 'Review the plan' });
+    expect(within(review).getByRole('status')).toHaveTextContent('Monday › Wall sit › set 1 › duration');
 
-    await user.click(within(dialog).getByRole('button', { name: 'Open plan' }));
+    await user.click(within(review).getByRole('button', { name: 'Import plan' }));
     expect(await screen.findByRole('heading', { name: 'Jump Day' })).toBeInTheDocument();
+  });
+
+  it('lets loads and rests be changed on every day before anything is kept, and drops it on cancel', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    renderApp('/workouts', device);
+    const dialog = await openDialog(user);
+    await paste(user, dialog, chatAnswer('[{"reps": 1, "seconds": 60}]'));
+    await user.click(within(dialog).getByRole('button', { name: 'Review plan' }));
+
+    const review = await screen.findByRole('dialog', { name: 'Review the plan' });
+    await user.click(within(within(review).getByRole('radiogroup', { name: 'Rest between sets, everywhere' })).getByRole('radio', { name: 'Off' }));
+    await user.type(within(review).getByLabelText('Pull-ups load in kg'), '10');
+    await user.click(within(review).getByRole('button', { name: 'Remove Wall sit' }));
+    await user.click(within(review).getByRole('button', { name: 'Cancel' }));
+    expect(await device.store.direct.count('training_plans')).toBe(0);
+
+    const back = await screen.findByRole('dialog', { name: 'Create with AI' }); // the answer is still there
+    await user.click(within(back).getByRole('button', { name: 'Review plan' }));
+    const again = await screen.findByRole('dialog', { name: 'Review the plan' });
+    await user.click(within(within(again).getByRole('radiogroup', { name: 'Rest between sets, everywhere' })).getByRole('radio', { name: 'Off' }));
+    await user.type(within(again).getByLabelText('Pull-ups load in kg'), '10');
+    await user.click(within(again).getByRole('button', { name: 'Remove Wall sit' }));
+    await user.click(within(again).getByRole('button', { name: 'Import plan' }));
+
+    await screen.findByRole('heading', { name: 'Jump Day' });
+    const [plan] = await device.store.direct.list(Tables.trainingPlans);
+    const [pullups, ...others] = plan!.sessions[1]!;
+    expect(others).toEqual([]);
+    expect(pullups).toMatchObject({ name: 'Pull-ups', restSeconds: 0 });
+    expect(pullups!.sets.map((s) => s.weight)).toEqual([10, 10]);
   });
 });
 

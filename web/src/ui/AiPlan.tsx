@@ -2,26 +2,26 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContainer } from '../app/hooks';
 import { readFileContents } from '../data/importFile';
-import { importEnvelope } from '../data/importItem';
-import { fixPrompt, ignoredPrompt } from '../data/importProblems';
+import { prepareTrainingPlan, storeTrainingPlan, type PlanPreparation } from '../data/importItem';
+import { fixPrompt } from '../data/importProblems';
 import { SPEC_PATHS } from '../data/planSpecPaths';
 import { catalogLinker } from '../domain/catalog';
 import { useAsync, useToast } from './hooks';
 import { Icons, Modal, type FabAction } from './kit';
+import { PlanReview } from './PlanReview';
 
 /**
  * Workouts › + › Create with AI. The app has no AI of its own: it hands any AI chat the exact
  * format, as a prompt, and takes the answer back, pasted. The round trip is
  *   describe the plan → copy the prompt → the AI writes JSON → paste it → import,
  * and when the import fails, the problems go back to the AI in one tap, worded for it to fix.
+ * A good answer is first laid out for review (see [PlanReview]); it is stored when confirmed there.
  */
 
 /** What came of the last paste. */
 type Outcome =
   | { readonly kind: 'not_a_plan' }
-  | { readonly kind: 'problems'; readonly lines: readonly string[] }
-  /** Imported, but with fields the app does not know: the plan is there, and the AI can do better. */
-  | { readonly kind: 'ignored'; readonly planId: string; readonly lines: readonly string[] };
+  | { readonly kind: 'problems'; readonly lines: readonly string[] };
 
 const copyText = async (text: string): Promise<boolean> => {
   try {
@@ -50,6 +50,7 @@ const AiPlanDialog = ({ onClose }: { onClose: () => void }) => {
   const [answer, setAnswer] = useState('');
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [importing, setImporting] = useState(false);
+  const [review, setReview] = useState<Extract<PlanPreparation, { status: 'ready' }> | null>(null);
 
   const prompt = () => (spec.state === 'ready' ? spec.value.aiPrompt(goal, window.location.origin) : '');
   const canShare = typeof navigator.share === 'function';
@@ -67,15 +68,23 @@ const AiPlanDialog = ({ onClose }: { onClose: () => void }) => {
     try {
       const contents = readFileContents(answer);
       if (contents.kind !== 'item' || contents.envelope.kind !== 'training_plan') return setOutcome({ kind: 'not_a_plan' });
-      const result = await importEnvelope(store, contents.envelope, { linkExercise: catalogLinker(repos.exercises) });
-      if (result.status === 'invalid') return setOutcome({ kind: 'problems', lines: result.problems });
-      toast(`Imported workout plan “${result.title}”`);
-      if (result.ignored.length > 0) return setOutcome({ kind: 'ignored', planId: result.id, lines: result.ignored });
-      openPlan(result.id);
+      const prepared = await prepareTrainingPlan(contents.envelope.data, catalogLinker(repos.exercises));
+      if (prepared.status === 'invalid') return setOutcome({ kind: 'problems', lines: prepared.problems });
+      setReview(prepared);
     } finally {
       setImporting(false);
     }
   };
+
+  if (review) {
+    return (
+      <PlanReview initial={review.plan} ignored={review.ignored} onClose={() => setReview(null)}
+        onConfirm={(plan) => void storeTrainingPlan(store, plan).then(() => {
+          toast(`Imported workout plan “${plan.name}”`);
+          openPlan(plan.id);
+        })} />
+    );
+  }
 
   return (
     <Modal title="Create with AI" onClose={onClose}>
@@ -116,12 +125,6 @@ const AiPlanDialog = ({ onClose }: { onClose: () => void }) => {
               <p className="small muted" style={{ margin: 0 }}>Send these back to the AI: it will fix them.</p>
             </div>
           )}
-          {outcome?.kind === 'ignored' && (
-            <div role="status" className="stack">
-              <p style={{ margin: 0 }}>Imported. These fields were not understood, so they were left out:</p>
-              <ProblemList lines={outcome.lines} />
-            </div>
-          )}
 
           <div className="actions">
             {outcome?.kind === 'problems' && (
@@ -129,18 +132,9 @@ const AiPlanDialog = ({ onClose }: { onClose: () => void }) => {
                 Copy for the AI
               </button>
             )}
-            {outcome?.kind === 'ignored' ? (
-              <>
-                <button type="button" className="btn secondary" onClick={() => copy(ignoredPrompt(outcome.lines), 'Copied. Paste it into the same AI chat.')}>
-                  Copy for the AI
-                </button>
-                <button type="button" className="btn" onClick={() => openPlan(outcome.planId)}>Open plan</button>
-              </>
-            ) : (
-              <button type="button" className="btn" disabled={answer.trim() === '' || importing} onClick={() => void importAnswer()}>
-                {importing ? 'Importing…' : 'Import plan'}
-              </button>
-            )}
+            <button type="button" className="btn" disabled={answer.trim() === '' || importing} onClick={() => void importAnswer()}>
+              {importing ? 'Reading…' : 'Review plan'}
+            </button>
           </div>
         </section>
       </div>

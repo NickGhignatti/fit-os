@@ -142,6 +142,21 @@ export const updatePlannedSet = (plan: TrainingPlan, setId: string, set: SetPlan
     list.map((e) => ({ ...e, sets: e.sets.map((s) => (s.id === setId ? { ...s, reps: set.reps, weight: set.weight, seconds: secondsOf(set) } : s)) })),
   );
 
+/** Gives every set of the exercise the same load; null for bodyweight. */
+export const setPlannedLoad = (plan: TrainingPlan, exerciseId: string, weight: number | null): TrainingPlan =>
+  mapSessions(plan, (list) =>
+    list.map((e) => (e.id === exerciseId ? { ...e, sets: e.sets.map((s) => ({ ...s, weight })) } : e)),
+  );
+
+/** The rests to give every exercise of the plan; what is left out stays as it is. */
+export interface PlanRests {
+  readonly restSeconds?: number | null;
+  readonly restAfterSeconds?: number | null;
+}
+
+export const setPlannedRests = (plan: TrainingPlan, rests: PlanRests): TrainingPlan =>
+  mapSessions(plan, (list) => list.map((e) => ({ ...e, ...rests })));
+
 export const deletePlannedSet = (plan: TrainingPlan, setId: string): TrainingPlan =>
   mapSessions(plan, (list) => list.map((e) => ({ ...e, sets: e.sets.filter((s) => s.id !== setId) })));
 

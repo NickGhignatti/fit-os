@@ -762,6 +762,41 @@ describe('resting between sets', () => {
   });
 });
 
+describe('swiping a set', () => {
+  /** Drags a row sideways, as a finger would, and lets go. */
+  const swipe = (row: HTMLElement, dx: number) => {
+    const body = row.querySelector('.swipe-body')!;
+    // jsdom has no PointerEvent: a mouse event under the pointer event's name carries the coordinates.
+    const touch = (type: string, x: number) => fireEvent(body, new MouseEvent(type, { bubbles: true, clientX: x, clientY: 100 }));
+    touch('pointerdown', 200);
+    touch('pointermove', 200 + dx);
+    touch('pointerup', 200 + dx);
+    return body as HTMLElement;
+  };
+
+  it('puts a row that stays on screen back in place once it is done, instead of leaving it slid away', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    const plan = newTrainingPlan('Push', 'daily', { 0: [
+      { name: 'Bench', notes: '', catalogId: null, sets: [{ reps: 6, weight: null }, { reps: 6, weight: null }, { reps: 6, weight: null }] },
+    ] });
+    await device.repos.trainingPlans.save(plan);
+    await device.repos.trainingPlans.setPlanActive(plan.id, true);
+    renderApp(`/day/${today()}`, device);
+    await user.click(await screen.findByRole('button', { name: 'Start workout' }));
+
+    const bench = within(await screen.findByRole('group', { name: 'Bench' }));
+    await user.click(bench.getByRole('button', { name: 'Set 1 not done' }));
+    await user.click(await bench.findByRole('button', { name: /1 set done/ })); // show the done set again: its row stays mounted
+
+    const row = bench.getByRole('group', { name: 'Set 1 of Bench' });
+    const body = swipe(row, 150); // swiped to undo
+    await waitFor(() => expect(bench.getByRole('button', { name: 'Set 1 not done' })).toBeInTheDocument());
+    await waitFor(() => expect(body.style.transform).toBe('')); // not left off screen with the green "Undo" showing
+    expect(row).not.toHaveClass('ready');
+  });
+});
+
 describe('widgets', () => {
   it('lets Today be made your own: remove, add and resize widgets, kept for next time', async () => {
     const user = userEvent.setup();
@@ -813,6 +848,9 @@ describe('sharing a plan as a file', () => {
 
     const file = jsonFile(envelopeFile('training_plan', { ...plan, isActive: true }), 'strength.fitos.json');
     await user.upload(await screen.findByLabelText('File to import'), file);
+    const review = await dialog('Review the plan'); // looked over first: nothing is kept yet
+    expect(await device.store.direct.count('training_plans')).toBe(0);
+    await user.click(within(review).getByRole('button', { name: 'Import plan' }));
     expect(await screen.findByText(/Imported workout plan “Strength”/)).toBeInTheDocument();
     const saved = await device.store.direct.list(Tables.trainingPlans);
     expect(saved).toHaveLength(1);

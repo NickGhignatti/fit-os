@@ -42,6 +42,22 @@ const linkWorkout = async (workout: Workout, link?: ExerciseLinker): Promise<Wor
   ...workout, exercises: await linked(workout.exercises, link),
 });
 
+/** A training plan read and checked but not yet stored, so that it can be looked over first. */
+export type PlanPreparation =
+  | { readonly status: 'ready'; readonly plan: TrainingPlan; readonly ignored: readonly string[] }
+  | { readonly status: 'invalid'; readonly problems: readonly string[] };
+
+/** Reads a training plan as authored: validated, linked to the catalogue, with fresh ids, nothing stored. */
+export const prepareTrainingPlan = async (data: unknown, link?: ExerciseLinker): Promise<PlanPreparation> => {
+  const parsed = authoredTrainingPlanSchema.safeParse(data);
+  if (!parsed.success) return { status: 'invalid', problems: describeIssues(parsed.error.issues, data) };
+  return { status: 'ready', plan: await linkPlan(copyTrainingPlan(parsed.data), link), ignored: ignoredFields(data, parsed.data) };
+};
+
+/** Stores a prepared plan; like any import it is never active. */
+export const storeTrainingPlan = (store: Store, plan: TrainingPlan): Promise<void> =>
+  store.docs.put(Tables.trainingPlans, { ...plan, isActive: false });
+
 /**
  * Stores a received item as a copy: validated, with fresh ids, and never active, so it cannot
  * overwrite or replace anything the user already has. A food-log day is added to that day.
@@ -52,11 +68,10 @@ export const importEnvelope = async (store: Store, envelope: Envelope, { linkExe
   const { data } = envelope;
   switch (envelope.kind) {
     case 'training_plan': {
-      const parsed = authoredTrainingPlanSchema.safeParse(data);
-      if (!parsed.success) return { status: 'invalid', problems: describeIssues(parsed.error.issues, data) };
-      const plan = await linkPlan(copyTrainingPlan(parsed.data), linkExercise);
-      await store.docs.put(Tables.trainingPlans, plan);
-      return { status: 'imported', kind: envelope.kind, title: plan.name, id: plan.id, ignored: ignoredFields(data, parsed.data) };
+      const prepared = await prepareTrainingPlan(data, linkExercise);
+      if (prepared.status === 'invalid') return prepared;
+      await storeTrainingPlan(store, prepared.plan);
+      return { status: 'imported', kind: envelope.kind, title: prepared.plan.name, id: prepared.plan.id, ignored: prepared.ignored };
     }
     case 'diet_plan': {
       const parsed = dietPlanSchema.safeParse(data);
