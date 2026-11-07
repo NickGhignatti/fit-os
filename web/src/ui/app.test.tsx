@@ -804,6 +804,35 @@ describe('swiping a set', () => {
   });
 });
 
+describe('deleting from the lists', () => {
+  it('deletes a diet straight from the Diet list, after a confirmation, and a workout from the list of workouts', async () => {
+    const user = userEvent.setup();
+    const device = makeDevice();
+    await device.repos.dietPlans.save(newDietPlan('Cut', 'daily'));
+    await device.repos.dietPlans.save(newDietPlan('Bulk', 'daily'));
+    await device.repos.trainingPlans.save(newTrainingPlan('Legs', 'daily'));
+    renderApp('/food', device);
+
+    await chooseFromMenu(user, 'Cut options', 'Delete');
+    const confirm = await dialog('Delete “Cut”?');
+    await user.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+    expect(await device.store.direct.count('diet_plans')).toBe(2); // asked first: cancelling keeps it
+
+    await chooseFromMenu(user, 'Cut options', 'Delete');
+    await user.click(within(await dialog('Delete “Cut”?')).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(screen.queryByText('Cut')).not.toBeInTheDocument());
+    expect(screen.getByText('Bulk')).toBeInTheDocument();
+    expect(await device.store.direct.count('diet_plans')).toBe(1);
+
+    cleanup();
+    renderApp('/workouts', device);
+    await user.click(await screen.findByRole('button', { name: 'all workouts' }));
+    await chooseFromMenu(user, 'Legs options', 'Delete');
+    await user.click(within(await dialog('Delete “Legs”?')).getByRole('button', { name: 'Delete' }));
+    await waitFor(async () => expect(await device.store.direct.count('training_plans')).toBe(0));
+  });
+});
+
 describe('widgets', () => {
   it('lets Today be made your own: remove, add and resize widgets, kept for next time', async () => {
     const user = userEvent.setup();

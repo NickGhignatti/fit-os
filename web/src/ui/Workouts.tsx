@@ -158,7 +158,7 @@ export const Workouts = () => {
         <Modal title="Your workouts" onClose={() => setListing(false)}>
           {sorted.length === 0
             ? <p className="muted">No workouts yet. Tap + to create one.</p>
-            : <PlanRows plans={sorted} repo={repos.trainingPlans} summary={trainingSummary} href={href} onOpen={() => setListing(false)} />}
+            : <PlanRows plans={sorted} repo={repos.trainingPlans} texts={TRAINING_TEXTS} summary={trainingSummary} href={href} onOpen={() => setListing(false)} />}
         </Modal>
       )}
       {creating}

@@ -90,25 +90,33 @@ export const PlanMenu = <P extends PlanLike>({ plan, repo, texts, extra = [], af
   );
 };
 
-/** Every saved plan, each with a switch to follow it or not, and a tap to open it. */
-export const PlanRows = <P extends PlanLike>({ plans, repo, summary, href, onOpen }: {
-  plans: readonly P[]; repo: PlanRepository<P>; summary: (plan: P) => string; href: (plan: P) => string; onOpen?: () => void;
-}) => (
-  <>
-    {plans.map((plan) => (
-      <div key={plan.id} className="list-item" style={{ cursor: 'default' }}>
-        <Link to={href(plan)} className="grow" style={{ color: 'inherit', textDecoration: 'none' }} onClick={onOpen}>
-          <div className="title">{plan.name} {plan.isActive && <span className="badge">Active</span>}</div>
-          <div className="small muted">{plan.recurrence === 'daily' ? 'Daily' : 'Weekly'} · {summary(plan)}</div>
-        </Link>
-        <button className="btn secondary" aria-label={`${plan.isActive ? 'Deactivate' : 'Set as active'} ${plan.name}`}
-          onClick={() => void repo.setPlanActive(plan.id, !plan.isActive)}>
-          {plan.isActive ? 'Deactivate' : 'Activate'}
-        </button>
-      </div>
-    ))}
-  </>
-);
+/** Every saved plan, each with a switch to follow it or not, a ⋮ to delete it, and a tap to open it. */
+export const PlanRows = <P extends PlanLike>({ plans, repo, texts, summary, href, onOpen }: {
+  plans: readonly P[]; repo: PlanRepository<P>; texts: PlanTexts; summary: (plan: P) => string; href: (plan: P) => string; onOpen?: () => void;
+}) => {
+  const [deleting, setDeleting] = useState<P | null>(null);
+  return (
+    <>
+      {plans.map((plan) => (
+        <div key={plan.id} className="list-item" style={{ cursor: 'default' }}>
+          <Link to={href(plan)} className="grow" style={{ color: 'inherit', textDecoration: 'none' }} onClick={onOpen}>
+            <div className="title">{plan.name} {plan.isActive && <span className="badge">Active</span>}</div>
+            <div className="small muted">{plan.recurrence === 'daily' ? 'Daily' : 'Weekly'} · {summary(plan)}</div>
+          </Link>
+          <button className="btn secondary" aria-label={`${plan.isActive ? 'Deactivate' : 'Set as active'} ${plan.name}`}
+            onClick={() => void repo.setPlanActive(plan.id, !plan.isActive)}>
+            {plan.isActive ? 'Deactivate' : 'Activate'}
+          </button>
+          <ActionMenu label={`${plan.name} options`} actions={[{ label: 'Delete', danger: true, onSelect: () => setDeleting(plan) }]} />
+        </div>
+      ))}
+      {deleting && (
+        <ConfirmDialog title={`Delete “${deleting.name}”?`} message={texts.deleteMessage} onClose={() => setDeleting(null)}
+          onConfirm={() => void repo.delete(deleting.id)} />
+      )}
+    </>
+  );
+};
 
 /** The "New …" action of a +, and the dialog it opens; a new plan opens right away. */
 export const usePlanCreation = <P extends PlanLike>({ repo, texts, icon, create, href }: {
@@ -135,7 +143,7 @@ export const PlanList = <P extends PlanLike>({ plans, repo, texts, summary, href
   if (plans.length === 0) return <Empty>{texts.empty.split('\n').map((line, i) => <div key={i}>{line}</div>)}</Empty>;
   return (
     <section className="card" aria-label="Saved plans">
-      <PlanRows plans={plans} repo={repo} summary={summary} href={href} />
+      <PlanRows plans={plans} repo={repo} texts={texts} summary={summary} href={href} />
     </section>
   );
 };
