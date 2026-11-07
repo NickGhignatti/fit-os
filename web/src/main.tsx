@@ -8,6 +8,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { createContainer } from './app/container';
 import { ContainerProvider } from './app/hooks';
 import { hideSplash } from './app/splash';
+import { browserEnvironment, keepUpToDate } from './app/updates';
 import { copyLegacyData } from './data/legacy';
 import { AppSchema } from './data/schema';
 import { Store } from './data/store';
@@ -18,15 +19,13 @@ const store = new Store(new PowerSyncDatabase({ schema: AppSchema, database: { d
 const container = createContainer(appConfig, store);
 
 // An installed app can stay open for days, and a new version found when it starts only shows on
-// the start after. So look for one each time the app comes back on screen, and every hour; a new
+// the start after. So look for one at start, each time the app comes back, and every hour; a new
 // version found takes over and reloads the page at once (registerType 'autoUpdate').
 registerSW({
   immediate: true,
   onRegisteredSW: (_url, registration) => {
     if (!registration) return;
-    const check = () => void registration.update().catch(() => undefined);
-    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
-    setInterval(check, 60 * 60 * 1000);
+    keepUpToDate(() => void registration.update().catch(() => undefined), browserEnvironment());
   },
 });
 
