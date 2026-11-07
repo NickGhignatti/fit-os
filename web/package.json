@@ -1,6 +1,7 @@
 {
   "name": "tracker-web",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

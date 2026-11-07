@@ -1,0 +1,62 @@
+fit-os
+Copyright (c) 2026 Nick Ghignatti. All rights reserved (see LICENSE).
+
+This repository contains, and the app uses, material made by others. That material is not covered
+by the LICENSE file: it stays under the terms below, which also say how it must be credited. The
+app credits the same sources in its Terms of Service (web/src/ui/Legal.tsx, "Third-party data").
+
+
+DATA
+
+Exercise catalogue: web/public/catalog/exercises.json
+  Source:  free-exercise-db, by Yuhonas and contributors
+           https://github.com/yuhonas/free-exercise-db
+           commit f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5
+  Licence: The Unlicense (public domain)
+  Built by tools/exercises/fetch_exercises.py. The exercise photos are not stored here: the app
+  loads them from the same commit of that repository.
+
+Food composition data: web/public/catalog/crea_foods.csv, and the food names in
+tools/food-model/classes.csv
+  Source:  CREA, Centro di ricerca Alimenti e Nutrizione,
+           "Tabelle di composizione degli alimenti"
+           https://www.alimentinutrizione.it/sezioni/tabelle-nutrizionali
+  Terms:   free to reuse, provided the source is cited as above.
+  Built by tools/crea/extract_crea.py.
+
+Packaged food products
+  Source:  Open Food Facts, https://world.openfoodfacts.org
+  Licence: Open Database License (ODbL) 1.0
+  Nothing from Open Food Facts is stored in this repository: the app queries it from the user's
+  browser when they search for a product or scan a barcode.
+
+
+PHOTO FOOD RECOGNISER: web/public/models/food-recognizer.onnx, web/public/models/food-classes.json
+
+Backbone
+  DINOv2 ViT-S/14 ("facebook/dinov2-small"), by Meta Platforms, Inc.
+  https://github.com/facebookresearch/dinov2
+  Licence: Apache License 2.0, text in LICENSES/Apache-2.0.txt
+  Changes: the backbone is used unchanged. Two single-layer heads were added and trained on top of
+  it, and the whole model was exported to ONNX (see tools/food-model).
+
+The heads were trained on:
+  - MyFoodRepo / AIcrowd Food Recognition Benchmark 2022 (AIcrowd and EPFL): CC BY 4.0
+  - Nutrition5k (Google Research): CC BY 4.0
+  - Open Images V7 (Google): labels CC BY 4.0, photos CC BY 2.0
+  - COCO 2017: annotations CC BY 4.0; only photos licensed CC BY, with no known copyright
+    restriction, or US Government works
+  Licence texts: https://creativecommons.org/licenses/by/4.0/ and
+  https://creativecommons.org/licenses/by/2.0/
+
+The model runs in the browser with ONNX Runtime Web (Microsoft, MIT License).
+
+
+SOFTWARE LIBRARIES
+
+The app is built with open-source libraries, listed in web/package.json and, with their exact
+versions, in web/package-lock.json. Among them: React, React Router, Zod, zod-to-json-schema,
+Dexie, PowerSync with wa-sqlite, Supabase Auth, ONNX Runtime Web, ZXing and qrcode.
+
+Each library stays under its own licence, whose text ships with it (node_modules/<name>/LICENSE).
+The libraries the app ships are under the MIT, Apache 2.0, BSD 3-Clause, ISC or 0BSD licences.
