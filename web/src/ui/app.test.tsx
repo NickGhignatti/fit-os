@@ -304,7 +304,7 @@ describe('the calorie tracker', () => {
     const user = userEvent.setup();
     renderApp('/food/pick?date=2026-10-14&meal=Snack');
     await user.type(await screen.findByLabelText('Search foods'), '8076800195057');
-    expect(await screen.findByText(/Can't reach Open Food Facts/, { selector: '[role=alert]' })).toBeInTheDocument();
+    expect(await screen.findByText(/Can't reach the product databases/, { selector: '[role=alert]' })).toBeInTheDocument();
   });
 });
 

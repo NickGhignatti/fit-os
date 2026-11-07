@@ -8,6 +8,9 @@ import { testStore } from './testStore';
 import {
   SqlSavedProducts,
   OpenFoodFactsRepository,
+  ProductSources,
+  UsdaBrandedRepository,
+  gtinForms,
   StaticBasicFoods,
   StaticExerciseCatalog,
   parseCreaCsv,
@@ -161,5 +164,35 @@ describe('searching and scanning', () => {
     expect((await lookUpBarcode({ products: missing, savedProducts: saved }, '99')).status).toBe('not_found');
     expect((await lookUpBarcode({ products: online, savedProducts: saved }, '99')).status).toBe('found');
     expect(await lookUpBarcode({ products: offline, savedProducts: saved }, '99')).toEqual({ status: 'found', product: item });
+  });
+});
+
+describe('barcode sources', () => {
+  const usda = (foods: unknown[]) => new UsdaBrandedRepository('k', (async () => new Response(JSON.stringify({ foods }))) as unknown as typeof fetch);
+  const bar = {
+    gtinUpc: '891128090406', description: 'KINDER BUENO RIEGEL BAR', brandName: 'FERRERO', servingSize: 21.5, servingSizeUnit: 'g',
+    foodNutrients: [{ nutrientNumber: '208', value: 567 }, { nutrientNumber: '203', value: 9.3 }, { nutrientNumber: '205', value: 51.2 }, { nutrientNumber: '204', value: 37.2 }],
+  };
+
+  it('writes one barcode every way it turns up', () => {
+    expect(gtinForms('0891128090406')).toEqual(['0891128090406', '891128090406']);
+    expect(gtinForms('8000500037560')).toEqual(['8000500037560']);
+  });
+
+  it('reads a USDA branded product, matching the code however it is written', async () => {
+    const result = await usda([bar]).findByBarcode('0891128090406');
+    expect(result).toEqual({
+      status: 'found',
+      product: { id: 'usda:891128090406', name: 'Kinder Bueno Riegel Bar', brand: 'Ferrero', per100g: { kcal: 567, protein: 9.3, carbs: 51.2, fat: 37.2 }, servingGrams: 21.5 },
+    });
+    expect((await usda([{ ...bar, gtinUpc: '1' }]).findByBarcode('891128090406')).status).toBe('not_found');
+  });
+
+  it('asks the next source when the first does not know the code, and reports an unreachable one', async () => {
+    const know = (status: 'not_found' | 'unavailable') => ({ findByBarcode: async () => ({ status }) as const, search: async () => ({ status: 'results', products: [] }) as const });
+    const second = usda([bar]);
+    expect((await new ProductSources([know('not_found'), second]).findByBarcode('891128090406')).status).toBe('found');
+    expect((await new ProductSources([know('unavailable'), know('not_found')]).findByBarcode('891128090406')).status).toBe('unavailable');
+    expect((await new ProductSources([know('not_found'), know('not_found')]).findByBarcode('891128090406')).status).toBe('not_found');
   });
 });

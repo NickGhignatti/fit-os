@@ -115,6 +115,7 @@ export const PrivacyPolicy = () => (
       <li><strong>Supabase</strong> provides our database and sign-in. It is contacted when you send or receive an item, sign in, add a device, or browse, publish or report community plans.</li>
       <li><strong>Google</strong> handles the sign-in screen when you choose to sign in, under its own privacy policy.</li>
       <li><strong>Open Food Facts</strong> is queried directly from your browser when you search packaged products or scan a barcode. It receives your search text or the barcode number and your IP address.</li>
+      <li><strong>USDA FoodData Central</strong> is asked for a barcode Open Food Facts does not know. It receives the barcode number and your IP address.</li>
       <li><strong>jsDelivr</strong> serves the exercise photos when you open an exercise.</li>
     </ul>
     <p>

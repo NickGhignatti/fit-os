@@ -1,4 +1,5 @@
-import { ExerciseLibrary, SqlSavedProducts, OpenFoodFactsRepository, StaticBasicFoods, StaticExerciseCatalog } from '../data/catalog';
+import type { ProductRepository } from '../domain/catalog';
+import { ExerciseLibrary, SqlSavedProducts, OpenFoodFactsRepository, ProductSources, StaticBasicFoods, UsdaBrandedRepository, StaticExerciseCatalog } from '../data/catalog';
 import {
   SqlCustomExercises,
   SqlCustomFoodRepository,
@@ -35,7 +36,7 @@ export interface Container {
     readonly exercises: ExerciseLibrary;
     readonly customExercises: SqlCustomExercises;
     readonly basicFoods: StaticBasicFoods;
-    readonly products: OpenFoodFactsRepository;
+    readonly products: ProductRepository;
     readonly savedProducts: SqlSavedProducts;
   };
   /** Null when no Supabase is configured: sending and receiving are then unavailable. */
@@ -64,7 +65,7 @@ export const createContainer = (config: AppConfig, store: Store): Container => {
     exercises: new ExerciseLibrary(new StaticExerciseCatalog(), customExercises),
     customExercises,
     basicFoods: new StaticBasicFoods(),
-    products: new OpenFoodFactsRepository(),
+    products: new ProductSources([new OpenFoodFactsRepository(), new UsdaBrandedRepository(config.usdaApiKey || undefined)]),
     savedProducts: new SqlSavedProducts(store),
   },
   transfer: config.transferEnabled ? new SupabaseTransferGateway(config.supabaseUrl, config.supabaseKey) : null,

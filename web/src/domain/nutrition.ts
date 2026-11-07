@@ -25,12 +25,15 @@ export const times = (n: Nutrients, factor: number): Nutrients => ({
 export const sum = (items: readonly Nutrients[]): Nutrients => items.reduce(plus, ZERO);
 
 /** Where a food's nutrition data comes from. */
-export type FoodSource = 'crea' | 'off' | 'custom';
+export type FoodSource = 'crea' | 'off' | 'usda' | 'custom';
 
-const SOURCES: readonly FoodSource[] = ['crea', 'off', 'custom'];
+const SOURCES: readonly FoodSource[] = ['crea', 'off', 'usda', 'custom'];
 
 /** A stable reference to a food in its source, written as e.g. "crea:005000" or "off:8076800195057". */
 export type FoodId = `${FoodSource}:${string}`;
+
+/** Packaged products (from a barcode database), as opposed to basic foods and the user's own. */
+export const isPackagedProduct = (food: { readonly id: string }): boolean => /^(off|usda):/.test(food.id);
 
 export const parseFoodId = (value: string): { source: FoodSource; key: string } => {
   const source = SOURCES.find((s) => value.startsWith(`${s}:`));

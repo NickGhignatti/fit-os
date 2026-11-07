@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => {
   return {
     define: {
       __SUPABASE_URL__: JSON.stringify(env.SUPABASE_URL ?? ''),
+      __USDA_API_KEY__: JSON.stringify(env.USDA_API_KEY ?? ''),
       __SUPABASE_KEY__: JSON.stringify(env.SUPABASE_PUBLISHABLE_KEY ?? ''),
       __CHANGELOG__: JSON.stringify(readChangelog(__dirname)),
     },

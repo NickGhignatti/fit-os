@@ -308,6 +308,108 @@ export class OpenFoodFactsRepository implements ProductRepository {
   }
 }
 
+/** Where saved products come from: the prefix of their ids. */
+const PRODUCT_SOURCES = ['off', 'usda'] as const;
+
+/**
+ * The ways one product's barcode is written: the same number turns up as EAN-13 with a leading zero
+ * in one database and as UPC-A (12 digits) or without the zeros in another. The code as given comes first.
+ */
+export const gtinForms = (barcode: string): string[] => {
+  const bare = barcode.replace(/^0+/, '');
+  const padded = [8, 12, 13].filter((n) => n >= bare.length).map((n) => bare.padStart(n, '0'));
+  return [...new Set([barcode, ...padded, bare])].filter((code) => code !== '');
+};
+
+// ---- Packaged products: USDA FoodData Central, Branded Foods (public domain) ----
+
+const USDA_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
+/** A shared key with a small hourly allowance, enough to try; set VITE_USDA_API_KEY for your own (free at fdc.nal.usda.gov). */
+const USDA_DEMO_KEY = 'DEMO_KEY';
+
+interface UsdaFoodDto {
+  gtinUpc?: string;
+  description?: string;
+  brandName?: string;
+  brandOwner?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
+  foodNutrients?: { nutrientNumber?: string; value?: number }[];
+}
+
+const titleCase = (text: string): string => text.toLowerCase().replace(/(^|[\s(\-/])(\p{L})/gu, (_, before: string, letter: string) => before + letter.toUpperCase());
+
+/** Null for products without a name or an energy value. USDA writes values per 100 g, names in capitals. */
+const usdaToFoodItem = (dto: UsdaFoodDto): FoodItem | null => {
+  const code = dto.gtinUpc?.trim();
+  const name = dto.description?.trim();
+  if (!code || !name) return null;
+  const value = (number: string) => dto.foodNutrients?.find((n) => n.nutrientNumber === number)?.value;
+  const kcal = value('208') ?? (value('268') !== undefined ? value('268')! / KJ_PER_KCAL : undefined);
+  if (kcal === undefined) return null;
+  const brand = (dto.brandName ?? dto.brandOwner)?.trim();
+  const grams = dto.servingSizeUnit?.toLowerCase() === 'g' ? dto.servingSize : undefined;
+  return {
+    id: `usda:${code}`,
+    name: titleCase(name),
+    brand: brand ? titleCase(brand) : null,
+    per100g: { kcal, protein: value('203') ?? 0, carbs: value('205') ?? 0, fat: value('204') ?? 0 },
+    servingGrams: grams !== undefined && grams > 0 ? grams : null,
+  };
+};
+
+/** Barcodes only: USDA's names are English and American, so it does not take part in searching by name. */
+export class UsdaBrandedRepository implements ProductRepository {
+  constructor(
+    private readonly apiKey: string = USDA_DEMO_KEY,
+    private readonly fetchImpl: typeof fetch = (...args) => fetch(...args),
+  ) {}
+
+  async findByBarcode(barcode: string): Promise<ProductLookup> {
+    if (!/^\d+$/.test(barcode)) return { status: 'not_found' };
+    const forms = new Set(gtinForms(barcode));
+    try {
+      const response = await this.fetchImpl(`${USDA_URL}?query=${barcode}&dataType=Branded&pageSize=5&api_key=${this.apiKey}`);
+      if (!response.ok) return { status: response.status === 429 ? 'not_found' : 'unavailable' }; // over the hourly allowance
+      const { foods } = (await response.json()) as { foods?: UsdaFoodDto[] };
+      const product = (foods ?? []).filter((f) => f.gtinUpc && forms.has(f.gtinUpc)).flatMap((f) => usdaToFoodItem(f) ?? [])[0];
+      return product ? { status: 'found', product } : { status: 'not_found' };
+    } catch {
+      return { status: 'unavailable' };
+    }
+  }
+
+  async search(): Promise<ProductSearch> {
+    return { status: 'results', products: [] };
+  }
+}
+
+/**
+ * Several sources behind one: a barcode is asked of each in turn, in each way it can be written, until
+ * one knows it. Searching by name goes to the first source only. If nothing knows the code but some
+ * source could not be reached, the answer is "unavailable" so the saved copy gets a chance.
+ */
+export class ProductSources implements ProductRepository {
+  constructor(private readonly sources: readonly [ProductRepository, ...ProductRepository[]]) {}
+
+  async findByBarcode(barcode: string): Promise<ProductLookup> {
+    let unreachable = false;
+    for (const source of this.sources) {
+      for (const form of gtinForms(barcode)) {
+        const lookup = await source.findByBarcode(form);
+        if (lookup.status === 'found') return lookup;
+        unreachable ||= lookup.status === 'unavailable';
+        if (lookup.status === 'unavailable') break; // the same source will not answer for another form
+      }
+    }
+    return { status: unreachable ? 'unavailable' : 'not_found' };
+  }
+
+  search(query: string): Promise<ProductSearch> {
+    return this.sources[0].search(query);
+  }
+}
+
 export class SqlSavedProducts implements SavedProductRepository {
   constructor(private readonly store: Store) {}
 
@@ -315,8 +417,14 @@ export class SqlSavedProducts implements SavedProductRepository {
     return this.store.docs.put(Tables.savedProducts, product);
   }
 
-  find(barcode: string): Promise<FoodItem | undefined> {
-    return this.store.docs.get(Tables.savedProducts, `off:${barcode}`);
+  async find(barcode: string): Promise<FoodItem | undefined> {
+    for (const form of gtinForms(barcode)) {
+      for (const source of PRODUCT_SOURCES) {
+        const saved = await this.store.docs.get(Tables.savedProducts, `${source}:${form}`);
+        if (saved) return saved;
+      }
+    }
+    return undefined;
   }
 
   async search(query: string): Promise<FoodItem[]> {

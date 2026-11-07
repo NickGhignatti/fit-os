@@ -5,7 +5,7 @@ import { lookUpBarcode, searchFoods, type ProductSearch } from '../domain/catalo
 import { addFood } from '../domain/edit';
 import { withEntry } from '../domain/foodLog';
 import { newId } from '../domain/id';
-import { portionNutrients, portionOf, type FoodItem, type Portion } from '../domain/nutrition';
+import { isPackagedProduct, portionNutrients, portionOf, type FoodItem, type Portion } from '../domain/nutrition';
 import { observeCalorieDay } from '../domain/useCases';
 import { DEFAULT_MEALS, formatGrams, formatKcal, formatMacros, parseNumber } from './format';
 import { useAsync } from './hooks';
@@ -13,7 +13,7 @@ import { Empty, Loading, Modal, PageHeader, useDebounced } from './kit';
 import { ScannerDialog } from './Scanner';
 import { mealNamesOf } from './Tracker';
 
-const SOURCE_LABEL = { crea: 'CREA', off: 'Open Food Facts', custom: 'Your food' } as const;
+const SOURCE_LABEL = { crea: 'CREA', off: 'Open Food Facts', usda: 'USDA', custom: 'Your food' } as const;
 const sourceOf = (food: FoodItem) => SOURCE_LABEL[food.id.split(':')[0] as keyof typeof SOURCE_LABEL];
 
 const FoodRow = ({ food, favorite, onPick, onToggleFavorite }: {
@@ -151,7 +151,7 @@ export const FoodPicker = () => {
     void lookUpBarcode(repos, barcode).then((r) => {
       if (!current) return;
       if (r.status === 'found') setDialog({ kind: 'amount', food: r.product });
-      else setNotFound(r.status === 'not_found' ? `No product with barcode ${barcode}. Search by name or create the food.` : "Can't reach Open Food Facts. Check your connection.");
+      else setNotFound(r.status === 'not_found' ? `No product with barcode ${barcode}. Search by name or create the food.` : "Can't reach the product databases. Check your connection.");
     });
     return () => {
       current = false;
@@ -161,7 +161,7 @@ export const FoodPicker = () => {
   if (!date && !forPlan) return <Empty>Choose where to add food from the Tracker or a diet.</Empty>;
 
   const pick = async (portion: Portion) => {
-    if (portion.food.id.startsWith('off:')) await repos.savedProducts.save(portion.food);
+    if (isPackagedProduct(portion.food)) await repos.savedProducts.save(portion.food);
     await repos.transaction.run(async () => {
       if (forPlan) {
         const plan = await repos.dietPlans.getPlan(planId);
@@ -227,7 +227,7 @@ export const FoodPicker = () => {
           <h2>Packaged products</h2>
           {debounced.length < 3 && <p className="muted small">Type at least 3 letters to search packaged products.</p>}
           {online.state === 'loading' && debounced.length >= 3 && <Loading />}
-          {online.state === 'ready' && online.value?.status === 'unavailable' && <p className="muted">Can't reach Open Food Facts. Check your connection.</p>}
+          {online.state === 'ready' && online.value?.status === 'unavailable' && <p className="muted">Can't reach the product databases. Check your connection.</p>}
           {online.state === 'ready' && online.value?.status === 'results' && online.value.products.length === 0 && <p className="muted">No packaged products found.</p>}
           {online.state === 'ready' && online.value?.status === 'results' && online.value.products.length > 0 && (
             <section className="card">{online.value.products.map(row)}</section>
@@ -239,7 +239,7 @@ export const FoodPicker = () => {
         <button className="btn secondary" onClick={() => setDialog({ kind: 'custom' })}>Create a food…</button>
         {forPlan && <button className="btn secondary" onClick={() => setDialog({ kind: 'text' })}>Add without nutrition data…</button>}
       </div>
-      <p className="small muted">Basic foods: CREA, Tabelle di composizione degli alimenti. Packaged products: Open Food Facts (ODbL).</p>
+      <p className="small muted">Basic foods: CREA, Tabelle di composizione degli alimenti. Packaged products: Open Food Facts (ODbL), and USDA FoodData Central for barcodes it does not know.</p>
 
       {dialog?.kind === 'amount' && <AmountDialog food={dialog.food} onClose={() => setDialog(null)} onSubmit={(p) => void pick(p)} />}
       {dialog?.kind === 'text' && <FreeTextDialog onClose={() => setDialog(null)} onSubmit={(n, q) => void addText(n, q)} />}
