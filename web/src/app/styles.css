@@ -337,6 +337,12 @@ h2 { font-size: 17px; letter-spacing: -0.01em; margin: 28px 0 10px; }
 .swipe.ready .swipe-under { opacity: 1; }
 .swipe-body { position: relative; padding: 0 16px; background: var(--surface); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .swipe-body.settle { transition: transform 0.18s ease-out; }
+/* The megaphone in the header, with a dot while the newest release notes are unread. */
+.whats-new { position: relative; }
+.whats-new-dot { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--on-accent-container); border: 2px solid var(--canvas); box-sizing: content-box; }
+.release + .release { padding-top: 14px; border-top: 1px solid var(--border); }
+.release-body { margin: 4px 0 0; white-space: pre-line; }
+
 /* An exercise in the review of a plan about to be imported: its load and rests, editable in place. */
 .review-exercise { padding: 10px 0 12px; border-top: 1px solid var(--border); }
 .review-exercise select.field { min-width: 0; }

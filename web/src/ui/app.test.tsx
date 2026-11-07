@@ -24,7 +24,7 @@ const dialog = (name: string | RegExp) => screen.findByRole('dialog', { name });
 
 /** The daily-targets form, once what it shows has loaded (it opens on "Loading" first). */
 const targetsForm = async () => {
-  const form = await targetsForm();
+  const form = await dialog('Daily targets');
   await within(form).findByLabelText('Calories (kcal)');
   return form;
 };

@@ -2,6 +2,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readChangelog } from './changelog';
 import { manifest } from './pwa-manifest';
 import { specFiles } from './src/data/planSpec';
 import { SPEC_PATHS } from './src/data/planSpecPaths';
@@ -40,6 +41,7 @@ export default defineConfig(({ mode }) => {
     define: {
       __SUPABASE_URL__: JSON.stringify(env.SUPABASE_URL ?? ''),
       __SUPABASE_KEY__: JSON.stringify(env.SUPABASE_PUBLISHABLE_KEY ?? ''),
+      __CHANGELOG__: JSON.stringify(readChangelog(__dirname)),
     },
     plugins: [
       react(),

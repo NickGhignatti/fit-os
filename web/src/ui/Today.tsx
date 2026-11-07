@@ -10,6 +10,7 @@ import { doneSetsOf, totalSetsOf } from '../domain/workout';
 import { DEFAULT_MEALS, dateTitle, formatKcal, formatKg, parseNumber, shortDayName, today } from './format';
 import { useToast } from './hooks';
 import { EnergyCard, Fab, Icons, Loading, PageHeader, PlayIcon, ProgressRing } from './kit';
+import { WhatsNew } from './WhatsNew';
 import { restQuoteFor } from './restDay';
 import { mealNamesOf } from './Tracker';
 import { WeightDialog, metricWidgets } from './Weight';
@@ -217,7 +218,7 @@ export const Today = () => {
 
   return (
     <div className="today">
-      <PageHeader title="Today" subtitle={dateTitle(date)} />
+      <PageHeader title="Today" subtitle={dateTitle(date)} actions={<WhatsNew />} />
 
       <WidgetBoard label="Widgets" kinds={[
         {
