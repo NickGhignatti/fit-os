@@ -22,6 +22,13 @@ afterEach(cleanup);
 
 const dialog = (name: string | RegExp) => screen.findByRole('dialog', { name });
 
+/** The daily-targets form, once what it shows has loaded (it opens on "Loading" first). */
+const targetsForm = async () => {
+  const form = await targetsForm();
+  await within(form).findByLabelText('Calories (kcal)');
+  return form;
+};
+
 /** Opens a ⋮ menu or a + and picks an entry, like a user would. */
 const chooseFromMenu = async (user: ReturnType<typeof userEvent.setup>, menu: string, entry: string | RegExp) => {
   await user.click(await screen.findByRole('button', { name: menu }));
@@ -308,7 +315,7 @@ describe('custom daily targets', () => {
     expect(await screen.findByText(/Set up your profile/)).toBeInTheDocument(); // nothing known yet
 
     await user.click(screen.getByRole('button', { name: 'Edit daily targets' }));
-    const form = await dialog('Daily targets');
+    const form = await targetsForm();
     await user.type(within(form).getByLabelText('Calories (kcal)'), '2200');
     await user.type(within(form).getByLabelText('Protein (g)'), '160');
     await user.type(within(form).getByLabelText('Fat (g)'), '70');
@@ -335,7 +342,7 @@ describe('custom daily targets', () => {
     renderApp('/tracker', device);
 
     await user.click(await screen.findByRole('button', { name: 'Edit daily targets' }));
-    const form = await dialog('Daily targets');
+    const form = await targetsForm();
     expect(within(form).getByLabelText('Protein (g)')).toHaveAttribute('placeholder', 'automatic: 144');
     expect(within(form).getByRole('button', { name: 'Reset to automatic' })).toBeDisabled();
 
@@ -344,7 +351,7 @@ describe('custom daily targets', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Daily energy balance' })).toHaveTextContent('0 / 200 g'));
 
     await user.click(screen.getByRole('button', { name: 'Edit daily targets' }));
-    const again = await dialog('Daily targets');
+    const again = await targetsForm();
     expect(within(again).getByLabelText('Protein (g)')).toHaveValue('200');
     expect(within(again).getByLabelText('Calories (kcal)')).toHaveValue(''); // still automatic
     await user.click(within(again).getByRole('button', { name: 'Reset to automatic' }));
@@ -355,7 +362,7 @@ describe('custom daily targets', () => {
     const user = userEvent.setup();
     renderApp('/tracker');
     await user.click(await screen.findByRole('button', { name: 'Edit daily targets' }));
-    const form = await dialog('Daily targets');
+    const form = await targetsForm();
 
     await user.type(within(form).getByLabelText('Calories (kcal)'), '50');
     expect(within(form).getByText(/Between 500 and 10000 kcal/)).toBeInTheDocument();
