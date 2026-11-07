@@ -17,6 +17,7 @@ Usage: python3 tools/food-model/train.py ~/.cache/fit-os/food-model
 import csv
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -26,7 +27,7 @@ import torch
 from PIL import Image
 from transformers import Dinov2Model
 
-VERSION = 1  # raise it with every new model, so phones replace their cached copy
+VERSION = 2  # raise it with every new model, so phones replace their cached copy
 HERE = Path(__file__).parent
 WEB = HERE.parent.parent / "web" / "public" / "models"
 SIZE = 224
@@ -52,11 +53,13 @@ class Sources:
         self.classes = list(csv.DictReader(open(HERE / "classes.csv")))
         self.index = {c["id"]: i for i, c in enumerate(self.classes)}
         self.items = []
+        self.commons_rows = []  # attribution of the Commons photos learned from
         self.n5k_grams = {}  # weighed grams of each of our foods on a Nutrition5k plate
         self.mfr()
         self.n5k()
         self.open_images()
         self.coco()
+        self.commons()
 
     def labels(self, column):
         return {label: c["id"] for c in self.classes for label in filter(None, c[column].split("|"))}
@@ -110,6 +113,21 @@ class Sources:
             if photo.exists():
                 found = sorted({b[4] for b in entry["boxes"]})
                 self.items.append((f"coco/{entry['file']}", photo, found, entry["boxes"], held_out(entry["file"])))
+
+
+    def commons(self):
+        """Wikimedia Commons photos of Italian dishes, each with its own licence; see fetch_commons.py."""
+        folder = self.root / "commons"
+        table = folder / "attribution.csv"
+        if not table.exists():
+            return
+        self.commons_rows = []
+        for row in csv.DictReader(open(table)):
+            photo = folder / "images" / row["file"]
+            found = [c for c in row["classes"].split("|") if c in self.index]
+            if photo.exists() and found:
+                self.commons_rows.append(row)
+                self.items.append((f"commons/{row['file']}", photo, found, [], held_out(row["file"])))
 
 
 def to_input(image):
@@ -232,7 +250,7 @@ def evaluate(sources, data, photo_head, patch_head, use):
     with torch.no_grad():
         probs = torch.sigmoid(photo_head(torch.from_numpy(data["photo"].astype(np.float32)))).numpy()
     report = {}
-    for source in ["mfr", "n5k", "oi", "coco", "all"]:
+    for source in ["mfr", "n5k", "oi", "coco", "commons", "all"]:
         rows = [i for i, item in enumerate(sources.items) if use[i] and item[4] and (source == "all" or item[0].startswith(source + "/"))]
         if not rows:
             continue
@@ -335,6 +353,32 @@ def check_weights(sources, model, shares, photos=300):
     }
 
 
+CC_BY = ("CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/")
+CC_BY_SA = ("CC BY-SA 4.0", "https://creativecommons.org/licenses/by-sa/4.0/")
+
+
+def write_licence(sources):
+    """
+    The terms of the model files, and who took the Wikimedia Commons photos it learned from. A model
+    that learned from ShareAlike photos is shared under the same licence; otherwise CC BY is enough.
+    """
+    share_alike = any(re.search(r"\bSA\b", row["licence"]) for row in sources.commons_rows)
+    name, link = CC_BY_SA if share_alike else CC_BY
+    (WEB / "LICENSE.md").write_text(
+        f"# Photo food recogniser\n\n`food-recognizer.onnx` and `food-classes.json` are licensed under [{name}]({link}).\n\n"
+        "They were trained on the photos credited in the app's Terms of Service and, for the ones from Wikimedia\n"
+        "Commons, in `ATTRIBUTION.csv` (author, licence and page of each photo). The backbone is DINOv2 (Meta,\n"
+        "Apache License 2.0) and the heads were trained from `tools/food-model` in the repository.\n\n"
+        "You may share and adapt them, also commercially, if you credit the sources, link the licence, say what you\n"
+        + ("changed, and share your version under the same licence.\n" if share_alike else "changed.\n")
+    )
+    with open(WEB / "ATTRIBUTION.csv", "w", newline="") as out:
+        writer = csv.writer(out)
+        writer.writerow(["title", "author", "licence", "licence_url", "page"])
+        for row in sorted(sources.commons_rows, key=lambda r: r["page"]):
+            writer.writerow([row[k] for k in ["title", "author", "licence", "licence_url", "page"]])
+
+
 def export(sources, data, photo_head, patch_head, report, use):
     from onnxruntime.quantization import QuantType, quantize_dynamic
 
@@ -357,6 +401,7 @@ def export(sources, data, photo_head, patch_head, report, use):
     } for c, share in zip(sources.classes, shares)]
     meta = {"version": VERSION, "size": SIZE, "grid": GRID, "threshold": THRESHOLD, "classes": classes, "evaluation": report}
     json.dump(meta, open(WEB / "food-classes.json", "w"), indent=1, ensure_ascii=False)
+    write_licence(sources)
 
 
 if __name__ == "__main__":
@@ -364,7 +409,9 @@ if __name__ == "__main__":
     torch.set_num_threads(10)
     sources = Sources(root)
     print(len(sources.items), "photos,", sum(item[4] for item in sources.items), "kept for testing", flush=True)
-    data = describe(sources, root / "features.npz")
+    # The cache is named after the photos in it, so adding or removing a source describes again.
+    names = hashlib.md5("\n".join(item[0] for item in sources.items).encode()).hexdigest()[:10]
+    data = describe(sources, root / f"features-{names}.npz")
     use = data["readable"]
     test = np.array([item[4] for item in sources.items])
     train = use & ~test
