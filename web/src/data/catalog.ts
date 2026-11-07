@@ -270,8 +270,21 @@ export class OpenFoodFactsRepository implements ProductRepository {
       true,
     );
     if (response === undefined) return { status: 'unavailable' };
-    const product = response.status === 1 && response.product ? toFoodItem(response.product) : null;
+    const product = (response.status === 1 && response.product ? toFoodItem(response.product) : null) ?? (await this.searchByCode(barcode));
     return product ? { status: 'found', product } : { status: 'not_found' };
+  }
+
+  /**
+   * The product record keeps what people typed in, and some have their values under the wrong tab
+   * (Kinder Bueno has them as "prepared"); the search index has them sorted out. Asked when the record is unusable.
+   */
+  private async searchByCode(barcode: string): Promise<FoodItem | null> {
+    const q = encodeURIComponent(`code:${barcode}`);
+    const response = await this.get<{ hits?: ProductDto[] }>(
+      `${this.endpoints.search}/search?q=${q}&page_size=1&fields=${FIELDS}`,
+    );
+    const hit = response?.hits?.find((h) => h.code === barcode);
+    return hit ? toFoodItem(hit) : null;
   }
 
   async search(query: string): Promise<ProductSearch> {

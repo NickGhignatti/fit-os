@@ -102,6 +102,17 @@ describe('Open Food Facts', () => {
     expect(none.status).toBe('not_found');
   });
 
+  it('asks the search index when the product record has no usable values', async () => {
+    const urls: string[] = [];
+    const fake = (async (url: string) => {
+      urls.push(url);
+      return new Response(JSON.stringify(url.includes('/api/v2/') ? { status: 1, product: { ...product, nutriments: { 'energy-kcal_prepared_100g': 567 } } } : { hits: [product] }));
+    }) as unknown as typeof fetch;
+    const result = await off(fake).findByBarcode('8076800195057');
+    expect(result.status === 'found' && result.product.per100g.kcal).toBe(359);
+    expect(decodeURIComponent(urls[1]!)).toContain('code:8076800195057');
+  });
+
   it('distinguishes unknown, malformed and unreachable', async () => {
     expect((await off(json(404, { status: 0 }) as unknown as typeof fetch).findByBarcode('1')).status).toBe('not_found');
     expect((await off(json(200, {}) as unknown as typeof fetch).findByBarcode('abc')).status).toBe('not_found');
