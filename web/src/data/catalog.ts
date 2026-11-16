@@ -324,7 +324,7 @@ export const gtinForms = (barcode: string): string[] => {
 // ---- Packaged products: USDA FoodData Central, Branded Foods (public domain) ----
 
 const USDA_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
-/** A shared key with a small hourly allowance, enough to try; set VITE_USDA_API_KEY for your own (free at fdc.nal.usda.gov). */
+/** A shared key with a small hourly allowance, enough to try; set USDA_API_KEY in the repo-root .env for your own (free at fdc.nal.usda.gov). */
 const USDA_DEMO_KEY = 'DEMO_KEY';
 
 interface UsdaFoodDto {

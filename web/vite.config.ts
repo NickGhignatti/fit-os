@@ -31,9 +31,9 @@ const planSpec = (): Plugin => ({
 });
 
 /**
- * Configuration comes from the repo-root `.env` (git-ignored). Only the two public values below
+ * Configuration comes from the repo-root `.env` (git-ignored). Only the public values below
  * reach the app, each named explicitly: a prefix shortcut such as envPrefix: 'SUPABASE_' would
- * also ship SUPABASE_SECRET_KEY to every visitor.
+ * also ship SUPABASE_SECRET_KEY to every visitor. The USDA key is public too: the browser sends it.
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '..', '');
