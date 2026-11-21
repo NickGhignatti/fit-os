@@ -300,11 +300,24 @@ describe('the calorie tracker', () => {
     expect(amount).toHaveTextContent('400 kcal per 100 g');
   });
 
-  it('says so when a barcode is unknown offline', async () => {
+  it('says so when a barcode is unknown offline, and finds it next time once added from the label', async () => {
     const user = userEvent.setup();
-    renderApp('/food/pick?date=2026-10-14&meal=Snack');
+    const device = makeDevice();
+    renderApp('/food/pick?date=2026-10-14&meal=Snack', device);
     await user.type(await screen.findByLabelText('Search foods'), '8076800195057');
     expect(await screen.findByText(/Can't reach the product databases/, { selector: '[role=alert]' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Add it from the label…' }));
+    const form = await dialog('New food');
+    await user.type(within(form).getByLabelText('Name'), 'Spaghetti');
+    await user.type(within(form).getByLabelText('kcal'), '359');
+    await user.click(within(form).getByRole('button', { name: 'Create' }));
+    await dialog('Spaghetti');
+
+    cleanup();
+    renderApp('/food/pick?date=2026-10-14&meal=Snack', device);
+    await user.type(await screen.findByLabelText('Search foods'), '8076800195057');
+    expect(await dialog('Spaghetti')).toHaveTextContent('359 kcal per 100 g');
   });
 });
 

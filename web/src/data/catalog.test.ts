@@ -102,7 +102,7 @@ describe('Open Food Facts', () => {
     const found = await off(json(200, { status: 1, product: kj }) as unknown as typeof fetch).findByBarcode('1');
     expect(found.status === 'found' && found.product.per100g.kcal).toBeCloseTo(100);
     const none = await off(json(200, { status: 1, product: { ...product, nutriments: {} } }) as unknown as typeof fetch).findByBarcode('1');
-    expect(none.status).toBe('not_found');
+    expect(none).toEqual({ status: 'not_found', known: { name: 'Spaghetti n.5', brand: 'Barilla' } });
   });
 
   it('asks the search index when the product record has no usable values', async () => {
@@ -159,11 +159,21 @@ describe('searching and scanning', () => {
     const online = { findByBarcode: async () => ({ status: 'found', product: item }) as const, search: async () => ({ status: 'unavailable' }) as const };
     const offline = { ...online, findByBarcode: async () => ({ status: 'unavailable' }) as const };
     const missing = { ...online, findByBarcode: async () => ({ status: 'not_found' }) as const };
+    const customFoods = { findByBarcode: async () => undefined };
 
-    expect((await lookUpBarcode({ products: offline, savedProducts: saved }, '99')).status).toBe('unavailable'); // never seen
-    expect((await lookUpBarcode({ products: missing, savedProducts: saved }, '99')).status).toBe('not_found');
-    expect((await lookUpBarcode({ products: online, savedProducts: saved }, '99')).status).toBe('found');
-    expect(await lookUpBarcode({ products: offline, savedProducts: saved }, '99')).toEqual({ status: 'found', product: item });
+    expect((await lookUpBarcode({ products: offline, savedProducts: saved, customFoods }, '99')).status).toBe('unavailable'); // never seen
+    expect((await lookUpBarcode({ products: missing, savedProducts: saved, customFoods }, '99')).status).toBe('not_found');
+    expect((await lookUpBarcode({ products: online, savedProducts: saved, customFoods }, '99')).status).toBe('found');
+    expect(await lookUpBarcode({ products: offline, savedProducts: saved, customFoods }, '99')).toEqual({ status: 'found', product: item });
+  });
+
+  it('finds a food the user created for a barcode first, however the code is written', async () => {
+    const db = testStore();
+    const custom = new SqlCustomFoodRepository(db);
+    const food = await custom.create('Grissini', { kcal: 410, protein: 12, carbs: 68, fat: 9 }, 'Forno', null, '8001234567890');
+    const unasked = { findByBarcode: async () => { throw new Error('asked online'); }, search: async () => ({ status: 'unavailable' }) as const };
+    const lookup = await lookUpBarcode({ products: unasked, savedProducts: new SqlSavedProducts(db), customFoods: custom }, '08001234567890');
+    expect(lookup).toEqual({ status: 'found', product: food });
   });
 });
 
