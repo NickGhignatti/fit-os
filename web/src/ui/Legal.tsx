@@ -246,9 +246,11 @@ export const TermsOfService = () => (
     <p>
       The photo food recogniser runs on your device and is built on DINOv2 (Meta, Apache License 2.0), run by ONNX
       Runtime (Microsoft, MIT Licence). It learned from the MyFoodRepo Food Recognition Benchmark (AIcrowd and EPFL,
-      CC BY 4.0), Nutrition5k (Google, CC BY 4.0), Open Images V7 (Google; labels CC BY 4.0, photos CC BY 2.0) and
-      COCO 2017 (annotations CC BY 4.0, only photos under open licences). Its guesses, and the weights it suggests, can
-      be wrong: check them before logging.
+      CC BY 4.0), Nutrition5k (Google, CC BY 4.0), Open Images V7 (Google; labels CC BY 4.0, photos CC BY 2.0),
+      COCO 2017 (annotations CC BY 4.0, only photos under open licences) and photos from Wikimedia Commons (CC BY,
+      CC BY-SA, CC0 and public domain; each author is listed in /models/ATTRIBUTION.csv). Because of the ShareAlike
+      photos, the recogniser's model files are shared under CC BY-SA 4.0 (/models/LICENSE.md). Its guesses, and the
+      weights it suggests, can be wrong: check them before logging.
     </p>
 
     <h2>9. No warranty</h2>

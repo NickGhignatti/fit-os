@@ -27,7 +27,7 @@ import torch
 from PIL import Image
 from transformers import Dinov2Model
 
-VERSION = 2  # raise it with every new model, so phones replace their cached copy
+VERSION = 3  # raise it with every new model, so phones replace their cached copy
 HERE = Path(__file__).parent
 WEB = HERE.parent.parent / "web" / "public" / "models"
 SIZE = 224
