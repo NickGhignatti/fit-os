@@ -72,8 +72,10 @@ export interface FoodLogRepository {
 /** Foods the user created. */
 export interface CustomFoodRepository {
   search(query: string): Promise<FoodItem[]>;
-  /** Saves a new food and returns it with its id. */
-  create(name: string, per100g: Nutrients, brand: string | null, servingGrams: number | null): Promise<FoodItem>;
+  /** Saves a new food and returns it with its id. With a barcode, scanning that code finds it again. */
+  create(name: string, per100g: Nutrients, brand: string | null, servingGrams: number | null, barcode?: string): Promise<FoodItem>;
+  /** The food the user created for this barcode, however the code is written. */
+  findByBarcode(barcode: string): Promise<FoodItem | undefined>;
 }
 
 /** Foods marked as favourite, newest first. */

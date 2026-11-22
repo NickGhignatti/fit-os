@@ -270,8 +270,11 @@ export class OpenFoodFactsRepository implements ProductRepository {
       true,
     );
     if (response === undefined) return { status: 'unavailable' };
-    const product = (response.status === 1 && response.product ? toFoodItem(response.product) : null) ?? (await this.searchByCode(barcode));
-    return product ? { status: 'found', product } : { status: 'not_found' };
+    const record = response.status === 1 ? response.product : undefined;
+    const product = (record ? toFoodItem(record) : null) ?? (await this.searchByCode(barcode));
+    if (product) return { status: 'found', product };
+    const name = record?.product_name_it?.trim() || record?.product_name?.trim();
+    return name ? { status: 'not_found', known: { name, brand: firstBrand(record?.brands) } } : { status: 'not_found' };
   }
 
   /**
@@ -394,15 +397,18 @@ export class ProductSources implements ProductRepository {
 
   async findByBarcode(barcode: string): Promise<ProductLookup> {
     let unreachable = false;
+    let known: (ProductLookup & { status: 'not_found' })['known'];
     for (const source of this.sources) {
       for (const form of gtinForms(barcode)) {
         const lookup = await source.findByBarcode(form);
         if (lookup.status === 'found') return lookup;
+        if (lookup.status === 'not_found') known ??= lookup.known;
         unreachable ||= lookup.status === 'unavailable';
         if (lookup.status === 'unavailable') break; // the same source will not answer for another form
       }
     }
-    return { status: unreachable ? 'unavailable' : 'not_found' };
+    if (unreachable) return { status: 'unavailable' };
+    return known ? { status: 'not_found', known } : { status: 'not_found' };
   }
 
   search(query: string): Promise<ProductSearch> {

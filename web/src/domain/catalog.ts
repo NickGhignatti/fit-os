@@ -134,8 +134,8 @@ export interface BasicFoodRepository {
 
 export type ProductLookup =
   | { readonly status: 'found'; readonly product: FoodItem }
-  /** Unknown barcode, or a product without nutrition data. */
-  | { readonly status: 'not_found' }
+  /** Unknown barcode, or a product without nutrition data: then `known` holds its name and brand. */
+  | { readonly status: 'not_found'; readonly known?: { readonly name: string; readonly brand: string | null } }
   /** No network, or the service did not answer. */
   | { readonly status: 'unavailable' };
 
@@ -178,13 +178,19 @@ export const searchFoods = async (
 };
 
 /**
- * Looks a barcode up online and saves what it finds. Offline, a product scanned or eaten before
- * is still found from the saved copy.
+ * Looks a barcode up and saves what it finds. A food the user created for this barcode comes first,
+ * without asking online. Offline, a product scanned or eaten before is still found from the saved copy.
  */
 export const lookUpBarcode = async (
-  repos: { products: ProductRepository; savedProducts: SavedProductRepository },
+  repos: {
+    products: ProductRepository;
+    savedProducts: SavedProductRepository;
+    customFoods: { findByBarcode(barcode: string): Promise<FoodItem | undefined> };
+  },
   barcode: string,
 ): Promise<ProductLookup> => {
+  const own = await repos.customFoods.findByBarcode(barcode);
+  if (own) return { status: 'found', product: own };
   const lookup = await repos.products.findByBarcode(barcode);
   if (lookup.status === 'found') {
     await repos.savedProducts.save(lookup.product);

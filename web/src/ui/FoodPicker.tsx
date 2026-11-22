@@ -129,6 +129,8 @@ export const FoodPicker = () => {
   const debounced = useDebounced(query.trim());
   const [dialog, setDialog] = useState<Dialog | null>(params.get('scan') === '1' ? { kind: 'scan' } : null);
   const [notFound, setNotFound] = useState<string | null>(null);
+  // a scanned code no database could give values for: the food the user creates gets it
+  const [missing, setMissing] = useState<{ barcode: string; name: string; brand: string | null } | null>(null);
   // When logging, the meals of that day, to move the food to another one before picking it.
   const profile = useStream((c) => c.repos.profile.observeProfile());
   const names = profile ? mealNamesOf(profile) : DEFAULT_MEALS;
@@ -150,8 +152,14 @@ export const FoodPicker = () => {
     let current = true;
     void lookUpBarcode(repos, barcode).then((r) => {
       if (!current) return;
-      if (r.status === 'found') setDialog({ kind: 'amount', food: r.product });
-      else setNotFound(r.status === 'not_found' ? `No product with barcode ${barcode}. Search by name or create the food.` : "Can't reach the product databases. Check your connection.");
+      if (r.status === 'found') {
+        setDialog({ kind: 'amount', food: r.product });
+        return;
+      }
+      const known = r.status === 'not_found' ? r.known : undefined;
+      setMissing({ barcode, name: known?.name ?? '', brand: known?.brand ?? null });
+      setNotFound(known ? `${known.name} has no nutrition values yet.`
+        : r.status === 'not_found' ? `No product with barcode ${barcode}.` : "Can't reach the product databases. Check your connection.");
     });
     return () => {
       current = false;
@@ -200,13 +208,19 @@ export const FoodPicker = () => {
       )}
       <div className="row">
         <input className="field grow" type="search" value={query} placeholder="Search, e.g. pasta, mela, or type a barcode"
-          aria-label="Search foods" onChange={(e) => { setQuery(e.target.value); setNotFound(null); }} />
+          aria-label="Search foods" onChange={(e) => { setQuery(e.target.value); setNotFound(null); setMissing(null); }} />
         <button className="btn secondary" onClick={() => setDialog({ kind: 'scan' })}>Scan</button>
         {date && !forPlan && (
           <button className="btn secondary" onClick={() => navigate(`/food/photo?date=${date}&meal=${encodeURIComponent(meal)}`, { replace: true })}>Photo</button>
         )}
       </div>
       {notFound && <p className="muted" role="alert">{notFound}</p>}
+      {missing && (
+        <div className="stack">
+          <p className="small muted">Copy the values from the label once, and scanning this barcode will find it next time.</p>
+          <button className="btn" onClick={() => setDialog({ kind: 'custom' })}>Add it from the label…</button>
+        </div>
+      )}
 
       {debounced === '' ? (
         <>
@@ -244,8 +258,8 @@ export const FoodPicker = () => {
       {dialog?.kind === 'amount' && <AmountDialog food={dialog.food} onClose={() => setDialog(null)} onSubmit={(p) => void pick(p)} />}
       {dialog?.kind === 'text' && <FreeTextDialog onClose={() => setDialog(null)} onSubmit={(n, q) => void addText(n, q)} />}
       {dialog?.kind === 'custom' && (
-        <CustomFoodDialog initialName={query.trim()} onClose={() => setDialog(null)}
-          onCreate={(f) => void repos.customFoods.create(f.name, { kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat }, null, f.serving)
+        <CustomFoodDialog initialName={missing ? missing.name : query.trim()} onClose={() => setDialog(null)}
+          onCreate={(f) => void repos.customFoods.create(f.name, { kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat }, missing?.brand ?? null, f.serving, missing?.barcode)
             .then((food) => setDialog({ kind: 'amount', food }))} />
       )}
       {dialog?.kind === 'scan' && (

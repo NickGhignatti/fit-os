@@ -22,6 +22,7 @@ import { newestFirst, type ProgressEntry } from '../domain/progress';
 import { rank } from '../domain/textSearch';
 import type { TrainingPlan } from '../domain/trainingPlan';
 import type { DaySummary, Workout } from '../domain/workout';
+import { gtinForms } from './catalog';
 import { Tables, type DocTable } from './schema';
 import type { Docs, Store } from './store';
 
@@ -219,6 +220,9 @@ export class SqlFoodLogRepository implements FoodLogRepository {
   }
 }
 
+/** A food created for a barcode is stored under it, so a scan finds it with one read. */
+const barcodeFoodId = (barcode: string) => `custom:gtin-${barcode}` as const;
+
 export class SqlCustomFoodRepository implements CustomFoodRepository {
   constructor(private readonly store: Store) {}
 
@@ -226,10 +230,18 @@ export class SqlCustomFoodRepository implements CustomFoodRepository {
     return rank(query, await this.store.docs.list(Tables.customFoods), (f) => f.name);
   }
 
-  async create(name: string, per100g: Nutrients, brand: string | null, servingGrams: number | null): Promise<FoodItem> {
-    const food: FoodItem = { id: `custom:${newId()}`, name, brand, per100g, servingGrams };
+  async create(name: string, per100g: Nutrients, brand: string | null, servingGrams: number | null, barcode?: string): Promise<FoodItem> {
+    const food: FoodItem = { id: barcode ? barcodeFoodId(barcode) : `custom:${newId()}`, name, brand, per100g, servingGrams };
     await this.store.docs.put(Tables.customFoods, food);
     return food;
+  }
+
+  async findByBarcode(barcode: string): Promise<FoodItem | undefined> {
+    for (const form of gtinForms(barcode)) {
+      const food = await this.store.docs.get(Tables.customFoods, barcodeFoodId(form));
+      if (food) return food;
+    }
+    return undefined;
   }
 }
 
