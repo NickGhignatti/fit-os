@@ -1,13 +1,13 @@
 id,name,foods,mfr,n5k,oi,coco,commons
 water,Water,,water|water-mineral|water-with-lemon-juice|ice-cubes,water,,,
-coffee,Coffee,508200:1,coffee-with-caffeine|espresso-with-caffeine|ristretto-with-caffeine|coffee-decaffeinated,,Coffee (drink)|Espresso,,
-coffee-milk,Coffee with milk,135020:150 508200:1,white-coffee-with-caffeine|cappuccino|latte-macchiato-with-caffeine,,Cappuccino|Latte,,
+coffee,Coffee,508200:1,coffee-with-caffeine|espresso-with-caffeine|ristretto-with-caffeine|coffee-decaffeinated,,Coffee (drink)|Espresso,,Cups of espresso|Bica|Lungo
+coffee-milk,Coffee with milk,135020:150 508200:1,white-coffee-with-caffeine|cappuccino|latte-macchiato-with-caffeine,,Cappuccino|Latte,,=Cappuccino|Cups of cappuccino|Latte art with cappuccino
 tea,Tea,508100:2,tea|herbal-tea|tea-green|tea-black|tea-peppermint|tea-verveine|tea-rooibos|tea-spice|tea-ginger|tea-fruit,,Tea,,
 wine-red,Red wine,405020:125,wine-red,,Red wine,,
 wine-white,White wine,405010:125,wine-white|wine-rose,,White wine,,
 sparkling-wine,Sparkling wine,409000:125,prosecco|sekt|champagne,,Champagne,,
 beer,Beer,404010:330,beer|light-beer,,Beer,,
-cocktail,Cocktail,,cocktail|aperitif-with-alcohol-aperol-spritz,,Cocktail,,
+cocktail,Cocktail,,cocktail|aperitif-with-alcohol-aperol-spritz,,Cocktail,,Aperol Spritz
 orange-juice,Orange juice,008010:200,juice-orange,,Orange juice,,
 fruit-juice,Fruit juice,008930:200,juice-apple|juice-multifruit,apple cider|grapefruit juice,Juice,,
 smoothie,Smoothie,,smoothie,,Smoothie,,
@@ -31,9 +31,9 @@ piadina,Piadina,000530:100,,,,,Piadina
 bruschetta,Bruschetta,000530:60 006640:60 009210:8,,,,,Bruschetta
 croissant,Croissant,002510:60,croissant|croissant-wholegrain,,Croissant,,Croissants|Cornetto
 chocolate-croissant,Chocolate croissant,002500:70,croissant-with-chocolate-filling|roll-with-pieces-of-chocolate,,Pain au chocolat,,
-brioche,Brioche,210060:60,brioche,,Brioche,,
+brioche,Brioche,210060:60,brioche,,Brioche,,=Brioche|Brioscia|Brioche tressée
 ham-croissant,Ham croissant,002510:60 110400:20,ham-croissant,,,,
-pancakes,Pancakes or crêpes,000220:30 135020:60 181100:25,pancakes|crepe-plain|buckwheat-pancake|waffle,waffles|crepes,Pancake|Waffle|Crêpe,,
+pancakes,Pancakes or crêpes,000220:30 135020:60 181100:25,pancakes|crepe-plain|buckwheat-pancake|waffle,waffles|crepes,Pancake|Waffle|Crêpe,,=Pancakes|Sweet pancakes|Folded pancakes|=Crêpes|Nutella crêpes|Banana crepes
 butter,Butter,190010:10,butter|butter-herb,,Butter,,
 margarine,Margarine,009100:10,margarine,,Margarine,,
 jam,Jam,204500:20,jam|fruit-coulis,jams,,,
@@ -50,7 +50,7 @@ mozzarella,Mozzarella,164820:100,mozzarella,mozzarella cheese,Mozzarella,,Mozzar
 feta,Feta,162000:50,feta,,Feta,,
 cottage-cheese,Cottage cheese,170010:100,fresh-cheese|cottage-cheese|curd|curds-natural-with-at-most-10-fidm,cottage cheese,Cottage cheese,,
 processed-cheese,Processed cheese,162030:25,processed-cheese,,,,
-fondue,Cheese fondue,162420:150 000530:100,fondue,,Fondue,,
+fondue,Cheese fondue,162420:150 000530:100,fondue,,Fondue,,=Cheese fondue|Cheese fondue in France|Cheese fondue in bread
 yogurt,Yogurt,150010:125,yaourt-yahourt-yogourt-ou-yoghourt-natural|soya-yaourt-yahourt-yogourt-ou-yoghourt,yogurt,Yogurt,,
 greek-yogurt,Greek yogurt,150020:150,greek-yaourt-yahourt-yogourt-ou-yoghourt,greek yogurt,,,
 cream,Cream,140300:30,cream|thickened-cream-35,,Whipped cream|Cream,,
@@ -58,46 +58,46 @@ sour-cream,Sour cream,140400:30,sour-cream,,Sour cream,,
 cream-sauce,Cream sauce,140400:40,sauce-cream,,,,
 ice-cream,Ice cream,206040:100,dairy-ice-cream,frozen yogurt,Ice cream,,Gelato
 sorbet,Sorbet,206800:100,sorbet,,Sorbet,,
-egg,Egg,181105:60,egg,eggs|poached eggs,Egg|Boiled egg|Fried egg,,
-scrambled-eggs,Scrambled eggs or omelette,181117:120,egg-scrambled-prepared|omelette-plain,scrambled eggs|omelets,Scrambled eggs|Omelette,,
+egg,Egg,181105:60,egg,eggs|poached eggs,Egg|Boiled egg|Fried egg,,=Fried eggs|Fried egg on toast|=Boiled eggs|Soft-boiled eggs|Sliced eggs
+scrambled-eggs,Scrambled eggs or omelette,181117:120,egg-scrambled-prepared|omelette-plain,scrambled eggs|omelets,Scrambled eggs|Omelette,,=Scrambled eggs|Scrambled egg on toast
 egg-whites,Egg whites,182010:100,,egg whites,,,
-chicken,Chicken,106213:120,chicken|chicken-cut-into-stripes-only-meat,chicken|chicken thighs|grilled chicken|turkey,Chicken|Fried chicken,,
+chicken,Chicken,106213:120,chicken|chicken-cut-into-stripes-only-meat,chicken|chicken thighs|grilled chicken|turkey,Chicken|Fried chicken,,=Roast chicken|Rotisserie chicken|Grilled chicken|Oven-roasted chickens
 chicken-breast,Chicken breast,106506:120,chicken-breast,chicken breast,,,
 chicken-leg,Chicken leg,106403:100,chicken-leg,,,,
 chicken-wings,Chicken wings,106273:90,chicken-wing,,Buffalo wing,,
 chicken-nuggets,Chicken nuggets,119040:110,chicken-nuggets,,Chicken nugget,,
-breaded-cutlet,Breaded cutlet,105236:120 000570:20 009799:10,cordon-bleu-from-pork-schnitzel-fried,,Schnitzel,,
+breaded-cutlet,Breaded cutlet,105236:120 000570:20 009799:10,cordon-bleu-from-pork-schnitzel-fried,,Schnitzel,,Cotoletta alla milanese|=Schnitzel|Wiener Schnitzel|Pork Schnitzel|Chicken Schnitzel
 beef,Beef,101521:150,beef|beef-filet|beef-sirloin-steak|beef-roast|beef-cut-into-stripes-only-meat|meat,beef|steak|brisket,Beef|Steak|Roast beef,,
 minced-meat,Minced meat or meatballs,101521:120,beef-minced-only-meat|minced-meat|tartar-meat|meat-balls|meatloaf,ground turkey,Meatball|Meatloaf,,
-hamburger,Hamburger,119030:180,hamburger-bread-meat-ketchup|hamburger,,Hamburger|Cheeseburger,,
-hot-dog,Hot dog,000580:60 110906:50,,,Hot dog,hot dog,
+hamburger,Hamburger,119030:180,hamburger-bread-meat-ketchup|hamburger,,Hamburger|Cheeseburger,,=Hamburgers|Homemade hamburgers|Fast food hamburgers
+hot-dog,Hot dog,000580:60 110906:50,,,Hot dog,hot dog,=Hot dogs|Homemade hot dog sandwiches|Chicago-style hot dogs|Hot dogs with ketchup|Hot dogs with onions
 pork,Pork,105236:120,pork|pork-chop|pork-escalope|pork-roast,pork,Pork|Pork chop,,
 lamb,Lamb,104043:120,lamb|lamb-chop,lamb,Lamb and mutton,,
-cooked-ham,Cooked ham,110400:50,ham-cooked|ham|ham-turkey,,Ham,,
-cured-ham,Cured ham,110535:40,ham-raw,,Prosciutto,,Ham from Italy
-mortadella,Mortadella,110200:40,,,,,Mortadella
+cooked-ham,Cooked ham,110400:50,ham-cooked|ham|ham-turkey,,Ham,,Prosciutto cotto
+cured-ham,Cured ham,110535:40,ham-raw,,Prosciutto,,=Ham from Italy|=Prosciutto di Parma|Prosciutto di San Daniele|Prosciutto Toscano|Prosciutto di Norcia|Prosciutto di Modena
+mortadella,Mortadella,110200:40,,,,,=Mortadella|Mortadella Bologna
 dried-beef,Dried beef,110020:40,dried-meat,,,,Bresaola
 salami,Salami,110640:40,salami|chorizo|processed-meat-charcuterie,pepperoni,Salami|Pepperoni,,Salami
 bacon,Bacon,110310:30,bacon|bacon-frying|bacon-cooking|bacon-raw,bacon|turkey bacon,Bacon,,
 sausage,Sausage,110716:100,sausage|frying-sausage,sausage|chicken apple sausage,Sausage|Bratwurst,,
 frankfurter,Frankfurter,110906:100,wienerli-swiss-sausage|cervelat|veal-sausage|cooked-sausage|smoked-cooked-sausage-of-pork-and-beef-meat-sausag,,Frankfurter würstchen,,
 pate,Pâté,114020:40,meat-terrine-pate,,Pâté,,
-kebab,Kebab,000530:80 104029:100 005410:20 006600:20,kebab-in-pita-bread,,Kebab|Shawarma|Gyro,,
-chili,Chili con carne,101521:80 004130:100 006680:100,chili-con-carne-prepared,chili,Chili con carne,,
+kebab,Kebab,000530:80 104029:100 005410:20 006600:20,kebab-in-pita-bread,,Kebab|Shawarma|Gyro,,=Döner kebab|=Kebabs|Skewered kebabs|Chicken kebabs|Lamb kebabs
+chili,Chili con carne,101521:80 004130:100 006680:100,chili-con-carne-prepared,chili,Chili con carne,,=Chili con carne|Chili with ground beef|Texas chili|Vegetarian chili
 salmon,Salmon,122400:150,salmon,salmon,Salmon,,
-smoked-salmon,Smoked salmon,122410:50,salmon-smoked,,Smoked salmon,,
+smoked-salmon,Smoked salmon,122410:50,salmon-smoked,,Smoked salmon,,=Smoked salmon|Lox
 tuna,Tuna,123610:60,tuna|tuna-in-oil-drained,tuna|tuna salad,Tuna,,
 white-fish,Fish,121423:150,fish|perch-fillets-lake|cod,fish|cod,Fish,,
-fish-fingers,Fish fingers,121490:120,fish-fingers-breaded|fish-crunchies-battered,,Fish and chips,,
+fish-fingers,Fish fingers,121490:120,fish-fingers-breaded|fish-crunchies-battered,,Fish and chips,,=Fish fingers
 shrimp,Shrimp,128100:100,shrimp-prawn-large|shrimp-prawn-small|shrimp-boiled,shrimp,Shrimp|Prawn,,
-sushi,Sushi,000105:120 122400:30,sushi,,Sushi|Sashimi,,
+sushi,Sushi,000105:120 122400:30,sushi,,Sushi|Sashimi,,=Sushi|Plates with sushi|Sushi platters|Take-out sushi|Sushi trays
 anchovies,Anchovies,120020:15,anchovies,,Anchovy,,
 green-salad,Green salad,005410:80,salad-leaf-salad-green|salad-lambs-ear,mixed greens|lettuce,Salad|Lettuce|Leaf vegetable,,
 rocket,Rocket,005460:50,salad-rocket,arugula,Arugula,,
 chicory,Chicory,005250:100,witloof-chicory,,Endive,,
 mixed-salad,Mixed salad,005410:60 006600:50 005150:30,mixed-salad-chopped-without-sauce|coleslaw-chopped-without-sauce,garden salad,Coleslaw,,
-caesar-salad,Caesar salad,005410:80 166000:10 000530:15 502760:15,,caesar salad|chicken salad,Caesar salad,,
-greek-salad,Greek salad,006600:100 005220:60 162000:40 008810:15 009210:10,greek-salad,greek salad,Greek salad,,
+caesar-salad,Caesar salad,005410:80 166000:10 000530:15 502760:15,,caesar salad|chicken salad,Caesar salad,,Caesar salad
+greek-salad,Greek salad,006600:100 005220:60 162000:40 008810:15 009210:10,greek-salad,greek salad,Greek salad,,Greek salad
 caprese,Caprese salad,164820:100 006600:150 009210:10,caprese-salad-tomato-mozzarella,,Caprese salad,,Insalata caprese
 leafy-greens,Cooked leafy greens,005085:150,swiss-chard,kale|chard|mustard greens|bok choy|collards|tatsoi,Kale|Chard,,
 spinach,Spinach,005705:150,leaf-spinach|spinach-steamed-without-addition-of-salt|cream-spinach,spinach (cooked),Spinach,,
@@ -113,7 +113,7 @@ broccoli,Broccoli,005105:150,broccoli|romanesco,broccoli,Broccoli,broccoli,
 cauliflower,Cauliflower,005165:150,cauliflower,cauliflower,Cauliflower,,
 zucchini,Courgette,005752:150,zucchini|zucchini-stewed-without-addition-of-fat-without-addition-of-salt,zucchini|chayote squash,Zucchini,,
 eggplant,Aubergine,005506:150,eggplant|eggplant-caviar,eggplant,Eggplant,,
-ratatouille,Ratatouille,005506:60 005752:60 005606:40 006680:40,ratatouille,,Ratatouille,,
+ratatouille,Ratatouille,005506:60 005752:60 005606:40 006680:40,ratatouille,,Ratatouille,,=Ratatouille|Caponata|Peperonata
 eggplant-parmigiana,Eggplant parmigiana,005506:150 006670:60 164820:50 166000:20 009799:15,,,,,Parmigiana
 mixed-vegetables,Mixed vegetables,006990:150,mixed-vegetables|vegetables|vegetable-mix-peas-and-carrots,succotash,Vegetable,,
 green-beans,Green beans,004325:150,french-beans|green-bean-steamed-without-addition-of-salt,green beans,Green bean,,
@@ -133,58 +133,58 @@ brussels-sprouts,Brussels sprouts,005175:120,brussel-sprouts,brussels sprouts,Br
 asparagus,Asparagus,005045:120,green-asparagus|white-asparagus,asparagus,Asparagus,,
 artichoke,Artichoke,005125:120,artichoke,artichokes,Artichoke,,
 avocado,Avocado,007490:70,avocado,avocado,Avocado,,
-guacamole,Guacamole,007490:50,guacamole,,Guacamole,,
+guacamole,Guacamole,007490:50,guacamole,,Guacamole,,=Guacamole
 pumpkin,Pumpkin,005720:150,pumpkin,squash,Pumpkin|Winter squash,,
 sprouts,Sprouts,005350:30,alfa-sprouts|shoots|mungbean-sprouts,,Bean sprouts,,
 sweet-potato,Sweet potato,006515:150,sweet-potato,sweet potato|yam,Sweet potato,,
 potatoes,Boiled potatoes,006515:200,potatoes-steamed|baked-potato,potatoes,Potato|Baked potato,,
-roast-potatoes,Roast potatoes,006511:150,country-fries|rosti,roasted potatoes|hash browns,Hash browns,,
-fries,French fries,119080:120,chips-french-fries,,French fries,,
-mashed-potatoes,Mashed potatoes,006515:150 135010:30 190010:10,mashed-potatoes-prepared-with-full-fat-milk-with-butter,mashed potatoes,Mashed potato,,
-potato-gratin,Potato gratin,006515:150 140400:30 162420:15,potatoes-au-gratin-dauphinois-prepared|vegetable-au-gratin-baked,,Gratin,,
+roast-potatoes,Roast potatoes,006511:150,country-fries|rosti,roasted potatoes|hash browns,Hash browns,,Roast potatoes
+fries,French fries,119080:120,chips-french-fries,,French fries,,=French fries|French fries as a side dish
+mashed-potatoes,Mashed potatoes,006515:150 135010:30 190010:10,mashed-potatoes-prepared-with-full-fat-milk-with-butter,mashed potatoes,Mashed potato,,=Mashed potatoes
+potato-gratin,Potato gratin,006515:150 140400:30 162420:15,potatoes-au-gratin-dauphinois-prepared|vegetable-au-gratin-baked,,Gratin,,Gratin dauphinois
 potato-salad,Potato salad,006515:150 502760:20,potato-salad-with-mayonnaise-yogurt-dressing,,Potato salad,,
 crisps,Crisps,006570:30,crisps|paprika-chips|corn-crisps,,Potato chip|Tortilla chip,,
 popcorn,Popcorn,501200:30,popcorn-salted,,Popcorn,,
 black-olives,Black olives,008810:20,black-olives,olives,Olive,,
 green-olives,Green olives,008820:20,green-olives,,,,
-hummus,Hummus,004010:60 009210:5,hummus,hummus,Hummus,,
-falafel,Falafel,004005:80 009799:10,falafel-balls,,Falafel,,
+hummus,Hummus,004010:60 009210:5,hummus,hummus,Hummus,,=Hummus|Israeli style hummus
+falafel,Falafel,004005:80 009799:10,falafel-balls,,Falafel,,=Falafel
 tofu,Tofu,,tofu,tofu|tempeh,Tofu,,
 lentils,Lentils,004505:150,lentils|lentils-green-du-puy-du-berry,lentils,Lentil,,
 chickpeas,Chickpeas,004010:120,chickpeas,chickpeas,Chickpea,,
 beans,Beans,004105:120,beans-kidney|beans-white|bean-seeds,black beans|white beans,Bean|Kidney bean,,
 quinoa,Quinoa,000097:150,quinoa,quinoa,Quinoa,,
-couscous,Couscous,000046:150,couscous|taboule-prepared-with-couscous,couscous,Couscous|Tabbouleh,,
+couscous,Couscous,000046:150,couscous|taboule-prepared-with-couscous,couscous,Couscous|Tabbouleh,,=Couscous|Couscous salads
 grains,Wheat or spelt grains,000025:150,bulgur|ebly,wheat berry|bulgur|barley,Bulgur,,
 rice,Rice,000105:180,rice|rice-basmati|rice-jasmin,white rice|country rice|pilaf,Rice|Steamed rice,,
 brown-rice,Brown rice,000115:180,rice-whole-grain|rice-wild,brown rice|wild rice,Brown rice,,
-fried-rice,Fried rice,000105:180 181117:30 006990:40 009799:10,cantonese-fried-rice,fried rice,Fried rice,,
+fried-rice,Fried rice,000105:180 181117:30 006990:40 009799:10,cantonese-fried-rice,fried rice,Fried rice,,Fried rice
 risotto,Risotto,000105:200 190010:10 166000:10,risotto-without-cheese-cooked|risotto-with-mushrooms-cooked,,Risotto,,Risotto
-arancini,Arancini,000105:90 101521:20 164820:15 000570:15 009799:10,,,,,Arancini
+arancini,Arancini,000105:90 101521:20 164820:15 000570:15 009799:10,,,,,Arancini|Supplì
 polenta,Polenta,000076:200,grits-polenta-maize-flour,,Polenta,,Polenta
 porridge,Porridge,003030:40 135020:150,porridge-prepared-with-partially-skimmed-milk,oatmeal|oats,Porridge|Oatmeal,,
-pasta,Pasta,000805:200,pasta|pasta-spaghetti|pasta-penne|pasta-twist|pasta-hornli|pasta-in-conch-form|pasta-in-butterfly-form-farfalle|high-protein-pasta-made-of-lentils-peas,pasta|spaghetti|pasta salad,Pasta|Spaghetti|Penne|Macaroni,,
+pasta,Pasta,000805:200,pasta|pasta-spaghetti|pasta-penne|pasta-twist|pasta-hornli|pasta-in-conch-form|pasta-in-butterfly-form-farfalle|high-protein-pasta-made-of-lentils-peas,pasta|spaghetti|pasta salad,Pasta|Spaghetti|Penne|Macaroni,,Spaghetti al pomodoro|Pasta all'amatriciana|Cacio e pepe
 wholemeal-pasta,Wholemeal pasta,000855:180,pasta-wholemeal,,,,
-egg-pasta,Egg pasta or noodles,000871:200,pasta-linguini-parpadelle-tagliatelle|pasta-noodles|spaetzle,,Noodle|Tagliatelle|Fettuccine,,
+egg-pasta,Egg pasta or noodles,000871:200,pasta-linguini-parpadelle-tagliatelle|pasta-noodles|spaetzle,,Noodle|Tagliatelle|Fettuccine,,=Tagliatelle|=Fettuccine|=Pappardelle
 rice-noodles,Rice noodles,000105:180,rice-noodles-vermicelli,rice noodles,Rice noodles,,
-ravioli,Ravioli or tortellini,000876:175,pasta-ravioli-stuffing|pasta-tortelloni-stuffing|dumplings,dumplings,Ravioli|Tortellini,,Ravioli
+ravioli,Ravioli or tortellini,000876:175,pasta-ravioli-stuffing|pasta-tortelloni-stuffing|dumplings,dumplings,Ravioli|Tortellini,,=Ravioli|Ravioli dishes|Tortellini|Agnolotti|=Cappelletti|=Tortelloni
 gnocchi,Potato gnocchi,006591:200,potato-gnocchi,,Gnocchi,,Gnocchi
 lasagne,Lasagne,000871:100 101521:50 006670:60 135020:40 166000:10 190010:5,lasagne-meat-prepared,lasagna,Lasagne,,Lasagna
 vegetable-lasagne,Vegetable lasagne,000871:100 006990:100 135020:40 166000:10,lasagne-vegetable-prepared,,,,
 tomato-sauce,Tomato sauce,006670:80 009210:5,tomato-sauce,salsa,Tomato sauce,,
-bolognese,Bolognese sauce,101521:50 006670:60 009210:5,bolognaise-sauce,,Bolognese sauce,,Ragù bolognese
+bolognese,Bolognese sauce,101521:50 006670:60 009210:5,bolognaise-sauce,,Bolognese sauce,,=Ragù bolognese|Pasta with ragù bolognese|Tagliatelle al ragù
 pesto,Pesto,009210:10 006800:5 166000:5 008590:5,sauce-pesto,,Pesto,,Pesto
 carbonara,Carbonara sauce,181100:30 110310:25 166060:10,sauce-carbonara,,Carbonara,,Spaghetti alla carbonara
 pizza,Pizza margherita,000720:250,pizza-margherita-baked,cheese pizza|pizza,Pizza,pizza,Pizza Margherita|Pizza napoletana|Pizza marinara
 pizza-vegetables,Vegetable pizza,000720:250 006990:50,pizza-with-vegetables-baked,,,,
 pizza-ham,Ham pizza,000720:250 110400:30,pizza-with-ham-baked|pizza-with-ham-with-mushrooms-baked,,,,
 pizza-pepperoni,Pepperoni pizza,000720:150 110640:20,,pepperoni pizza,,,
-tarte-flambee,Tarte flambée,000700:200 110310:30 140400:30,french-pizza-from-alsace-baked,,,,
+tarte-flambee,Tarte flambée,000700:200 110310:30 140400:30,french-pizza-from-alsace-baked,,,,=Tarte flambée
 sandwich,Sandwich,000530:80 110400:30 162420:20 190010:10,sandwich-ham-cheese-and-butter|croque-monsieur,sandwiches,Sandwich|Submarine sandwich,sandwich,
-quiche,Quiche or savoury pie,000220:40 190010:20 181100:30 135020:30 162420:20,quiche-with-cheese-baked-with-puff-pastry|quiche-with-spinach-baked-with-cake-dough|salt-cake-vegetables-filled|savoury-puff-pastry|savoury-puff-pastry-stick|dough-puff-pastry-shortcrust-bread-pizza-dough|pastry-flaky|turnover-with-meat-small-meat-pie-empanadas,,Quiche|Empanada,,
+quiche,Quiche or savoury pie,000220:40 190010:20 181100:30 135020:30 162420:20,quiche-with-cheese-baked-with-puff-pastry|quiche-with-spinach-baked-with-cake-dough|salt-cake-vegetables-filled|savoury-puff-pastry|savoury-puff-pastry-stick|dough-puff-pastry-shortcrust-bread-pizza-dough|pastry-flaky|turnover-with-meat-small-meat-pie-empanadas,,Quiche|Empanada,,=Quiches|Quiche lorraine|Quiche provençale
 vegetable-soup,Vegetable soup,905010:300,soup-vegetable|soup-cream-of-vegetables|soup-potato,,Soup|Minestrone,,Minestrone
 pumpkin-soup,Pumpkin soup,005720:250 140400:20 009210:5,soup-pumpkin,,,,
-tomato-soup,Tomato soup,900410:300,soup-tomato,,Tomato soup,,
+tomato-soup,Tomato soup,900410:300,soup-tomato,,Tomato soup,,=Tomato soup
 lentil-soup,Lentil soup,004505:200 009210:5,soup-of-lentils-dahl-dhal,,Dal,,
 broth,Broth,,bouillon|bouillon-vegetable|soup-miso,,Broth|Miso soup,,
 chicken-curry,Chicken curry,106213:120 140400:30,chicken-curry-cream-coconut-milk-curry-spices-paste,curries,Curry,,
@@ -217,7 +217,7 @@ figs,Figs,007050:100,figs,figs,Common fig,,
 kaki,Persimmon,007090:150,kaki,,Persimmon,,
 dates,Dates,007630:30,dates,,,,
 dried-fruit,Dried fruit,007410:30,dried-raisins|fig-dried|apricot-dried|mango-dried,,Raisin|Dried fruit,,
-fruit-salad,Fruit salad,007120:50 007510:50 007730:50 008000:50,fruit-salad,fruit salad,Fruit salad,,
+fruit-salad,Fruit salad,007120:50 007510:50 007730:50 008000:50,fruit-salad,fruit salad,Fruit salad,,=Fruit salads|Macedonia (fruit salad)
 coconut,Coconut,007520:40,coconut,,Coconut,,
 almonds,Almonds,008540:30,almonds,almonds,Almond,,
 walnuts,Walnuts,008560:30,walnut,walnuts,Walnut,,
@@ -230,21 +230,21 @@ pine-nuts,Pine nuts,008590:10,pine-nuts,,Pine nut,,
 mixed-nuts,Mixed nuts,008560:15 008540:15,mixed-nuts|nuts|mix-of-dried-fruits-and-nuts|brazil-nut,,Nut (Food)|Trail mix,,
 chestnuts,Chestnuts,008521:60,chestnuts,,Chestnut,,
 seeds,Seeds,,pumpkin-seeds|sunflower-seeds|mixed-seeds|seeds|sesame-seeds|linseeds|chia-grains,chia seeds,Sunflower seed,,
-muesli,Muesli,003040:50,muesli|crunch-muesli,granola,Muesli|Granola|Breakfast cereal,,
-bircher-muesli,Bircher muesli,003040:40 150010:100 007120:50,birchermuesli-prepared-no-sugar-added,,,,
+muesli,Muesli,003040:50,muesli|crunch-muesli,granola,Muesli|Granola|Breakfast cereal,,=Muesli
+bircher-muesli,Bircher muesli,003040:40 150010:100 007120:50,birchermuesli-prepared-no-sugar-added,,,,Birchermuesli
 oat-flakes,Oat flakes,003030:40,flakes-oat,,,,
 corn-flakes,Corn flakes,003020:30,corn-flakes,,Corn flakes,,
 dark-chocolate,Dark chocolate,203020:20,dark-chocolate,,Dark chocolate,,
 milk-chocolate,Milk chocolate,203010:20,milk-chocolate|chocolate|chocolate-filled|white-chocolate|chocolate-egg-small,,Chocolate|Chocolate bar,,
 nut-chocolate,Chocolate with hazelnuts,203030:20,praline|milk-chocolate-with-hazelnuts,,Praline,,
-chocolate-cake,Chocolate cake,208500:80,cake-chocolate|brownie,brownies,Chocolate cake,,
-sponge-cake,Cake,209010:80,cake-marble|cake-oblong|lemon-cake|banana-cake|carrot-cake|muffin|cake-salted,,Cake|Muffin|Cupcake|Carrot cake,cake,
-fruit-tart,Fruit tart,208510:100,apple-pie|tart|fruit-tart|pie-plum-baked-with-cake-dough|pie-apricot-baked-with-cake-dough|pie-rhubarb-baked-with-cake-dough|lemon-pie|apple-crumble,,Tart|Apple pie|Pie,,
+chocolate-cake,Chocolate cake,208500:80,cake-chocolate|brownie,brownies,Chocolate cake,,=Chocolate cakes|Sachertorte|Chocolate fudge cakes|Tenerina|Flourless chocolate cakes
+sponge-cake,Cake,209010:80,cake-marble|cake-oblong|lemon-cake|banana-cake|carrot-cake|muffin|cake-salted,,Cake|Muffin|Cupcake|Carrot cake,cake,=Sponge cakes|Victoria sponge cakes|Génoise|Chiffon cake
+fruit-tart,Fruit tart,208510:100,apple-pie|tart|fruit-tart|pie-plum-baked-with-cake-dough|pie-apricot-baked-with-cake-dough|pie-rhubarb-baked-with-cake-dough|lemon-pie|apple-crumble,,Tart|Apple pie|Pie,,Crostata|=Fruit tarts|Apple tarts|Strawberry tarts|Apricot tarts|Plum tarts|Fruit tartlets
 black-forest-cake,Black Forest cake,209010:80 140300:30,black-forest-tart,,Black forest cake,,
-cheesecake,Cheesecake,000900:20 162050:60 201500:10,cheesecake,,Cheesecake,,
+cheesecake,Cheesecake,000900:20 162050:60 201500:10,cheesecake,,Cheesecake,,=Cheesecakes|Fruit cheesecakes|Cold cheesecakes|Käsekuchen (German cheesecake)|Ricotta cakes
 tiramisu,Tiramisù,215000:30 164800:50 181100:20 201500:10 508010:2,tiramisu,,Tiramisu,,Tiramisu
-biscuits,Biscuits,000900:30,biscuits|cookies|chocolate-cookies|biscuit-with-butter|macaroon,cookies,Cookie|Biscuit|Macaroon,,
-doughnut,Doughnut,210060:60,,,Doughnut,donut,
+biscuits,Biscuits,000900:30,biscuits|cookies|chocolate-cookies|biscuit-with-butter|macaroon,cookies,Cookie|Biscuit|Macaroon,,=Cookies|Assorted cookies
+doughnut,Doughnut,210060:60,,,Doughnut,donut,=Doughnuts|Doughnuts with granulated sugar|Sprinkles on doughnuts|=Bomboloni
 creamy-dessert,Pudding or mousse,140300:40 135010:60 201500:12,chocolate-mousse|mousse|vanille-cream-cooked-custard-creme-dessert|panna-cotta,,Pudding|Mousse|Custard|Panna cotta,,Panna cotta
 cannoli,Cannoli,207020:100,,,,,Cannoli
 sweets,Sweets,202010:20,sweets-candies|gummi-bears-fruit-jellies-jelly-babies-with-fruit-essence|meringue|sugar-glazing,,Candy|Gummy bear,,
@@ -254,9 +254,9 @@ ketchup,Ketchup,502260:20,ketchup,ketchup,Ketchup,,
 mustard,Mustard,,mustard|mustard-dijon,,Mustard (Food),,
 dressing,Oil or dressing,009210:10,balsamic-salad-dressing|french-salad-dressing|salad-dressing|italian-salad-dressing|oil-vinegar-salad-dressing|oil|balsamic-vinegar,olive oil|vegetable oil|vinaigrette,Salad dressing|Olive oil,,
 soy-sauce,Soy sauce,509020:10,sauce-soya,,Soy sauce,,
-tzatziki,Tzatziki,151000:60 005220:20,tzatziki,,Tzatziki,,
+tzatziki,Tzatziki,151000:60 005220:20,tzatziki,,Tzatziki,,=Tzatziki
 other-sauce,Sauce,,sauce-sweet-sour|sauce-curry|sauce-roast|sauce-savoury|sauce-mushroom|sauce-sweet-salted-asian,,Gravy|Sauce,,
 herbs,Herbs,,garlic|parsley|basil|chives|coriander|bouquet-garni|capers,parsley,Herb|Basil|Parsley,,
 veggie-burger,Veggie burger,,veggie-burger|bread-meat-substitute-lettuce-sauce,,Veggie burger,,
-spring-roll,Spring roll,,spring-roll-fried,,Spring roll,,
+spring-roll,Spring roll,,spring-roll-fried,,Spring roll,,=Spring rolls|Egg roll|Lumpia|Cantonese spring rolls
 other-dish,Other dish,,cenovis-yeast-spread|maple-syrup-concentrate|faux-mage-cashew-vegan-chers|coconut-milk|sun-dried-tomatoe|breadcrumbs-unspiced|cocoa-powder|buckwheat-grain-peeled|goat-average-raw,millet|chilaquiles|tacos|jicama,,,

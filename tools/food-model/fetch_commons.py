@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Downloads photos of Italian dishes from Wikimedia Commons for the photo recogniser.
 
-Each class of classes.csv names the Commons categories ("commons" column) that show it. Every photo
+Each class of classes.csv names the Commons categories ("commons" column) that show it. Subcategories
+are searched too, one level down, unless the name starts with "=": broad categories such as
+"=Hamburgers" also hold restaurants, machines and other dishes, so only their own photos are taken. Every photo
 carries its own licence, which is checked one by one: CC BY, CC0 and public domain are taken; with
 ShareAlike on (the default) CC BY-SA too. Anything non-commercial, no-derivatives or unclear is left out.
 
@@ -122,7 +124,8 @@ def main():
     for c in classes:
         usable = {}
         for category in filter(None, c["commons"].split("|")):
-            for photo in photos_in(category, share_alike):
+            only_own = category.startswith("=")
+            for photo in photos_in(category.removeprefix("="), share_alike, 0 if only_own else SUBCATEGORY_DEPTH):
                 usable[photo["page"]] = photo
         print(f"{c['id']:<20} {len(usable):>4} usable photos", flush=True)
         for page, photo in list(usable.items())[:PER_CLASS]:
